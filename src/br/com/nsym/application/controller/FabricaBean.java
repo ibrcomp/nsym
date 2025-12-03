@@ -469,7 +469,7 @@ public class FabricaBean extends AbstractBeanEmpDS<Produto> {
 					if (this.viewState == ViewState.EDITING) {
 						if (itemSelect.getId() != null) {
 							System.out.println("Estou no Exclui Item devolvendo a quantidade do item para o estoque! item ID: " + itemSelect.getId());
-							this.listaDeMateriaisParaExcluir.add(itemSelect);	teste					
+							this.listaDeMateriaisParaExcluir.add(itemSelect);					
 						}
 					}
 					//				if (this.formaPag != null) {
