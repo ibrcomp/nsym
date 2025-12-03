@@ -741,6 +741,22 @@ public class Authorization {
     @Getter
     @AuthorizationGroup("authority.financial-period")
     public final String FINANCIAL_PERIOD_DETAILS = "authority.financial-period.details";
+    
+    @Getter
+	@AuthorizationGroup("authority.reformatrib")
+	public final String REFORMATRIB_VIEW = "authority.reformatrib.acess";
+    
+	@Getter
+	@AuthorizationGroup("authority.reformatrib")
+	public final String REFORMATRIB_INSERT = "authority.reformatrib.add";
+					
+	@Getter
+	@AuthorizationGroup("authority.reformatrib")
+	public final String REFORMATRIB_DELETE = "authority.reformatrib.delete";
+
+	@Getter
+	@AuthorizationGroup("authority.reformatrib")
+	public final String REFORMATRIB_EDIT = "authority.reformatrib.edit";
 
     @Getter
     @AuthorizationGroup("authority.closing")
