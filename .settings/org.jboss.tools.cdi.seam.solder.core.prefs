@@ -1,7 +1,0 @@
-eclipse.preferences.version=1
-org.jboss.tools.cdi.seam.solder.core.validator.problem.ambiguousGenericConfigurationPoint=warning
-org.jboss.tools.cdi.seam.solder.core.validator.problem.defaultProducerFieldOnNormalScopedBean=warning
-org.jboss.tools.cdi.seam.solder.core.validator.problem.genericConfigurationTypeIsGenericBean=warning
-org.jboss.tools.cdi.seam.solder.core.validator.problem.identicalDefaultBeans=warning
-org.jboss.tools.cdi.seam.solder.core.validator.problem.wrongGenericConfigurationAnnotationReference=warning
-org.jboss.tools.cdi.seam.solder.core.validator.problem.wrongTypeOfGenericConfigurationPoint=warning
