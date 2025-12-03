@@ -1,24 +1,23 @@
 ########################
 # Maven (build)
 ########################
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
-release.properties
+/target/
+/pom.xml.tag
+/pom.xml.releaseBackup
+/pom.xml.versionsBackup
+/pom.xml.next
+/release.properties
 
 ########################
 # Logs & temporários
 ########################
-logs/
+/logs/
+/tmp/
+/temp/
 *.log
 *.tmp
 *.swp
 *.swo
-tmp/
-temp/
-.tmp/
 
 ########################
 # Eclipse
@@ -28,10 +27,6 @@ temp/
 .settings/
 .factorypath
 .codetogether.ignore
-
-########################
-# Tern / JS tooling
-########################
 .tern-project
 
 ########################
@@ -40,7 +35,7 @@ temp/
 .idea/
 *.iml
 *.iws
-out/
+/out/
 
 ########################
 # VS Code
@@ -48,16 +43,14 @@ out/
 .vscode/
 
 ########################
-# Outras pastas de build
-########################
-build/
-dist/
-
-########################
-# Arquivos de SO
+# Sistema operacional
 ########################
 .DS_Store
 Thumbs.db
 ehthumbs.db
 Desktop.ini
 
+########################
+# Coisas antigas
+########################
+.gitold/
