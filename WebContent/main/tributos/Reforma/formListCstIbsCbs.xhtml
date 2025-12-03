@@ -62,30 +62,38 @@
                                              update=":cstIbsCbsForm:dialogEdicao"
                                              actionListener="#{cstIbsCbsBean.novo}"
                                              oncomplete="PF('dlgCstIbsCbs').show()"
-                                             rendered="#{userSessionBean.hasRole('ROLE_CST_IBS_CBS_CADASTRAR')}" />
+                                             rendered="#{userSessionBean.hasRole(authorization.REFORMATRIB_INSERT)}" />
                         </f:facet>
 
                         <p:column headerText="ID" style="width:60px">
                             <h:outputText value="#{c.id}" />
                         </p:column>
+                        
+                        <p:column headerText="Cst IBS/CBS" style="width:100px">
+                            <h:outputText value="#{c.cstIbsCbs}" />
+                        </p:column>
 
-                        <p:column headerText="Código" style="width:100px">
-                            <h:outputText value="#{c.codigo}" />
+                        <p:column headerText="Cst CBS" style="width:100px">
+                            <h:outputText value="#{c.cstCbs}" />
+                        </p:column>
+                        
+                        <p:column headerText="Cst IBS" style="width:100px">
+                            <h:outputText value="#{c.cstIbs}" />
                         </p:column>
 
                         <p:column headerText="Descrição">
-                            <h:outputText value="#{c.descricao}" />
+                            <h:outputText value="#{c.descricaoCstIbsCbs}" />
                         </p:column>
 
                         <p:column headerText="Class. Tributária" style="width:260px">
-                            <h:outputText value="#{c.cClassTrib != null ? c.cClassTrib.codigo : ''}" />
-                            <h:outputText value=" - " rendered="#{c.cClassTrib != null}" />
-                            <h:outputText value="#{c.cClassTrib != null ? c.cClassTrib.descricao : ''}" />
+                            <h:outputText value="#{c.CClassTrib != null ? c.CClassTrib.cstIbsCbs : ''}" />
+                            <h:outputText value=" - " rendered="#{c.CClassTrib != null}" />
+                            <h:outputText value="#{c.CClassTrib != null ? c.CClassTrib.nomeCClassTrib : ''}" />
                         </p:column>
 
-                        <p:column headerText="Ativo" style="width:80px">
-                            <h:outputText value="#{c.ativo ? 'Sim' : 'Não'}" />
-                        </p:column>
+<!--                         <p:column headerText="Ativo" style="width:80px"> -->
+<!--                             <h:outputText value="#{c. ? 'Sim' : 'Não'}" /> -->
+<!--                         </p:column> -->
 
                         <p:column headerText="Ações" style="width:150px;text-align:center">
                             <p:commandButton icon="ui-icon-search"
@@ -95,7 +103,7 @@
                                              update=":cstIbsCbsForm:dialogEdicao"
                                              actionListener="#{cstIbsCbsBean.editar(c)}"
                                              oncomplete="PF('dlgCstIbsCbs').show()"
-                                             rendered="#{userSessionBean.hasRole('ROLE_CST_IBS_CBS_EDITAR')}" />
+                                             rendered="#{userSessionBean.hasRole(authorization.REFORMATRIB_EDIT)}" />
 
                             <p:commandButton icon="ui-icon-trash"
                                              title="Excluir"
@@ -103,8 +111,8 @@
                                              process="@this"
                                              update="cstIbsCbsForm"
                                              actionListener="#{cstIbsCbsBean.excluir(c)}"
-                                             onclick="return confirm('Confirma exclusão do CST #{c.codigo}?');"
-                                             rendered="#{userSessionBean.hasRole('ROLE_CST_IBS_CBS_EXCLUIR')}" />
+                                             onclick="return confirm('Confirma exclusão do CST #{c.cstIbsCbs}?');"
+                                             rendered="#{userSessionBean.hasRole(authorization.REFORMATRIB_DELETE)}" />
                         </p:column>
 
                     </p:dataTable>
@@ -126,7 +134,7 @@
                         <div class="form-group col-md-3">
                             <p:outputLabel for="codigo" value="Código" />
                             <p:inputText id="codigo"
-                                         value="#{cstIbsCbsBean.entidade.codigo}"
+                                         value="#{cstIbsCbsBean.entidade.cstIbsCbs}"
                                          maxlength="3"
                                          styleClass="form-control"
                                          required="true"
@@ -136,7 +144,7 @@
                         <div class="form-group col-md-9">
                             <p:outputLabel for="descricao" value="Descrição" />
                             <p:inputTextarea id="descricao"
-                                             value="#{cstIbsCbsBean.entidade.descricao}"
+                                             value="#{cstIbsCbsBean.entidade.descricaoCstIbsCbs}"
                                              rows="3"
                                              autoResize="false"
                                              styleClass="form-control"
@@ -149,31 +157,32 @@
                         <div class="form-group col-md-8">
                             <p:outputLabel for="classTrib" value="Classificação Tributária (CClassTrib)" />
                             <p:selectOneMenu id="classTrib"
-                                             value="#{cstIbsCbsBean.entidade.cClassTrib}"
-                                             styleClass="form-control"
+                                             value="#{cstIbsCbsBean.entidade.CClassTrib}"
+                                             style="width:100%"
                                              converter="omnifaces.SelectItemsConverter">
                                 <f:selectItem itemLabel="-- selecione --" itemValue="#{null}" noSelectionOption="true" />
                                 <f:selectItems value="#{cstIbsCbsBean.listaClassTrib}"
                                                var="ct"
-                                               itemLabel="#{ct.codigo} - #{ct.descricao}"
+                                               itemLabel="#{ct.CClassTrib} - #{ct.nomeCClassTrib}"
                                                itemValue="#{ct}" />
                             </p:selectOneMenu>
                         </div>
-
-						<p:selectOneMenu id="tipoTributo"
-							value="#{cstIbsCbsBean.entidade.tipoTributo}"
-							styleClass="form-control" converter="omnifaces.EnumConverter">
-							<f:selectItem itemLabel="Selecione..." itemValue="#{null}" />
-							<f:selectItems value="#{cstIbsCbsBean.tiposTributo}" var="t"
-								itemValue="#{t}" itemLabel="#{t.toString()}" />
-						</p:selectOneMenu>
-
 						<div class="form-group col-md-4">
-                            <p:outputLabel for="ativo" value="Ativo" />
-                            <br />
-                            <p:selectBooleanCheckbox id="ativo"
-                                                     value="#{cstIbsCbsBean.entidade.ativo}" />
-                        </div>
+							<p:outputLabel for="tipoTributo" value="Tipo de Tributo" />
+							<p:selectOneMenu id="tipoTributo"
+								value="#{cstIbsCbsBean.entidade.tipoTributo}" style="width:100%"
+								converter="omnifaces.GenericEnumConverter">
+								<f:selectItem itemLabel="Selecione..." itemValue="#{null}" />
+								<f:selectItems value="#{cstIbsCbsBean.tiposTributo}" var="t"
+									itemValue="#{t}" itemLabel="#{t.toString()}" />
+							</p:selectOneMenu>
+						</div>
+						<!-- 						<div class="form-group col-md-4"> -->
+<!--                             <p:outputLabel for="ativo" value="Ativo" /> -->
+<!--                             <br /> -->
+<!--                             <p:selectBooleanCheckbox id="ativo" -->
+<!--                                                      value="#{cstIbsCbsBean.entidade.ativo}" /> -->
+<!--                         </div> -->
                     </div>
 
                     <div class="row">
@@ -184,7 +193,7 @@
                                              actionListener="#{cstIbsCbsBean.salvar}"
                                              update=":cstIbsCbsForm"
                                              oncomplete="PF('dlgCstIbsCbs').hide()"
-                                             rendered="#{userSessionBean.hasRole('ROLE_CST_IBS_CBS_SALVAR')}" />
+                                             rendered="#{userSessionBean.hasRole(authorization.REFORMATRIB_INSERT)}" />
 
                             <p:commandButton value="Cancelar"
                                              icon="ui-icon-close"

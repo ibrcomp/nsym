@@ -1,6 +1,5 @@
 package br.com.nsym.application.controller.reforma;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,6 +9,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.transaction.Transactional;
 
+import br.com.nsym.application.controller.AbstractBeanEmpDS;
 import br.com.nsym.domain.model.entity.fiscal.reforma.CClassTrib;
 import br.com.nsym.domain.model.entity.fiscal.reforma.CstIbsCbs;
 import br.com.nsym.domain.model.entity.fiscal.tools.TipoTributo;
@@ -20,7 +20,7 @@ import lombok.Setter;
 
 @Named
 @ViewScoped
-public class CstIbsCbsBean implements Serializable {
+public class CstIbsCbsBean extends AbstractBeanEmpDS<CstIbsCbs> {
 
     private static final long serialVersionUID = 1L;
 
@@ -138,4 +138,22 @@ public class CstIbsCbsBean implements Serializable {
     public TipoTributo[] getTiposTributo() {
         return TipoTributo.values();
     }
+
+	@Override
+	public CstIbsCbs setIdEmpresa(Long idEmpresa) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public CstIbsCbs setIdFilial(Long idFilial) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void initializeForm(Long id) {
+		// TODO Auto-generated method stub
+		
+	}
 }
