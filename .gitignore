@@ -1,0 +1,63 @@
+########################
+# Maven (build)
+########################
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+########################
+# Logs & temporários
+########################
+logs/
+*.log
+*.tmp
+*.swp
+*.swo
+tmp/
+temp/
+.tmp/
+
+########################
+# Eclipse
+########################
+.classpath
+.project
+.settings/
+.factorypath
+.codetogether.ignore
+
+########################
+# Tern / JS tooling
+########################
+.tern-project
+
+########################
+# IntelliJ IDEA
+########################
+.idea/
+*.iml
+*.iws
+out/
+
+########################
+# VS Code
+########################
+.vscode/
+
+########################
+# Outras pastas de build
+########################
+build/
+dist/
+
+########################
+# Arquivos de SO
+########################
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
