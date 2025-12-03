@@ -1,0 +1,60 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="cfopDialog" width="50%"
+	modal="true" resizable="false" closeOnEscape="true"
+	widgetVar="dialogCFOP"
+	header="#{messages['cfop.page-description-including']}">
+	<!-- 	<f:metadata> -->
+	<!-- 		<f:viewAction action="#{cfopBean.initializeForm(param.cfopID)}" /> -->
+	<!-- 	</f:metadata> -->
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-2">
+				<p:outputLabel value="#{messages['cfop.page-title']}" />
+			</h2>
+		</div>
+		<div class="box-body row">
+			<div class="form-group col-md-5">
+				<p:outputLabel value="#{label['label.descricao']}: "
+					for="descricaoCFOP" />
+				<p:inputText value="#{cfopBean.cfop.descricao}" id="descricaoCFOP"
+					required="false" immediate="true"
+					readonly="#{userSessionBean.hasRole(authorization.CFOP_INSERT) eq 'false'}"
+					requiredMessage="#{validation['cfop.descricao']}" maxlength="100"
+					label="descricao" styleClass="form-control" />
+			</div>
+			<div class="form-group col-md-2">
+				<p:outputLabel value="#{label['label.cfop']}: " for="cfopDI" />
+				<p:inputText id="cfopDI" value="#{cfopBean.cfop.cfop}"
+					readonly="#{userSessionBean.hasRole(authorization.CFOP_INSERT) eq 'false'}"
+					styleClass="form-control" />
+			</div>
+			<div class="form-group col-md-2">
+				<p:outputLabel value="#{label['label.tipoNota']}" for="tiponota" />
+				<p:selectOneMenu id="tiponota" filter="true"
+					value="#{cfopBean.cfop.tipoNota}"
+					disabled="#{userSessionBean.hasRole(authorization.CFOP_INSERT) eq 'false'}"
+					converter="omnifaces.GenericEnumConverter" style="width:100%"
+					immediate="true">
+					<f:selectItem itemValue="#{null}" noSelectionOption="true"
+						itemLabel="#{messages['filial.form.select-one']}" />
+					<f:selectItems value="#{cfopBean.tipoNota}" />
+				</p:selectOneMenu>
+			</div>
+		</div>
+		<div class="box-footer align-right">
+
+			<p:commandButton actionListener="#{cfopBean.doSalvar()}"
+				process="popu" style="align-left"
+				oncomplete="PF('dialogCFOP').hide()" update="popu"
+				value="#{label['label.save']}" styleClass="btn btn-flat btn-seach"
+				icon="fa fa-search-plus" />
+
+		</div>
+	</div>
+
+
+</p:dialog>
+

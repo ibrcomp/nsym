@@ -1,0 +1,205 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:o="http://omnifaces.org/ui"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                template="/template/mainTemplate.xhtml">
+
+    <!-- Menu / submenu ativos -->
+    <ui:param name="activeMenu" value="Fiscal" />
+    <ui:param name="activeSubMenu" value="CST IBS/CBS" />
+
+    <f:metadata>
+        <f:viewAction action="#{cstIbsCbsBean.initializeListing()}" />
+    </f:metadata>
+
+    <ui:define name="pageTitle">
+        Manutenção de CST IBS/CBS
+    </ui:define>
+
+    <ui:define name="pageDescription">
+        <h:outputText value="Cadastro dos códigos CST de IBS/CBS vinculados à classificação tributária (CClassTrib)." />
+    </ui:define>
+
+    <ui:define name="breadcrumb">
+        <li><a href="#">Fiscal</a></li>
+        <li><a href="formListCstIbsCbs.xhtml">CST IBS/CBS</a></li>
+    </ui:define>
+
+    <ui:define name="content">
+
+        <h:form id="cstIbsCbsForm" prependId="false">
+
+            <p:messages id="messages" closable="true" />
+            <p:growl id="growl" showDetail="true" />
+
+            <div class="box">
+                <div class="box-header with-border">
+                    <h2 class="box-title">
+                        Manutenção de CST IBS/CBS
+                    </h2>
+                </div>
+
+                <div class="box-body">
+
+                    <!-- TABELA -->
+                    <p:dataTable id="tabela"
+                                 value="#{cstIbsCbsBean.lista}"
+                                 var="c"
+                                 paginator="true"
+                                 rows="20"
+                                 styleClass="table table-striped"
+                                 rowKey="#{c.id}"
+                                 selectionMode="single"
+                                 emptyMessage="Nenhum CST IBS/CBS cadastrado.">
+
+                        <f:facet name="header">
+                            <p:commandButton value="Novo"
+                                             icon="ui-icon-plus"
+                                             styleClass="btn btn-flat btn-success"
+                                             process="@this"
+                                             update=":cstIbsCbsForm:dialogEdicao"
+                                             actionListener="#{cstIbsCbsBean.novo}"
+                                             oncomplete="PF('dlgCstIbsCbs').show()"
+                                             rendered="#{userSessionBean.hasRole('ROLE_CST_IBS_CBS_CADASTRAR')}" />
+                        </f:facet>
+
+                        <p:column headerText="ID" style="width:60px">
+                            <h:outputText value="#{c.id}" />
+                        </p:column>
+
+                        <p:column headerText="Código" style="width:100px">
+                            <h:outputText value="#{c.codigo}" />
+                        </p:column>
+
+                        <p:column headerText="Descrição">
+                            <h:outputText value="#{c.descricao}" />
+                        </p:column>
+
+                        <p:column headerText="Class. Tributária" style="width:260px">
+                            <h:outputText value="#{c.cClassTrib != null ? c.cClassTrib.codigo : ''}" />
+                            <h:outputText value=" - " rendered="#{c.cClassTrib != null}" />
+                            <h:outputText value="#{c.cClassTrib != null ? c.cClassTrib.descricao : ''}" />
+                        </p:column>
+
+                        <p:column headerText="Ativo" style="width:80px">
+                            <h:outputText value="#{c.ativo ? 'Sim' : 'Não'}" />
+                        </p:column>
+
+                        <p:column headerText="Ações" style="width:150px;text-align:center">
+                            <p:commandButton icon="ui-icon-search"
+                                             title="Editar"
+                                             styleClass="btn btn-flat btn-info"
+                                             process="@this"
+                                             update=":cstIbsCbsForm:dialogEdicao"
+                                             actionListener="#{cstIbsCbsBean.editar(c)}"
+                                             oncomplete="PF('dlgCstIbsCbs').show()"
+                                             rendered="#{userSessionBean.hasRole('ROLE_CST_IBS_CBS_EDITAR')}" />
+
+                            <p:commandButton icon="ui-icon-trash"
+                                             title="Excluir"
+                                             styleClass="btn btn-flat btn-danger"
+                                             process="@this"
+                                             update="cstIbsCbsForm"
+                                             actionListener="#{cstIbsCbsBean.excluir(c)}"
+                                             onclick="return confirm('Confirma exclusão do CST #{c.codigo}?');"
+                                             rendered="#{userSessionBean.hasRole('ROLE_CST_IBS_CBS_EXCLUIR')}" />
+                        </p:column>
+
+                    </p:dataTable>
+
+                </div>
+            </div>
+
+            <!-- DIÁLOGO DE EDIÇÃO -->
+            <p:dialog id="dialogEdicao"
+                      header="Cadastro de CST IBS/CBS"
+                      widgetVar="dlgCstIbsCbs"
+                      modal="true"
+                      resizable="false"
+                      width="720">
+
+                <h:panelGroup id="panelEdicao">
+
+                    <div class="row">
+                        <div class="form-group col-md-3">
+                            <p:outputLabel for="codigo" value="Código" />
+                            <p:inputText id="codigo"
+                                         value="#{cstIbsCbsBean.entidade.codigo}"
+                                         maxlength="3"
+                                         styleClass="form-control"
+                                         required="true"
+                                         requiredMessage="Informe o código do CST." />
+                        </div>
+
+                        <div class="form-group col-md-9">
+                            <p:outputLabel for="descricao" value="Descrição" />
+                            <p:inputTextarea id="descricao"
+                                             value="#{cstIbsCbsBean.entidade.descricao}"
+                                             rows="3"
+                                             autoResize="false"
+                                             styleClass="form-control"
+                                             required="true"
+                                             requiredMessage="Informe a descrição do CST." />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group col-md-8">
+                            <p:outputLabel for="classTrib" value="Classificação Tributária (CClassTrib)" />
+                            <p:selectOneMenu id="classTrib"
+                                             value="#{cstIbsCbsBean.entidade.cClassTrib}"
+                                             styleClass="form-control"
+                                             converter="omnifaces.SelectItemsConverter">
+                                <f:selectItem itemLabel="-- selecione --" itemValue="#{null}" noSelectionOption="true" />
+                                <f:selectItems value="#{cstIbsCbsBean.listaClassTrib}"
+                                               var="ct"
+                                               itemLabel="#{ct.codigo} - #{ct.descricao}"
+                                               itemValue="#{ct}" />
+                            </p:selectOneMenu>
+                        </div>
+
+						<p:selectOneMenu id="tipoTributo"
+							value="#{cstIbsCbsBean.entidade.tipoTributo}"
+							styleClass="form-control" converter="omnifaces.EnumConverter">
+							<f:selectItem itemLabel="Selecione..." itemValue="#{null}" />
+							<f:selectItems value="#{cstIbsCbsBean.tiposTributo}" var="t"
+								itemValue="#{t}" itemLabel="#{t.toString()}" />
+						</p:selectOneMenu>
+
+						<div class="form-group col-md-4">
+                            <p:outputLabel for="ativo" value="Ativo" />
+                            <br />
+                            <p:selectBooleanCheckbox id="ativo"
+                                                     value="#{cstIbsCbsBean.entidade.ativo}" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12" style="text-align:right">
+                            <p:commandButton value="Salvar"
+                                             icon="ui-icon-disk"
+                                             styleClass="btn btn-flat btn-primary"
+                                             actionListener="#{cstIbsCbsBean.salvar}"
+                                             update=":cstIbsCbsForm"
+                                             oncomplete="PF('dlgCstIbsCbs').hide()"
+                                             rendered="#{userSessionBean.hasRole('ROLE_CST_IBS_CBS_SALVAR')}" />
+
+                            <p:commandButton value="Cancelar"
+                                             icon="ui-icon-close"
+                                             styleClass="btn btn-flat btn-default"
+                                             immediate="true"
+                                             actionListener="#{cstIbsCbsBean.cancelarEdicao}"
+                                             update=":cstIbsCbsForm"
+                                             oncomplete="PF('dlgCstIbsCbs').hide()" />
+                        </div>
+                    </div>
+
+                </h:panelGroup>
+            </p:dialog>
+
+        </h:form>
+
+    </ui:define>
+</ui:composition>

@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions
+	targetNamespace="http://misc.domain.nsym.com.br"
+	xmlns:apachesoap="http://xml.apache.org/xml-soap"
+	xmlns:impl="http://misc.domain.nsym.com.br"
+	xmlns:intf="http://misc.domain.nsym.com.br"
+	xmlns:tns1="http://cadastro.entity.model.domain.nsym.com.br"
+	xmlns:tns2="http://entity.model.domain.nsym.com.br"
+	xmlns:tns3="http://time.java"
+	xmlns:tns4="http://tools.entity.model.domain.nsym.com.br"
+	xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+	xmlns:wsdlsoap="http://schemas.xmlsoap.org/wsdl/soap/"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<!--WSDL created by Apache Axis version: 1.4 Built on Apr 22, 2006 (06:55:48 
+		PDT) -->
+	<wsdl:types>
+		<schema elementFormDefault="qualified"
+			targetNamespace="http://misc.domain.nsym.com.br"
+			xmlns="http://www.w3.org/2001/XMLSchema">
+			<import namespace="http://entity.model.domain.nsym.com.br" />
+			<import namespace="http://xml.apache.org/xml-soap" />
+			<import
+				namespace="http://cadastro.entity.model.domain.nsym.com.br" />
+			<import
+				namespace="http://tools.entity.model.domain.nsym.com.br" />
+			<import namespace="http://time.java" />
+			<element name="findAddressByLogradouro">
+				<complexType>
+					<sequence>
+						<element name="uf" type="xsd:string" />
+						<element name="localidade" type="xsd:string" />
+						<element name="logradouro" type="xsd:string" />
+					</sequence>
+				</complexType>
+			</element>
+			<element name="findAddressByLogradouroResponse">
+				<complexType>
+					<sequence>
+						<element name="findAddressByLogradouroReturn"
+							type="impl:ArrayOf_xsd_anyType" />
+					</sequence>
+				</complexType>
+			</element>
+			<complexType name="ArrayOf_xsd_anyType">
+				<sequence>
+					<element maxOccurs="unbounded" minOccurs="0" name="item"
+						type="xsd:anyType" />
+				</sequence>
+			</complexType>
+			<element name="findAddressByZipcode">
+				<complexType>
+					<sequence>
+						<element name="zipcode" type="xsd:string" />
+					</sequence>
+				</complexType>
+			</element>
+			<element name="findAddressByZipcodeResponse">
+				<complexType>
+					<sequence>
+						<element name="findAddressByZipcodeReturn"
+							type="tns1:Endereco" />
+					</sequence>
+				</complexType>
+			</element>
+		</schema>
+		<schema elementFormDefault="qualified"
+			targetNamespace="http://entity.model.domain.nsym.com.br"
+			xmlns="http://www.w3.org/2001/XMLSchema">
+			<import namespace="http://xml.apache.org/xml-soap" />
+			<import
+				namespace="http://cadastro.entity.model.domain.nsym.com.br" />
+			<import
+				namespace="http://tools.entity.model.domain.nsym.com.br" />
+			<import namespace="http://time.java" />
+			<import namespace="http://misc.domain.nsym.com.br" />
+			<complexType abstract="true" name="PersistentEntity">
+				<sequence>
+					<element name="deleted" type="xsd:boolean" />
+					<element name="editedBy" nillable="true" type="xsd:string" />
+					<element name="id" nillable="true" type="xsd:long" />
+					<element name="idEmpresa" nillable="true" type="xsd:long" />
+					<element name="idFilial" nillable="true" type="xsd:long" />
+					<element name="includedBy" nillable="true"
+						type="xsd:string" />
+					<element name="inclusion" nillable="true"
+						type="xsd:dateTime" />
+					<element name="inclusionAsLocalDate" nillable="true"
+						type="xsd:anyType" />
+					<element name="inclusionDateAsString" nillable="true"
+						type="xsd:string" />
+					<element name="lastEdition" nillable="true"
+						type="xsd:dateTime" />
+					<element name="saved" type="xsd:boolean" />
+				</sequence>
+			</complexType>
+		</schema>
+		<schema elementFormDefault="qualified"
+			targetNamespace="http://xml.apache.org/xml-soap"
+			xmlns="http://www.w3.org/2001/XMLSchema">
+			<import namespace="http://entity.model.domain.nsym.com.br" />
+			<import
+				namespace="http://cadastro.entity.model.domain.nsym.com.br" />
+			<import
+				namespace="http://tools.entity.model.domain.nsym.com.br" />
+			<import namespace="http://time.java" />
+			<import namespace="http://misc.domain.nsym.com.br" />
+			<complexType name="Vector">
+				<sequence>
+					<element maxOccurs="unbounded" minOccurs="0" name="item"
+						type="xsd:anyType" />
+				</sequence>
+			</complexType>
+		</schema>
+		<schema elementFormDefault="qualified"
+			targetNamespace="http://cadastro.entity.model.domain.nsym.com.br"
+			xmlns="http://www.w3.org/2001/XMLSchema">
+			<import namespace="http://entity.model.domain.nsym.com.br" />
+			<import namespace="http://xml.apache.org/xml-soap" />
+			<import
+				namespace="http://tools.entity.model.domain.nsym.com.br" />
+			<import namespace="http://time.java" />
+			<import namespace="http://misc.domain.nsym.com.br" />
+			<complexType name="Endereco">
+				<complexContent>
+					<extension base="tns2:PersistentEntity">
+						<sequence>
+							<element name="bairro" nillable="true" type="xsd:string" />
+							<element name="cep" nillable="true" type="xsd:string" />
+							<element name="complemento" nillable="true"
+								type="xsd:string" />
+							<element name="endComplemento" nillable="true"
+								type="impl:ArrayOf_xsd_anyType" />
+							<element name="ibge" nillable="true" type="xsd:string" />
+							<element name="localidade" nillable="true"
+								type="xsd:string" />
+							<element name="logradouro" nillable="true"
+								type="xsd:string" />
+							<element name="uf" nillable="true" type="xsd:anyType" />
+						</sequence>
+					</extension>
+				</complexContent>
+			</complexType>
+		</schema>
+	</wsdl:types>
+
+	<wsdl:message name="findAddressByLogradouroRequest">
+
+		<wsdl:part element="impl:findAddressByLogradouro"
+			name="parameters">
+
+		</wsdl:part>
+
+	</wsdl:message>
+
+	<wsdl:message name="findAddressByZipcodeResponse">
+
+		<wsdl:part element="impl:findAddressByZipcodeResponse"
+			name="parameters">
+
+		</wsdl:part>
+
+	</wsdl:message>
+
+	<wsdl:message name="findAddressByLogradouroResponse">
+
+		<wsdl:part element="impl:findAddressByLogradouroResponse"
+			name="parameters">
+
+		</wsdl:part>
+
+	</wsdl:message>
+
+	<wsdl:message name="findAddressByZipcodeRequest">
+
+		<wsdl:part element="impl:findAddressByZipcode"
+			name="parameters">
+
+		</wsdl:part>
+
+	</wsdl:message>
+
+	<wsdl:portType name="AddressFinder">
+
+		<wsdl:operation name="findAddressByLogradouro">
+
+			<wsdl:input message="impl:findAddressByLogradouroRequest"
+				name="findAddressByLogradouroRequest">
+
+			</wsdl:input>
+
+			<wsdl:output
+				message="impl:findAddressByLogradouroResponse"
+				name="findAddressByLogradouroResponse">
+
+			</wsdl:output>
+
+		</wsdl:operation>
+
+		<wsdl:operation name="findAddressByZipcode">
+
+			<wsdl:input message="impl:findAddressByZipcodeRequest"
+				name="findAddressByZipcodeRequest">
+
+			</wsdl:input>
+
+			<wsdl:output message="impl:findAddressByZipcodeResponse"
+				name="findAddressByZipcodeResponse">
+
+			</wsdl:output>
+
+		</wsdl:operation>
+
+	</wsdl:portType>
+
+	<wsdl:binding name="AddressFinderSoapBinding"
+		type="impl:AddressFinder">
+
+		<wsdlsoap:binding style="document"
+			transport="http://schemas.xmlsoap.org/soap/http" />
+
+		<wsdl:operation name="findAddressByLogradouro">
+
+			<wsdlsoap:operation soapAction="" />
+
+			<wsdl:input name="findAddressByLogradouroRequest">
+
+				<wsdlsoap:body use="literal" />
+
+			</wsdl:input>
+
+			<wsdl:output name="findAddressByLogradouroResponse">
+
+				<wsdlsoap:body use="literal" />
+
+			</wsdl:output>
+
+		</wsdl:operation>
+
+		<wsdl:operation name="findAddressByZipcode">
+
+			<wsdlsoap:operation soapAction="" />
+
+			<wsdl:input name="findAddressByZipcodeRequest">
+
+				<wsdlsoap:body use="literal" />
+
+			</wsdl:input>
+
+			<wsdl:output name="findAddressByZipcodeResponse">
+
+				<wsdlsoap:body use="literal" />
+
+			</wsdl:output>
+
+		</wsdl:operation>
+
+	</wsdl:binding>
+
+	<wsdl:service name="AddressFinderService">
+
+		<wsdl:port binding="impl:AddressFinderSoapBinding"
+			name="AddressFinder">
+
+			<wsdlsoap:address
+				location="http://localhost:8080/nsym/services/AddressFinder" />
+
+		</wsdl:port>
+
+	</wsdl:service>
+
+</wsdl:definitions>

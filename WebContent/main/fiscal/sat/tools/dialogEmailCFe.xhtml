@@ -1,0 +1,48 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="enviaEmailCFeId"
+	width="70%" modal="true" resizable="false" closeOnEscape="true"
+	widgetVar="dialogEnviaEmailCFe" header="#{messages['cfe.page-title']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-2">
+				<p:outputLabel value="#{messages['cfe.page-email-cfe']}" />
+			</h2>
+		</div>
+		<div class="box-body">
+			<div class="row">
+				<div class="form-group col-sm-8">
+					<p:outputLabel value="#{label['label.email.cfe']}" for="emailNfe" />
+					<p:inputText value="#{satBean.emailCfe}" id="emailNfe"
+						immediate="true" styleClass="form-control" />
+				</div>
+			</div>
+			<div class="row">
+				<div class="form-group col-sd-8">
+					<p:outputLabel value="Resposta Sefaz" for="respSefazEmail" />
+					<p:inputTextarea rows="2" cols="100" maxlength="150"
+						immediate="true" disabled="true" styleClass="form-control"
+						counterTemplate="{0} caracteres restantes"
+						value="#{satBean.respostaAcbrLocal}" id="respSefazEmail"
+						autoResize="false" />
+				</div>
+			</div>
+		</div>
+		<div class="box-footer align-right">
+
+			<p:commandButton process="formPopupEmail"
+				value="#{label['label.send']}"
+				actionListener="#{satBean.enviarEmailSat()}" update="respSefazEmail"
+				onstart="PF('formBlock').block()"
+				styleClass="btn btn-flat btn-success"
+				oncomplete="PF('formBlock').unblock()"
+				disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}" />
+
+		</div>
+
+	</div>
+</p:dialog>
+

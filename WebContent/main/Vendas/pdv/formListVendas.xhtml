@@ -1,0 +1,294 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="Venda" />
+	<ui:param name="activeSubMenu" value="listaVendas" />
+
+	<f:metadata>
+		<f:viewAction action="#{pedidoBean.initializeListing()}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['pedido.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{pedidoBean.viewState eq 'ADDING'}"
+			value="#{messages['pedido.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{pedidoBean.viewState eq 'EDITING'}"
+			value="#{messages['pedido.page-description-editing']}">
+			<f:param value="#{pedidoBean.pedido.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['report']}</a></li>
+		<li><a href="formListVendas.xhtml">#{breadcrumb['pedido.list']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['pedido.list']}"></p:outputLabel>
+					</h2>
+				</div>
+				<div class="navbar-form">
+					<p:toolbar id="navegador">
+						<f:facet name="left">
+
+							<p:commandButton update="empresaForm" process="empresaForm"
+								value="#{menu['new']}" action="#{pedidoBean.newPedido()}"
+								onstart="PF('formBlock').block()"
+								styleClass="btn btn-flat btn-primary" icon="ui-icon-document"
+								disabled="#{userSessionBean.hasRole(authorization.VENDA_INSERT) eq 'false'}"
+								oncomplete="PF('formBlock').unblock()" rendered="true" />
+
+
+							<p:commandButton process="empresaForm" value="#{menu['view']}"
+								id="btnView"
+								action="#{pedidoBean.changeToEdit(pedidoBean.pedido.id)}"
+								onstart="PF('formBlock').block()"
+								update="empresaForm pageDescription"
+								styleClass="btn btn-flat btn-warning"
+								disabled="#{userSessionBean.hasRole(authorization.VENDA_EDIT) eq 'false' or pedidoBean.viewState != 'EDITING'}"
+								oncomplete="PF('formBlock').unblock()"
+								rendered="#{pedidoBean.viewState eq 'EDITING'}" />
+
+
+						</f:facet>
+						<f:facet name="right">
+							<p:commandButton process="empresaForm" value="#{menu['print']}"
+								action="#{pedidoBean.reimprimiVenda()}"
+								onstart="PF('formBlock').block()"
+								update="empresaForm pageDescription"
+								styleClass="btn btn-flat btn-warning"
+								disabled="#{userSessionBean.hasRole(authorization.VENDA_VIEW) eq 'false' }"
+								oncomplete="PF('formBlock').unblock()"
+								rendered="#{pedidoBean.viewState eq 'EDITING' or pedidoBean.viewState eq 'PRINTING'}" />
+
+							<p:commandButton process="empresaForm"
+								ajax="false"
+								value="#{menu['print']} PDF-A4"
+								action="#{pedidoBean.geraPDFA4()}" id="buttonSaveWindows"
+								onclick="target = '_blank'" onstart="PF('formBlock').block()"
+								styleClass="btn btn-flat btn-success"
+								disabled="#{userSessionBean.hasRole(authorization.VENDA_VIEW) eq 'false'}"
+								update="messages" oncomplete="PF('formBlock').unblock()"
+								onsuccess="#{pedidoBean.newPedido()}"
+								rendered="#{pedidoBean.viewState eq 'EDITING' or pedidoBean.viewState eq 'PRINTING'}" 
+								icon="fa fa-hdd-o" />
+							<span class="ui-separator"> <span
+								class="ui-icon ui-icon-grip-dotted-vertical" />
+							</span>
+							<p:commandButton process="empresaForm" value="#{menu['delete']}"
+								action="#{pedidoBean.doExcluir()}" immediate="true"
+								update="empresaForm" styleClass="btn btn-flat btn-danger"
+								disabled="#{userSessionBean.hasRole(authorization.VENDA_DELETE) eq 'false'}"
+								rendered="#{pedidoBean.viewState eq 'EDITING'}">
+								<p:confirm header="Atenção" message="Excluir? "
+									icon="ui-icon-alert" />
+							</p:commandButton>
+
+							<p:confirmDialog global="true">
+								<p:commandButton value="#{menu.yes}"
+									styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
+								<p:commandButton value="#{menu.no}"
+									styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+							</p:confirmDialog>
+							<span class="ui-separator"> <span
+								class="ui-icon ui-icon-grip-dotted-vertical" />
+							</span>
+							<p:commandButton immediate="true" value="#{menu['back']}"
+								action="#{pedidoBean.toTelaPrincipal}"
+								styleClass="btn btn-flat btn-default" />
+						</f:facet>
+					</p:toolbar>
+				</div>
+
+				<div class="box-body row">
+					<div class="form-group col-md-12">
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.start']}" for="idEmissao" />
+							<br />
+							<p:calendar value="#{pedidoBean.dataInicial}" id="idEmissao"
+								pattern="dd/MM/yyyy" converter="localDateConverter" />
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.finish']}" for="idDataEnt" />
+							<br />
+							<p:calendar value="#{pedidoBean.dataFinal}" id="idDataEnt"
+								pattern="dd/MM/yyyy" converter="localDateConverter" />
+						</div>
+						<div class="form-group col-md-2">
+							<br />
+							<p:commandButton value="#{label['label.search']}"
+								process="empresaForm"
+								actionListener="#{pedidoBean.initializeListing()}"
+								onstart="PF('formBlock').block()"
+								oncomplete="PF('formBlock').unblock()" update="empresaForm"
+								id="buttonPesquisa" style="width:80%;margin:5px"
+								styleClass="btn btn-flat btn-info" icon="fa fa-search" />
+						</div>
+					</div>
+					<div class="form-group col-md-12">
+						<p:dataTable id="pedidos" var="lista" widgetVar="listaPedido"
+							value="#{pedidoBean.listaPedidosPorPeriodo}"
+							paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+							paginator="true" rows="20" selection="#{pedidoBean.pedido}"
+							selectionMode="single" lazy="false" rowKey="#{lista.id}"
+							rowsPerPageTemplate="10,20,30" sortField="#{lista.pedidoStatus}" 
+							rowStyleClass="#{lista.pedidoStatus.sigla == 'ARC' ? 'sa' : lista.pedidoStatus.sigla == 'CAN' ? 'ca': 
+							lista.pedidoStatus.sigla == 'AGC' ? 'ee' : lista.pedidoTipo.sigla == 'TRA' ? 'transf' : 
+							lista.pedidoStatus.sigla == 'REC' ? 'en' : null}">
+
+							<p:ajax event="rowSelect" listener="#{pedidoBean.onRowSelect}" 
+								update="navegador" process="empresaForm" />
+
+							<p:column headerText="#{label['label.venda.list.controle']}" 
+								rendered="true" style="width:5%">
+								<h:outputLabel value="#{lista.controle.controle}" />
+							</p:column>
+							<p:column headerText="#{label['label.venda.list.id']}"  filterMatchMode="contains"
+								filterBy="#{lista.controle.id}" rendered="true" style="width:10%">
+								<h:outputLabel value="#{lista.controle.id}" />
+							</p:column>
+
+							<p:column headerText="#{label['label.dataEmissao']}"
+								rendered="true" sortBy="#{lista.inclusion}" style="width:10%">
+								<h:outputLabel value="#{lista.inclusionAsLocalDate}" />
+							</p:column>
+
+							<p:column headerText="#{label['label.nome']}" filterMatchMode="contains" 
+							filterBy="#{lista.destino.nome()}" > 
+								<h:outputText value="#{lista.destino.nome()}" rendered="#{lista.pedidoTipo ne 'TRA'}" />
+								<h:outputText value="#{lista.destinoTransferencia.retornaRazao()}" rendered="#{lista.pedidoTipo eq 'TRA'}"/>
+							</p:column>
+
+							<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+								style="width:10%">
+								<h:outputLabel value="#{lista.valorTotalPedido}">
+									<f:convertNumber type="currency" currencySymbol="R$"
+										maxFractionDigits="2" currencyCode="BRL" />
+								</h:outputLabel>
+							</p:column>
+							<p:column sortBy="#{lista.pedidoTipo}"
+								headerText="#{label['label.pedidoTipo']}" style="width:10%">
+								<h:outputText value="#{lista.pedidoTipo.toString()}" />
+							</p:column>
+							<p:column sortBy="#{lista.pedidoStatus}" 
+								headerText="#{label['label.status.pedido']}" style="width:10%">
+								<h:outputText value="#{lista.pedidoStatus.toString()}" />
+							</p:column>
+
+							<p:column sortBy="#{lista.fiscalStatus}" exportable="false" styleClass="#{lista.fiscalStatus == 'NE' ? 'ca' : 
+							lista.fiscalStatus == 'ES'? 'transf' : lista.fiscalStatus == 'ED' ? 'ee' : lista.fiscalStatus == 'GA' ? 'sa' : null}"
+								headerText="#{label['label.status.fiscal']}" style="width:10%">
+								<h:outputText value="#{lista.fiscalStatus.toString()}" />
+							</p:column>
+
+							<p:column headerText="#{label['label.list.Action']}"
+								style="width:10%">
+								<p:commandLink process="empresaForm" title="#{menu['nfe']}"
+									styleClass="btn btn-flat"
+									disabled="#{lista.pedidoStatus ne 'REC' or lista.fiscalStatus ne 'NE'}"
+									action="#{nfeBean.emitirNFePedido(lista)}"
+									update="empresaForm">
+									<p:graphicImage name="/nsym/img/nfe.png" width="25"
+										style="right:0;" />
+								</p:commandLink>
+								<p:commandLink process="empresaForm" title="#{menu['fiscal.sat.printCFe']}" rendered="false"
+									styleClass="btn btn-flat"
+									disabled="#{lista.pedidoStatus ne 'REC' or lista.fiscalStatus ne 'NE'}"
+									action="#{nfeBean.nfePedido(lista)}"
+									update="pedidos">
+									<p:graphicImage name="/nsym/img/sat.png" width="25"
+										style="right:0;" />
+								</p:commandLink>
+							</p:column>
+
+							<p:columnGroup type="footer"
+								rendered="#{userSessionBean.hasRole(authorization.VENDA_REPORT)}">
+								<p:row>
+									<p:column colspan="3"
+										style="text-align:right;font-size:18px;font-weight:bold;"
+										footerText="#{label['label.nfe.item.valorTotal']}:" />
+									<p:column>
+										<f:facet name="footer">
+											<h:outputText value="#{pedidoBean.totallistaPedidoTemp}"
+												style="font-size:18px;color:blue;font-weight:bold;">
+												<f:convertNumber type="currency" currencySymbol="R$"
+													maxFractionDigits="2" currencyCode="BRL" />
+											</h:outputText>
+										</f:facet>
+									</p:column>
+								</p:row>
+							</p:columnGroup>
+						</p:dataTable>
+						<p:outputLabel value="Exportar:"
+							rendered="#{userSessionBean.hasRole(authorization.VENDA_REPORT)}" />
+						<p:commandLink ajax="false" onstart="PF('formBlock').block()"
+							oncomplete="PF('formBlock').unblock()"
+							rendered="#{userSessionBean.hasRole(authorization.VENDA_REPORT)}">
+							<p:graphicImage name="/nsym/img/download-pdf.png" width="26"
+								style="right:0;" />
+							<p:dataExporter type="pdf" target="pedidos"
+								options="#{pedidoBean.criaPdfOpt()}"
+								preProcessor="#{pedidoBean.preProcessPDF}"
+								fileName="listaPedidos" />
+						</p:commandLink>
+
+					</div>
+
+				</div>
+
+<!-- 				<div class="box-footer"> -->
+<!-- 					<div class="align-left"> -->
+<!-- 						<div class="form-group col-md-2"> -->
+<!-- 							<p:commandButton process="pedidos" icon="fa fa-remove" -->
+<!-- 								title="Relatorio jasper" styleClass="btn btn-flat btn-warning" -->
+<!-- 								actionListener="#{pedidoBean.geraListaPedidosJasper()}" -->
+<!-- 								update="pedidos" /> -->
+<!-- 						</div> -->
+<!-- 					</div> -->
+<!-- 					<div class="align-right"></div> -->
+<!-- 				</div> -->
+			</div>
+		</h:form>
+
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="formPopup" prependId="false">
+			<!-- 			<ui:include -->
+			<!-- 				src="/main/fiscal/sat/tools/dialogPesquisaProdutoSat.xhtml" /> -->
+		</h:form>
+		<h:form id="formSetCliente" prependId="false">
+			<ui:include src="/main/fiscal/dialogEncontraDestinatario.xhtml" />
+		</h:form>
+
+	</ui:define>
+</ui:composition>

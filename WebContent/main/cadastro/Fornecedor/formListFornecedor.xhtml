@@ -1,0 +1,153 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:a4j="http://richfaces.org/a4j"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="Cadastros" />
+	<ui:param name="activeSubmenu" value="Fornecedor" />
+
+	<f:metadata>
+		<f:viewAction action="#{fornecedorBean.initializeListing()}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['fornecedor.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{fornecedorBean.viewState eq 'ADDING'}"
+			value="#{messages['cliente.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{fornecedorBean.viewState eq 'EDITING'}"
+			value="#{messages['cliente.page-description-editing']}">
+			<f:param value="#{fornecedorBean.fornecedor.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li><a href="formListFornecedor.xhtml">#{breadcrumb['entries.fornecedor']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="Lista de Fornecedores"></p:outputLabel>
+					</h2>
+				</div>
+
+				<div class="box-body row">
+					<div class="navbar-form">
+						<p:toolbar id="navegador">
+							<f:facet name="left">
+								<p:commandButton update="empresaForm" process="empresaForm"
+									value="#{menu['new']}" action="#{fornecedorBean.newFornecedor}"
+									onstart="PF('formBlock').block()"
+									disabled="#{userSessionBean.hasRole(authorization.FORNECEDOR_INSERT) eq 'false'}"
+									styleClass="btn btn-flat btn-success"
+									oncomplete="PF('formBlock').unblock()" rendered="true" />
+								<p:commandButton process="empresaForm" value="#{menu['view']}"
+									action="#{fornecedorBean.changeToEdit(fornecedorBean.fornecedor.id)}"
+									onstart="PF('formBlock').block()"
+									update="empresaForm pageDescription"
+									disabled="#{userSessionBean.hasRole(authorization.FORNECEDOR_VIEW) eq 'false'}"
+									styleClass="btn btn-flat btn-success"
+									oncomplete="PF('formBlock').unblock()"
+									rendered="#{fornecedorBean.viewState eq 'EDITING'}" />
+							</f:facet>
+							<f:facet name="right">
+								<p:commandButton immediate="true" value="#{menu['back']}"
+									action="#{userBean.toDashboard}"
+									styleClass="btn btn-flat btn-default" />
+							</f:facet>
+						</p:toolbar>
+					</div>
+					<div class="form-group col-md-12">
+						<p:dataTable id="fornecedores" var="lista"
+							widgetVar="listaFornecedor"
+							value="#{fornecedorBean.fornecedorModel}"
+							paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+							paginator="true" rows="20"
+							selection="#{fornecedorBean.fornecedor}" selectionMode="single"
+							lazy="true" rowKey="#{lista.id}" sortBy="#{lista.razaoSocial}"
+							rowsPerPageTemplate="10,20,30">
+
+							<p:ajax event="rowSelect"
+								listener="#{fornecedorBean.onRowSelect}" update="empresaForm" />
+
+							<p:column headerText="#{label['label.list.id']}" rendered="true"
+								style="width:10%">
+								<h:outputLabel value="#{lista.id}" />
+							</p:column>
+
+							<p:column sortBy="#{lista.razaoSocial}"
+								filterMatchMode="contains" filterBy="#{lista.razaoSocial}"
+								headerText="#{label['label.list.razao']}" style="width:30%">
+								<h:outputText value="#{lista.razaoSocial}" />
+							</p:column>
+
+							<p:column sortBy="#{lista.nomeFantasia}"
+								filterMatchMode="contains" filterBy="#{lista.nomeFantasia}"
+								headerText="#{label['label.list.fantasia']}" style="width:20%">
+								<h:outputText value="#{lista.nomeFantasia}" />
+							</p:column>
+
+							<p:column headerText="#{label['label.cnpj']}"
+								filterMatchMode="contains" filterBy="#{lista.cnpj}"
+								rendered="true">
+								<p:outputLabel value="#{lista.cnpj}" />
+							</p:column>
+
+							<p:column headerText="#{label['label.list.cpf']}"
+								filterMatchMode="contains" filterBy="#{lista.cpf}"
+								rendered="true">
+								<p:outputLabel value="#{lista.cpf}" />
+							</p:column>
+
+							<p:column headerText="#{label['label.ie']}" rendered="true">
+								<p:outputLabel value="#{lista.inscEstadual}" />
+							</p:column>
+
+						</p:dataTable>
+						<p:outputLabel value="#{label['label.list.export']}:" />
+						<h:commandLink>
+							<p:graphicImage name="/nsym/img/excel.png" width="28"
+								style="right:0;" />
+							<p:dataExporter type="xls" target="fornecedores"
+								fileName="listaFornecedor" />
+						</h:commandLink>
+
+					</div>
+
+				</div>
+
+				<div class="box-footer align-right">
+				</div>
+			</div>
+		</h:form>
+
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+</ui:composition>

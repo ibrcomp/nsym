@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.20.0.final using JasperReports Library version 6.20.0-2bc7ab61c56f459e8176eb05c7705e145cd400ad  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="RelMaisVendidos" pageWidth="595" pageHeight="842" columnWidth="535" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="3d4feaf2-3dda-4fa8-97fe-220a6b6c859f">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="WebContent\WEB-INF\Relatorios\Vendas\DataAdapter.jrdax"/>
+	<style name="Table_TH" mode="Opaque" backcolor="#BFE1FF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#C7CDD1"/>
+			<bottomPen lineWidth="0.5" lineColor="#C7CDD1"/>
+		</box>
+	</style>
+	<style name="Table_CH" mode="Opaque" backcolor="#E6F3FF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#C7CDD1"/>
+			<bottomPen lineWidth="0.5" lineColor="#C7CDD1"/>
+		</box>
+	</style>
+	<style name="Table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#C7CDD1"/>
+			<bottomPen lineWidth="0.5" lineColor="#C7CDD1"/>
+		</box>
+		<conditionalStyle>
+			<conditionExpression><![CDATA[new Boolean($V{REPORT_COUNT}.intValue()%2==0)]]></conditionExpression>
+			<style backcolor="#E6F3FF"/>
+		</conditionalStyle>
+	</style>
+	<subDataset name="Dataset1" uuid="f27bccea-1f5c-488c-86d5-3fd628d4d95c">
+		<queryString>
+			<![CDATA[]]>
+		</queryString>
+		<field name="colaborador" class="java.lang.String"/>
+		<field name="total" class="java.math.BigDecimal"/>
+		<field name="matriz" class="java.lang.String"/>
+		<field name="filial" class="java.lang.String"/>
+	</subDataset>
+	<parameter name="empresaID" class="java.lang.String"/>
+	<parameter name="dataIni" class="java.lang.String"/>
+	<parameter name="dataFim" class="java.lang.String"/>
+	<parameter name="CollectionBeanParam" class="net.sf.jasperreports.engine.data.JRBeanCollectionDataSource"/>
+	<parameter name="filialID" class="java.lang.String"/>
+	<queryString language="SQL">
+		<![CDATA[select colaborador.nome as Colaborador,
+ sum(pedido.valorTotalPedido) as Total, 
+ emp.RazaoSocial as Empresa,
+  fil.RazaoSocial as Filial,
+  (select sum(p1.valorTotalPedido) from pedido p1 where p1.id_empresa = $P{empresaID}  and p1.id_filial is null and p1.pedidoStatus = "REC" and  p1.dataEmissao between  $P{dataIni}  and $P{dataFim} ) as "Total Período" from pedido 
+  inner join colaborador on colaborador.id = pedido.Colaborador_id
+   inner join Empresa emp on emp.id = pedido.id_empresa 
+   left join Filial fil on fil.id = pedido.id_filial 
+   where (pedido.dataEmissao between  $P{dataIni}  and $P{dataFim} )  and pedido.id_empresa = $P{empresaID}  and pedido.id_Filial is null  and pedido.pedidoStatus = "REC" 
+   group by colaborador.nome]]>
+	</queryString>
+	<field name="Colaborador" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="nome"/>
+		<property name="com.jaspersoft.studio.field.label" value="Colaborador"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="colaborador"/>
+	</field>
+	<field name="Total" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="Total"/>
+		<property name="com.jaspersoft.studio.field.label" value="Total"/>
+	</field>
+	<field name="Empresa" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="razaoSocial"/>
+		<property name="com.jaspersoft.studio.field.label" value="Empresa"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="empresa"/>
+	</field>
+	<field name="Filial" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="razaoSocial"/>
+		<property name="com.jaspersoft.studio.field.label" value="Filial"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="filial"/>
+	</field>
+	<field name="Total Período" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="Total Período"/>
+		<property name="com.jaspersoft.studio.field.label" value="Total Período"/>
+	</field>
+	<background>
+		<band/>
+	</background>
+	<title>
+		<band height="72">
+			<frame>
+				<reportElement mode="Opaque" x="-20" y="-20" width="595" height="90" backcolor="#006699" uuid="3d674bed-19f0-4cfc-86c7-0367ebcb4de9"/>
+				<staticText>
+					<reportElement x="279" y="9" width="51" height="21" forecolor="#FFFFFF" uuid="0bac1268-8e28-4a85-9af0-ad3dba76b112"/>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font size="12"/>
+					</textElement>
+					<text><![CDATA[Matriz:]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="281" y="63" width="70" height="21" forecolor="#FFFFFF" uuid="7e23b072-acf0-4495-815b-6e7b7c324f3e"/>
+					<textElement textAlignment="Left" verticalAlignment="Middle"/>
+					<text><![CDATA[Perído Inicial:]]></text>
+				</staticText>
+				<textField pattern="dd/MM/yyyy">
+					<reportElement x="351" y="63" width="80" height="21" forecolor="#FFFFFF" uuid="6d438944-fd0f-4181-b2fa-6921b77818a8"/>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$P{dataIni}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="439" y="63" width="70" height="21" forecolor="#FFFFFF" uuid="c6e1bcae-911a-45bb-9217-789a23d6a33c"/>
+					<textElement textAlignment="Left" verticalAlignment="Middle"/>
+					<text><![CDATA[Perído Final:]]></text>
+				</staticText>
+				<textField pattern="dd/MM/yyyy">
+					<reportElement x="509" y="63" width="80" height="21" forecolor="#FFFFFF" uuid="5b1447f7-a4d9-485a-92b0-52bddf5e4acb"/>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font isBold="true" isItalic="false" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$P{dataFim}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="6" y="4" width="235" height="31" forecolor="#FCFCFC" uuid="85154938-aec7-4f66-bf51-09786689f109"/>
+					<textElement rotation="None">
+						<font size="19" isBold="true" isItalic="true" isUnderline="false"/>
+					</textElement>
+					<text><![CDATA[Vendas por Colaborador]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="339" y="8" width="236" height="22" forecolor="#FFFFFF" uuid="cd486a1e-fc29-4cbe-8fe0-c721fa087b39"/>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font size="12"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$P{empresaID}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="279" y="34" width="51" height="21" forecolor="#FFFFFF" uuid="45beb97c-cca9-4ffb-aa59-0cd60e67f5a1"/>
+					<textElement textAlignment="Left" verticalAlignment="Middle">
+						<font size="12"/>
+					</textElement>
+					<text><![CDATA[Filial:]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="339" y="33" width="236" height="22" forecolor="#FFFFFF" uuid="f4d391a4-bf26-44c2-9b0a-c9f92390bbb8"/>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font size="12"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$P{filialID}]]></textFieldExpression>
+				</textField>
+			</frame>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="4"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="6"/>
+	</columnHeader>
+	<detail>
+		<band height="78">
+			<componentElement>
+				<reportElement x="0" y="5" width="555" height="70" uuid="00921aee-436e-4ccc-aeb0-5074f0fbf731">
+					<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.VerticalRowLayout"/>
+					<property name="com.jaspersoft.studio.table.style.table_header" value="Table_TH"/>
+					<property name="com.jaspersoft.studio.table.style.column_header" value="Table_CH"/>
+					<property name="com.jaspersoft.studio.table.style.detail" value="Table_TD"/>
+				</reportElement>
+				<jr:table xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
+					<datasetRun subDataset="Dataset1" uuid="748841b2-c5d8-49e5-b6b0-130998a634b0">
+						<dataSourceExpression><![CDATA[$P{CollectionBeanParam}]]></dataSourceExpression>
+					</datasetRun>
+					<jr:column width="300" uuid="65b8e0a1-52f8-475f-82e8-c33c52ef6dce">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column1"/>
+						<jr:tableHeader style="Table_TH" height="10" rowSpan="1"/>
+						<jr:tableFooter style="Table_TH" height="10" rowSpan="1"/>
+						<jr:columnHeader style="Table_CH" height="20" rowSpan="1">
+							<staticText>
+								<reportElement x="0" y="0" width="300" height="20" uuid="5935d06e-a3ef-4b66-b1f7-8180623287b5"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle"/>
+								<text><![CDATA[Colaborador]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:columnFooter style="Table_CH" height="10" rowSpan="1"/>
+						<jr:detailCell style="Table_TD" height="20">
+							<textField>
+								<reportElement x="0" y="0" width="300" height="20" uuid="8ba4ccf2-dbc0-4bc4-b1c7-6680e59872a6"/>
+								<textElement textAlignment="Left" verticalAlignment="Middle"/>
+								<textFieldExpression><![CDATA[$F{colaborador}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="255" uuid="ef371caf-cd58-4ecf-a243-0daa9ec33fd4">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column2"/>
+						<jr:tableHeader style="Table_TH" height="10" rowSpan="1"/>
+						<jr:tableFooter style="Table_TH" height="10" rowSpan="1"/>
+						<jr:columnHeader style="Table_CH" height="20" rowSpan="1">
+							<staticText>
+								<reportElement x="0" y="0" width="255" height="20" uuid="afd8eb3b-47d2-4127-9377-3c6449a864f4"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle"/>
+								<text><![CDATA[Total]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:columnFooter style="Table_CH" height="10" rowSpan="1"/>
+						<jr:detailCell style="Table_TD" height="20">
+							<textField pattern="¤#,##0.00;¤-#,##0.00">
+								<reportElement x="0" y="0" width="255" height="20" uuid="42724b1a-37b4-469f-9447-c315ce738005"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle"/>
+								<textFieldExpression><![CDATA[$F{total}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+				</jr:table>
+			</componentElement>
+		</band>
+	</detail>
+	<columnFooter>
+		<band/>
+	</columnFooter>
+	<pageFooter>
+		<band height="17">
+			<textField>
+				<reportElement mode="Opaque" x="0" y="4" width="515" height="13" backcolor="#E6E6E6" uuid="f8dd6c06-ca24-4604-9b56-b57d5f17c95b"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Página "+$V{PAGE_NUMBER}+" de"]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement mode="Opaque" x="515" y="4" width="40" height="13" backcolor="#E6E6E6" uuid="8e15fef6-6470-41df-b231-67f89d650a0a"/>
+				<textFieldExpression><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="EEEEE dd MMMMM yyyy">
+				<reportElement x="0" y="4" width="100" height="13" uuid="0a23cf0f-0e28-4c10-8fc1-53046b3ccab7"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band/>
+	</summary>
+</jasperReport>

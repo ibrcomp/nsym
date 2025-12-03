@@ -1,0 +1,352 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="Ncm" />
+
+	<f:metadata>
+		<f:viewAction action="#{ncmBean.initializeForm(param.ncmID)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['ncm.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{ncmBean.viewState eq 'ADDING'}"
+			value="#{messages['ncm.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{ncmBean.viewState eq 'EDITING'}"
+			value="#{messages['ncm.page-description-editing']}">
+			<f:param value="#{ncmBean.ncm.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li><a href="formListNcm.xhtml">#{breadcrumb['entries.ncm']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['entries']}"></p:outputLabel>
+					</h2>
+				</div>
+				<div class="box-body">
+					<div class="row">
+						<div class="form-group col-md-1">
+							<p:outputLabel value="#{label['label.st']}: " for="st" />
+							<p:selectBooleanCheckbox value="#{ncmBean.ncm.st}" id="st"
+								disabled="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}">
+								<p:ajax update="empresaForm formIVA" />
+							</p:selectBooleanCheckbox>
+						</div>
+						<div class="form-group col-md-5">
+							<p:outputLabel value="#{label['label.descricao']}: "
+								for="descricao" />
+							<p:inputText value="#{ncmBean.ncm.descricao}" id="descricao"
+								required="false" immediate="true"
+								readonly="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}"
+								requiredMessage="#{validation['ncm.descricao']}" maxlength="100"
+								label="descricao" styleClass="form-control" />
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.ncm']}: " for="ncmDI" />
+							<p:inputText id="ncmDI" value="#{ncmBean.ncm.ncm}"
+								readonly="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}"
+								styleClass="form-control" />
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.iva']}: " for="iva" />
+							<p:inputNumber id="iva" value="#{ncmBean.ncm.iva}"
+								decimalPlaces="2" emptyValue="zero"
+								readonly="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}" />
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.cest']}: " for="cest" />
+							<p:inputText id="cest" value="#{ncmBean.ncm.cest}"
+								readonly="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}"
+								styleClass="form-control" />
+						</div>
+					</div>
+					<div class="row">
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.extipi']}: " for="tipi" />
+							<p:inputText id="tipi" value="#{ncmBean.ncm.exTipi}"
+								readonly="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}"
+								styleClass="form-control" />
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.totalTributos']}: "
+								for="vttributos" />
+							<p:inputNumber id="vttributos" symbol="%" emptyValue="zero"
+								value="#{ncmBean.ncm.valorTotalTributos}" decimalPlaces="2"
+								symbolPosition="s"
+								readonly="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}" />
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.ncm.permiteReducao']}: "
+								for="permReducao" />
+							<p:selectBooleanButton id="permReducao"
+								value="#{ncmBean.ncm.permiteReducao}"
+								onLabel="#{label['label.yes']}" offLabel="#{label['label.no']}"
+								styleClass="btn btn-flat btn-primary form-control"
+								disabled="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}">
+								<p:ajax update="permReducao" event="change" />
+							</p:selectBooleanButton>
+						</div>
+						<!-- 						<div class="form-group col-md-2"> -->
+						<!-- 							<p:outputLabel value="#{label['label.tributos.list']}: " rendered="#{ncmBean.pegaIdFilial() eq null}" -->
+						<!-- 								for="ncm"  /> -->
+						<!-- 							<p:selectOneMenu label="Tributos" id="ncm" -->
+						<!-- 								required="true" -->
+						<!-- 								value="#{ncmBean.ncm.tributo}" -->
+						<!-- 								disabled="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}" -->
+						<!-- 								rendered="#{ncmBean.pegaIdFilial() eq null}" -->
+						<!-- 								converter="omnifaces.SelectItemsConverter" style="width:100%" -->
+						<!-- 								immediate="true"> -->
+						<!-- 								<f:selectItem itemValue="1" noSelectionOption="true" -->
+						<!-- 									itemLabel="#{messages['filial.form.select-one']}" /> -->
+						<!-- 								<f:selectItems value="#{ncmBean.listaTributosAtivos}" -->
+						<!-- 									var="lista" itemLabel="#{lista.descricao}" /> -->
+						<!-- 							</p:selectOneMenu> -->
+						<!-- 						</div> -->
+
+						<!-- 						<div class="form-group col-md-2"> -->
+						<!-- 							<p:outputLabel value="#{label['label.tributos.list']}: " rendered="#{ncmBean.pegaIdFilial() ne null}" -->
+						<!-- 								for="ncmFilial"  /> -->
+						<!-- 							<p:selectOneMenu label="Tributos" id="ncmFilial" -->
+						<!-- 								required="true" -->
+						<!-- 								value="#{ncmBean.ncm.tributoFilial}" -->
+						<!-- 								disabled="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}" -->
+						<!-- 								rendered="#{ncmBean.pegaIdFilial() ne null}" -->
+						<!-- 								converter="omnifaces.SelectItemsConverter" style="width:100%" -->
+						<!-- 								immediate="true"> -->
+						<!-- 								<f:selectItem itemValue="1" noSelectionOption="true" -->
+						<!-- 									itemLabel="#{messages['filial.form.select-one']}" /> -->
+						<!-- 								<f:selectItems value="#{ncmBean.listaTributosAtivos}" -->
+						<!-- 									var="lista" itemLabel="#{lista.descricao}" /> -->
+						<!-- 							</p:selectOneMenu> -->
+						<!-- 						</div> -->
+
+					</div>
+
+				</div>
+
+			</div>
+			<div class="box-footer align-right">
+				<p:commandButton update="empresaForm" process="empresaForm"
+					value="#{menu['save']}" action="#{ncmBean.doSalvar()}"
+					onstart="PF('formBlock').block()"
+					styleClass="btn btn-flat btn-success"
+					disabled="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}"
+					oncomplete="PF('formBlock').unblock()"
+					rendered="#{ncmBean.viewState eq 'ADDING'}" icon="fa fa-hdd-o" />
+
+				<p:commandButton process="empresaForm" value="#{menu['update']}"
+					action="#{ncmBean.doSalvar()}" onstart="PF('formBlock').block()"
+					update="empresaForm pageDescription"
+					styleClass="btn btn-flat btn-warning"
+					disabled="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}"
+					oncomplete="PF('formBlock').unblock()"
+					rendered="#{ncmBean.viewState eq 'EDITING'}" />
+
+				<p:commandButton process="empresaForm" value="#{menu['delete']}"
+					action="#{ncmBean.doExcluir()}" immediate="true"
+					styleClass="btn btn-flat btn-danger"
+					disabled="#{userSessionBean.hasRole(authorization.NCM_DELETE) eq 'false'}"
+					rendered="#{ncmBean.viewState eq 'EDITING'}">
+					<p:confirm header="Atenção" message="Excluir? "
+						icon="ui-icon-alert" />
+				</p:commandButton>
+
+				<p:confirmDialog global="true">
+					<p:commandButton value="#{menu.yes}"
+						styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
+					<p:commandButton value="#{menu.no}"
+						styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+				</p:confirmDialog>
+
+			</div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="resources/nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+		<h:form id="formIVA" prependId="false">
+			<div class="box">
+				<p:tabView prependId="false" id="tabViewIVA" style="width:100%"
+					rendered="#{ncmBean.ncm.st eq 'true'}">
+					<p:tab title="IVA" id="tabIVA">
+						<h:form id="formTabIva" prependId="false">
+							<div class="box-body">
+								<div class="row">
+									<div class="form-group col-md-2">
+										<p:outputLabel value="#{label['label.ncm.Estado']}"
+											for="selEstado" rendered="#{ncmBean.ncm.st eq 'true'}" />
+										<p:selectOneMenu label="Estados" id="selEstado"
+											rendered="#{ncmBean.ncm.st eq 'true'}" value="#{ncmBean.uf}"
+											disabled="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}"
+											converter="omnifaces.GenericEnumConverter" style="width:100%">
+											<f:selectItem itemValue="#{null}" noSelectionOption="false"
+												itemLabel="#{messages['filial.form.select-one']}" />
+											<f:selectItems value="#{ncmBean.estadoType()}" />
+										</p:selectOneMenu>
+									</div>
+									<div class="form-group col-md-2">
+										<p:outputLabel value="#{label['label.iva']}" for="percIVA"
+											rendered="#{ncmBean.ncm.st eq 'true'}" />
+										<p:inputNumber value="#{ncmBean.valorIVa}" id="percIVA"
+											decimalSeparator="," thousandSeparator="." symbolPosition="s"
+											symbol="%" decimalPlaces="2"
+											rendered="#{ncmBean.ncm.st eq 'true'}" immediate="true"
+											styleClass="from-control" />
+									</div>
+								</div>
+								<div class="row">
+									<div class="form-group col-md-3">
+										<p:dataTable id="listIva" var="lista" widgetVar="listaIVANcm"
+											value="#{ncmBean.listaIVAEstadoNcm}" rowKey="#{lista.id}"
+											paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+											paginator="true" selectionMode="single" rows="3"
+											rendered="#{ncmBean.ncm.st eq 'true'}" sortBy="#{lista.uf}">
+
+											<p:ajax event="rowSelect"
+												listener="#{ncmBean.onRowSelectIVAEstado}" update="tabIVA" />
+
+
+											<p:column headerText="#{label['label.estado']}"
+												rendered="true" style="width:25%">
+												<h:outputLabel value="#{lista.uf}" />
+											</p:column>
+
+											<p:column headerText="#{label['label.iva']}"
+												style="width:50%">
+												<h:outputText value="#{lista.PIVA}%" />
+											</p:column>
+
+											<p:column headerText="#{label['label.list.Action']}">
+												<p:commandButton process="listIva" icon="fa fa-remove"
+													title="#{menu['delete']}"
+													styleClass="btn btn-flat btn-danger"
+													actionListener="#{ncmBean.excluiIVAUf(lista)}"
+													update="listIva" />
+											</p:column>
+
+										</p:dataTable>
+									</div>
+								</div>
+							</div>
+							<div class="box-body row">
+								<div class="form-group col-md-2">
+									<p:commandButton value="#{menu['add']}" process="formTabIva"
+										actionListener="#{ncmBean.salvaIVAEstado()}"
+										id="botaoSalvaIVA" update="tabIVA messages listIva"
+										styleClass="btn btn-flat btn-warning"
+										disabled="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}"
+										rendered="#{ncmBean.ncm.st eq 'true'}" />
+								</div>
+							</div>
+						</h:form>
+					</p:tab>
+				</p:tabView>
+				<p:tabView prependId="false" id="tabViewFCP" style="width:100%">
+					<p:tab title="Fundo de combate a pobreza" id="tabFCP">
+						<h:form id="formTabFcp" prependId="false">
+							<div class="box-body row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.ncm.Estado']}"
+										for="selEstadoFCP" />
+									<p:selectOneMenu label="Estados" id="selEstadoFCP"
+										value="#{ncmBean.ufFCP}"
+										disabled="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}"
+										converter="omnifaces.GenericEnumConverter" style="width:100%">
+										<f:selectItem itemValue="#{null}" noSelectionOption="false"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{ncmBean.estadoType()}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.fcp']}" for="percFCP" />
+									<p:inputNumber value="#{ncmBean.valorFCP}" id="percFCP"
+										decimalSeparator="," thousandSeparator="." symbolPosition="s"
+										symbol="%" immediate="true" styleClass="from-control" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:dataTable id="listFCP" var="lista" widgetVar="listaFCPNcm"
+										value="#{ncmBean.listaFcpEstadoNcm}" rowKey="#{lista.id}"
+										paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+										paginator="true" selectionMode="single" rows="3"
+										sortBy="#{lista.uf}">
+
+										<p:ajax event="rowSelect"
+											listener="#{ncmBean.onRowSelectFcpEstado}" update="tabFCP" />
+
+
+										<p:column headerText="#{label['label.estado']}"
+											rendered="true" style="width:10%">
+											<h:outputLabel value="#{lista.uf}" />
+										</p:column>
+
+										<p:column headerText="#{label['label.iva']}" style="width:20%">
+											<h:outputText value="#{lista.PFcp}%" />
+										</p:column>
+
+									</p:dataTable>
+								</div>
+							</div>
+							<div class="box-body row">
+								<div class="form-group col-md-2">
+									<p:commandButton value="#{menu['add']}" process="tabFCP"
+										actionListener="#{ncmBean.salvaFcpEstado()}"
+										id="botaoSalvaFCP" update="tabFCP messages"
+										styleClass="btn btn-flat btn-warning"
+										disabled="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}" />
+								</div>
+							</div>
+						</h:form>
+					</p:tab>
+				</p:tabView>
+			</div>
+		</h:form>
+		<h:form id="testeEnvio" prependId="false">
+			<div class="box">
+				<div class="box-body ">
+					<div class="align-right col-md-12">
+						<p:spacer width="10" />
+						<p:commandButton immediate="true" value="#{menu['back']}"
+							action="#{ncmBean.toListNcm}"
+							styleClass="btn btn-flat btn-default"
+							icon="fa fa-arrow-circle-o-left" />
+					</div>
+
+				</div>
+			</div>
+		</h:form>
+	</ui:define>
+	<ui:define name="popups">
+	</ui:define>
+</ui:composition>

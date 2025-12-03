@@ -1,0 +1,165 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="Estoque" />
+	<ui:param name="activeSubmenu" value="RelEstoque" />
+
+	<f:metadata>
+		<f:viewAction action="#{estoqueGeralBean.initializeRelEstoque()}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['estoque.rel.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{estoqueGeralBean.viewState eq 'LISTING'}"
+			value="#{messages['fiscal.rel.page-description']}" />
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['estoque.report']}</a></li>
+		<li><a href="formRelFiscal.xhtml">#{breadcrumb['estoque.report.list']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{message['fiscal.rel.util']}" />
+					</h2>
+				</div>
+				<div class="navbar-form">
+					<p:toolbar id="navegador">
+						<f:facet name="left">
+							<p:spacer width="10" />
+						</f:facet>
+						<f:facet name="right">
+							<p:commandButton immediate="true" value="#{menu['back']}"
+								action="#{userBean.toDashboard}"
+								styleClass="btn btn-flat btn-default" />
+
+						</f:facet>
+					</p:toolbar>
+				</div>
+<!-- 				<div class="box box-success box-body"> -->
+<!-- 					<h4>#{messages['relatorioVendas.periodo']}</h4> -->
+<!-- 					<div class="form-group col-md-12"> -->
+<!-- 						<div class="row"> -->
+<!-- 							<div class="form-group col-md-2"> -->
+<!-- 								<p:outputLabel -->
+<!-- 									value="#{label['label.dataFechamento']} #{label['label.start']}" -->
+<!-- 									for="idEmissao" /> -->
+<!-- 								<p:calendar value="#{estoqueGeralBean.dataInicial}" -->
+<!-- 									id="idEmissao" immediate="true" -->
+<!-- 									rendered="#{estoqueGeralBean.viewState eq 'LISTING' }" -->
+<!-- 									pattern="dd/MM/yyyy" converter="localDateConverter" /> -->
+<!-- 							</div> -->
+<!-- 							<div class="form-group col-md-2"> -->
+<!-- 								<p:outputLabel -->
+<!-- 									value="#{label['label.dataFechamento']} #{label['label.finish']}" -->
+<!-- 									for="idDataEnt" /> -->
+<!-- 								<p:calendar value="#{estoqueGeralBean.dataFinal}" id="idDataEnt" -->
+<!-- 									immediate="true" -->
+<!-- 									rendered="#{estoqueGeralBean.viewState eq 'LISTING'  }" -->
+<!-- 									pattern="dd/MM/yyyy" converter="localDateConverter" /> -->
+<!-- 							</div> -->
+<!-- 						</div> -->
+<!-- 					</div> -->
+<!-- 				</div> -->
+				<div class="row">
+					<div class="col-md-6">
+						<div class="box box-warning box-body">
+							<h4>#{messages['relEstoqueGeral.all']}</h4>
+							<div class="form-group col-md-2">
+									<p:outputLabel
+										value="#{label['label.estoque.rel.apenasDifereZero']}"
+										for="booleanDifZero" />
+									<p:selectBooleanCheckbox
+										value="#{estoqueGeralBean.estoqueDifereZero}"
+										id="booleanDifZero" immediate="true" />
+							</div>
+							<div class="form-group col-md-2">
+									<p:outputLabel
+										value="#{label['label.estoque.rel.XLS']}"
+										for="booleanXLS" />
+									<p:selectBooleanCheckbox
+										value="#{estoqueGeralBean.exportExcel}"
+										id="booleanXLS" immediate="true" />
+							</div>
+							<div class="form-group col-md-4">
+								<br />
+								<p:commandButton value="#{label['label.gerar.relatorio']}"
+									 ajax="false" process="empresaForm"
+									actionListener="#{estoqueGeralBean.geraEstoqueAll()}"
+									onstart="PF('formBlock').block()"
+									oncomplete="PF('formBlock').unblock()" update="empresaForm"
+									id="buttomRelNatOpera" 
+									style="width:80%;margin:5px" styleClass="btn btn-flat btn-info"
+									icon="fa fa-search" />
+<!-- 									onclick="target = '_blank'"
+ajax="false" -->
+							</div>
+						</div>
+					</div>
+					<!-- 					<div class="col-md-6"> -->
+					<!-- 						<div class="box box-warning box-body"> -->
+					<!-- 							<h4>#{messages['relatoriosVendas.vendasColaborador']}</h4> -->
+					<!-- 							<div class="form-group col-md-4"> -->
+					<!-- 								<br /> -->
+					<!-- 								<p:commandButton value="#{label['label.gerar.relatorio']}" ajax="false" -->
+					<!-- 									process="empresaForm" -->
+					<!-- 									actionListener="#{pedidoBean.geraVendasColaborador()}" -->
+					<!-- 									onstart="PF('formBlock').block()" -->
+					<!-- 									oncomplete="PF('formBlock').unblock()" update="empresaForm" -->
+					<!-- 									id="buttomRelVendasColaborador" onclick="target = '_blank'" -->
+					<!-- 									style="width:80%;margin:5px" styleClass="btn btn-flat btn-info" -->
+					<!-- 									icon="fa fa-search" /> -->
+					<!-- 							</div> -->
+					<!-- 						</div> -->
+					<!-- 					</div> -->
+				</div>
+				<!-- 				<div class="row"> -->
+				<!-- 					<div class="col-md-6"> -->
+				<!-- 						<div class="box box-warning box-body"> -->
+				<!-- 							<h4>#{messages['relatoriosVendas.maisVendidos.filtro']}</h4> -->
+				<!-- 							<div class="form-group col-md-4"> -->
+				<!-- 								<br /> -->
+				<!-- 								<p:commandButton value="#{label['label.gerar.relatorio']}" ajax="false" -->
+				<!-- 									process="empresaForm" -->
+				<!-- 									actionListener="#{pedidoBean.geraVendidosFabricanteDepartamento()}" -->
+				<!-- 									onstart="PF('formBlock').block()" -->
+				<!-- 									oncomplete="PF('formBlock').unblock()" update="empresaForm" -->
+				<!-- 									id="buttomRelFabricanteDepart" onclick="target = '_blank'" -->
+				<!-- 									style="width:80%;margin:5px" styleClass="btn btn-flat btn-info" -->
+				<!-- 									icon="fa fa-search" /> -->
+				<!-- 							</div> -->
+				<!-- 						</div> -->
+				<!-- 				</div> -->
+			</div>
+		</h:form>
+
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+</ui:composition>

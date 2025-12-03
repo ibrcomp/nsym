@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd"
+	version="2.2">
+
+	<persistence-unit name="nsymDS" transaction-type="JTA">
+		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+		<jta-data-source>java:jboss/datasources/nsymDS</jta-data-source>
+
+		<class>br.com.nsym.domain.model.entity.security.AbstractIdentityTypeEntity</class>
+		<class>br.com.nsym.domain.model.entity.security.GrantTypeEntity</class>
+		<class>br.com.nsym.domain.model.entity.security.GroupMembershipTypeEntity</class>
+		<class>br.com.nsym.domain.model.entity.security.GroupTypeEntity</class>
+		<class>br.com.nsym.domain.model.entity.security.PartitionTypeEntity</class>
+		<class>br.com.nsym.domain.model.entity.security.PasswordTypeEntity</class>
+		<class>br.com.nsym.domain.model.entity.security.RelationshipIdentityTypeEntity</class>
+		<class>br.com.nsym.domain.model.entity.security.RelationshipTypeEntity</class>
+		<class>br.com.nsym.domain.model.entity.security.RoleTypeEntity</class>
+		<class>br.com.nsym.domain.model.entity.security.UserTypeEntity</class>
+		<class>br.com.nsym.domain.model.entity.PersistentEntity</class>
+		<class>br.com.nsym.domain.model.entity.PersistentEntityLogon</class>
+		<class>br.com.nsym.domain.model.entity.tools.Configuration</class>
+		<class>br.com.nsym.domain.model.entity.tools.Message</class>
+		<class>br.com.nsym.domain.model.entity.tools.UserMessage</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.ControleLogon</class>
+		<exclude-unlisted-classes>true</exclude-unlisted-classes>
+		<shared-cache-mode>ENABLE_SELECTIVE</shared-cache-mode>
+		<validation-mode>CALLBACK</validation-mode>
+		<properties>
+			<property name="hibernate.hbm2ddl.auto" value="update" />
+			<property name="hibernate.show_sql" value="false" />
+			<property name="hibernate.connection.autocommit"
+				value="false" />
+			<!-- <property name="hibernate.dialect" -->
+			<!-- value="org.hibernate.dialect.MySQL5InnoDBDialect" /> -->
+			<property name="hibernate.dialect"
+				value="org.hibernate.dialect.MySQL8Dialect" />
+			<property name="hibernate.cache.use_second_level_cache"
+				value="true" />
+			<property name="hibernate.transaction.jta.platform"
+				value="org.hibernate.service.jta.platform.internal.JBossAppServerJtaPlatform" />
+
+			<!-- desabilita JSR-303 no save/update -->
+			<property name="javax.persistence.validation.mode"
+				value="none" />
+			<property name="wildfly.jpa.default-unit" value="true" />
+		</properties>
+
+	</persistence-unit>
+	<persistence-unit name="empDS" transaction-type="JTA">
+
+		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+		<jta-data-source>java:jboss/datasources/empDS</jta-data-source>
+		<!-- Classes mapeadas -->
+
+		<class>br.com.nsym.domain.model.entity.cadastro.Endereco</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Fone</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Cliente</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Email</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Contato</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.EndComplemento</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Empresa</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Filial</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Cargo</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Transportadora</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Fornecedor</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Colaborador</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Imagens</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.BarrasEstoque</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Departamento</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Fabricante</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Produto</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Secao</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.SubSecao</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Tamanho</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Cor</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Grade</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.Tributos</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.Ncm</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.NcmEstoque</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.CFOP</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.IPI</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.ICMS</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.PIS</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.COFINS</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.ICMSST</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.PISST</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.COFINSST</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.produto.ProdutoCusto</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.nfe.ItemNfe</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.nfe.ItemNfeRecebida</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.nfe.Nfe</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.nfe.NfeRecebida</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.nfe.NfeNaoConfirmada</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.nfe.Destinatario</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.nfe.NaturezaOperacao</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.nfe.Transportador</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.InfAdcionais</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.Pais</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.nfe.Emitente</class>
+		<class>br.com.nsym.domain.model.entity.tools.Medida</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.TabIVAEstado</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.TabFcpEstado</class>
+		<class>br.com.nsym.application.controller.nfe.tools.NumeroSemUtilizacaoNFe</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.nfe.Lacre</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.FormaDePagamento</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.tools.ParcelasNfe</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.nfe.CartaCorrecao</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.nfe.NfeReferenciada</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.nfe.Inutilizacao</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.nfe.DI</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.nfe.II</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.nfe.Adicao</class>
+		<class>br.com.nsym.domain.model.entity.cadastro.produto.ProdutoEstoque</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.produto.BarrasCusto</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.Cfe.CFe</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.Cfe.ItemCFe</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.Cfe.DestinatarioCFe</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.Cfe.EmitenteCFe</class>
+		<class>br.com.nsym.domain.model.entity.venda.Transacao</class>
+		<class>br.com.nsym.domain.model.entity.venda.ItemPedido</class>
+		<class>br.com.nsym.domain.model.entity.venda.Pedido</class>
+		<class>br.com.nsym.domain.model.entity.venda.DestinatarioPedido</class>
+		<class>br.com.nsym.domain.model.entity.venda.EmitenteVenda</class>
+		<class>br.com.nsym.domain.model.entity.tools.ControlePedido</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.AgPedido</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.RecebimentoParcial</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.Caixa</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.MovimentoCaixa</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.tools.MotivoMovimentoCaixa</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.SaldoCaixa</class>
+		<class>br.com.nsym.domain.model.entity.estoque.EntradaEstoque</class>
+		<class>br.com.nsym.domain.model.entity.estoque.ItemEstoqueEntrada</class>
+		<class>br.com.nsym.domain.model.entity.venda.DestinatarioTransferencia</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.Credito</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.Banco</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.ContaCorrente</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.tools.WsBanco</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.InfBoleto</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.ChequeInf</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.CartaoInf</class>
+		<class>br.com.nsym.domain.model.entity.financeiro.AgTitulo</class>
+		<class>br.com.nsym.domain.model.entity.fabrica.Modelo</class>
+		<class>br.com.nsym.domain.model.entity.fabrica.MaterialModelo</class>
+		<class>br.com.nsym.domain.model.entity.fabrica.Producao</class>
+		<class>br.com.nsym.domain.model.entity.fabrica.util.GradeProducao</class>
+		<class>br.com.nsym.domain.model.entity.fabrica.FichaTecnica</class>
+		<class>br.com.nsym.domain.model.entity.fabrica.util.ItemProducao</class>
+		<class>br.com.nsym.domain.model.entity.fabrica.util.EtapaProducao</class>
+		<class>br.com.nsym.domain.model.entity.fabrica.util.LinhaProducao</class>
+		<class>br.com.nsym.domain.model.entity.fabrica.util.SequenciaLinhaProducao</class>
+		<class>br.com.nsym.domain.model.entity.fabrica.ItemFichaTecnica</class>
+		<class>br.com.nsym.domain.model.entity.fabrica.OrdemServico</class>
+		<class>br.com.nsym.domain.model.entity.fabrica.Risco</class>
+		<class>br.com.nsym.domain.model.entity.fabrica.Cortador</class>
+		<class>br.com.nsym.domain.model.entity.fabrica.Servico</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.reforma.CClassTrib</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.reforma.CstIbsCbs</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.reforma.CstIs</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.NVE</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.Cfe.Nfce</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.Cfe.NfceItem</class>
+		<exclude-unlisted-classes>true</exclude-unlisted-classes>
+		<shared-cache-mode>ENABLE_SELECTIVE</shared-cache-mode>
+		<properties>
+
+			<property name="hibernate.dialect"
+				value="org.hibernate.dialect.MySQL8Dialect" />
+			<property name="hibernate.show_sql" value="true" />
+			<property name="hibernate.format_sql" value="true" />
+
+			<!-- poderia ser: update, create, create-drop, none -->
+			<property name="hibernate.hbm2ddl.auto" value="update" />
+			<property name="hibernate.cache.use_second_level_cache"
+				value="true" />
+			<property name="hibernate.cache.use_query_cache"
+				value="true" />
+			<property name="hibernate.generate_statistics" value="true" />
+			<property name="hibernate.transaction.jta.platform"
+				value="org.hibernate.service.jta.platform.internal.JBossAppServerJtaPlatform" />
+			<property name="hibernate.c3p0.min_size" value="5" />
+			<property name="hibernate.c3p0.max_size" value="20" />
+			<property name="hibernate.c3p0.timeout" value="500" />
+			<property name="hibernate.c3p0.max_statements" value="50" />
+			<property name="hibernate.c3p0.idle_test_period"
+				value="2000" />
+
+			<!-- desabilita JSR-303 no save/update -->
+			<property name="javax.persistence.validation.mode"
+				value="none" />
+
+		</properties>
+	</persistence-unit>
+</persistence>
+
+

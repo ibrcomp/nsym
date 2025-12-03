@@ -1,0 +1,251 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="Estoque" />
+	<ui:param name="activeSubMenu" value="Recebimento" />
+
+	<f:metadata>
+		<f:viewAction
+			action="#{recebimentoBean.initializeForm(param.estoqueID)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['nfe.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{recebimentoBean.viewState eq 'ADDING'}"
+			value="#{messages['nfe.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{recebimentoBean.viewState eq 'EDITING'}"
+			value="#{messages['nfe.page-description-editing']}">
+			<f:param value="#{recebimentoBean.nfe.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li><a href="formListNfe.xhtml">#{breadcrumb['entries.nfe']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{label['label.nfe.list']}" />
+					</h2>
+				</div>
+
+				<div class="box-body">
+					<div class="row">
+						<div class="navbar-form">
+							<p:toolbar>
+								<f:facet name="left">
+
+								</f:facet>
+								<f:facet name="right">
+
+									<p:commandButton update="empresaForm" process="empresaForm"
+										value="#{menu['save']}" action="#{clienteBean.doSalvar()}"
+										onstart="PF('formBlock').block()"
+										styleClass="btn btn-flat btn-success"
+										oncomplete="PF('formBlock').unblock()"
+										disabled="#{userSessionBean.hasRole(authorization.ESTOQUE_INSERT) eq 'false'}"
+										rendered="#{clienteBean.viewState eq 'ADDING'}"
+										icon="fa fa-hdd-o" />
+									<p:spacer width="5" />
+								</f:facet>
+							</p:toolbar>
+						</div>
+					</div>
+					<div class="row">
+						<div class="form-group col-md-12">
+							<p:dataTable id="itensNfe" var="lista" widgetVar="listaItensNfe"
+								value="#{recebimentoBean.listaItens}"
+								paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+								paginator="true" rows="10"
+								selection="#{recebimentoBean.listaItensSelecionados}"
+								lazy="false" rowKey="#{lista.id}" sortBy="#{lista.XProduto}"
+								sortOrder="descending">
+
+								<p:column selectionMode="multiple"
+									style="width:3%;text-align:center" />
+								<p:column headerText="Código" rendered="true"
+									sortBy="#{lista.CProd}" style="width:15%">
+									<h:outputLabel value="#{lista.CProd}" />
+								</p:column>
+
+								<p:column sortBy="#{lista.ean}" headerText="Barras"
+									style="width:10%">
+									<h:outputText value="#{lista.ean}" />
+								</p:column>
+
+								<p:column headerText="Descrição" rendered="true"
+									sortBy="#{lista.XProduto}" style="width:40%">
+									<h:outputLabel value="#{lista.XProduto}" />
+								</p:column>
+
+								<p:column headerText="NCM" rendered="true" sortBy="#{lista.ncm}">
+									<h:outputLabel value="#{lista.ncm}" />
+								</p:column>
+
+								<p:column sortBy="#{lista.QCom}" headerText="Quantidade">
+									<h:outputText value="#{lista.QCom}" />
+								</p:column>
+
+								<p:column sortBy="#{lista.VUnCom}" headerText="Preço"
+									style="width:10%">
+									<h:outputText value="#{lista.VUnCom}" />
+								</p:column>
+								<p:column headerText="Atualizado" style="width:10%">
+									<h:outputText value="#{lista.estoqueAtualizado}" />
+								</p:column>
+								<f:facet name="footer">
+									<p:commandButton process="itensNfe"
+										update="itensSelecionadosDetail" icon="pi pi-search"
+										actionListener="#{recebimentoBean.geraTotalAdicional()}"
+										value="#{label['label.recebimento.group']}"
+										oncomplete="PF('agruparDialog').show()" />
+									<p:commandButton process="itensNfe"
+										update="EditaItemListaSelecionadosDialog" icon="pi pi-search"
+										actionListener="#{recebimentoBean.edicaoItemListaSelecionados()}"
+										value="#{label['label.new']}" />
+								</f:facet>
+							</p:dataTable>
+							<p:dialog header="Itens Selecionados" widgetVar="agruparDialog"
+								modal="true" showEffect="fade" hideEffect="fade"
+								resizable="false" width="70%">
+								<p:dataTable var="item" id="itensSelecionadosDetail"
+									paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+									paginator="true" rows="5"
+									value="#{recebimentoBean.listaItensSelecionados}">
+									<p:column headerText="Código" rendered="true" style="width:15%">
+										<h:outputLabel value="#{item.CProd}" />
+									</p:column>
+
+									<p:column headerText="EAN" rendered="true" style="width:15%">
+										<h:outputLabel value="#{item.ean}" />
+									</p:column>
+
+									<p:column headerText="Descricao" rendered="true"
+										style="width:40%">
+										<h:outputLabel value="#{item.XProduto}" />
+									</p:column>
+									<p:columnGroup type="footer">
+										<p:row>
+											<p:column colspan="2" footerText="Quantidade total"
+												style="text-align:right;font-size:18px;font-weight:bold" />
+											<p:column footerText="#{recebimentoBean.QAdicional}"
+												style="font-size:18px;color:red;font-weight:bold;text-align:left;">
+											</p:column>
+										</p:row>
+									</p:columnGroup>
+								</p:dataTable>
+								<div class="box">
+									<h4 class="box-title">
+										<p:outputLabel value="#{label['label.recebimento.agrupar']}" />
+									</h4>
+									<div class="row">
+										<div class="form-group col-md-2">
+											<p:outputLabel value="#{label['label.nfe.item.codigo']}"
+												for="idRefItem">
+												<p:commandButton
+													actionListener="#{recebimentoBean.telaPesquisaProduto()}"
+													styleClass="btn btn-flat btn-info"
+													disabled="#{userSessionBean.hasRole(authorization.ESTOQUE_RECEBIMENTO_INSERT) eq 'false'}"
+													icon="fa fa-search" style="width:20px;height:20px"
+													update="formPopupPesquisaProduto" process="empresaForm" />
+											</p:outputLabel>
+											<h:inputText value="#{recebimentoBean.ref}" id="idRefItem"
+												onkeypress="setaFoco(this)" immediate="true"
+												styleClass="form-control">
+											</h:inputText>
+										</div>
+										<div class="form-gropu col-md-3">
+											<p:outputLabel for="tipoControleEstoque"
+												value="#{label['label.produto.tipoEstoque']}" />
+											<p:selectOneMenu id="tipoControleEstoque" disabled="true"
+												editable="false"
+												value="#{recebimentoBean.produto.tipoEstoque}"
+												converter="omnifaces.GenericEnumConverter">
+												<f:selectItems value="#{produtoBean.tipoControleEstoque}"
+													var="tipoControle" />
+											</p:selectOneMenu>
+										</div>
+										<div class="form-group col-md-2">
+											<p:outputLabel value="#{label['label.descricao']}" for="desc" />
+											<p:inputText value="#{recebimentoBean.produto.descricao}"
+												id="desc" readonly="true" />
+										</div>
+										<div class="form-group col-md-2">
+											<p:outputLabel value="#{label['label.estoque.qAtual']}" />
+											<p:inputText
+												value="#{recebimentoBean.barrasEstoque.totalEstoque}"
+												rendered="#{recebimentoBean.produto.tipoEstoque eq 'BA'}"
+												id="QAtual" readonly="true" />
+											<p:inputText
+												value="#{recebimentoBean.produto.estoqueTotalBarras()}"
+												rendered="#{recebimentoBean.produto.tipoEstoque ne 'BA'}"
+												id="QAtual2" readonly="true" />
+										</div>
+										<div class="form-group col-md-2">
+											<p:commandButton process="empresaForm" update="empresaForm"
+												icon="fa fa-save"
+												actionListener="#{recebimentoBean.atualizaEstoqueGrupo()}"
+												value="#{label['label.estoque.group.update']}" />
+										</div>
+										<div class="form-group col-md-2"></div>
+
+									</div>
+								</div>
+							</p:dialog>
+						</div>
+					</div>
+				</div>
+
+				<div class="box-footer">
+					<div class="row">
+						<div class="align-left col-md-12">
+							<div class="form-group col-md-12"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</h:form>
+
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="formPopupPesquisaProduto" prependId="false">
+			<ui:include src="/main/estoque/tools/dialogPesquisaProduto.xhtml" />
+		</h:form>
+		<h:form id="formPopupInsereProd" prependId="false">
+			<ui:include
+				src="/main/estoque/tools/dialogEditaProdutoListaItemSelecionado.xhtml" />
+		</h:form>
+
+	</ui:define>
+</ui:composition>

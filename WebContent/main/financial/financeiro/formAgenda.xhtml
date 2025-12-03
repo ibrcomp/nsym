@@ -1,0 +1,318 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+	<ui:param name="activeMenu" value="FINANCEIRO" />
+	<ui:param name="activeSubmenu" value="Agenda" />
+	<f:metadata>
+		<f:viewAction action="#{agendaBean.initializeListing()}" />
+	</f:metadata>
+	<ui:define name="pageTitle">
+        #{messages['agenda.page-title']}
+    </ui:define>
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{agendaBean.viewState eq 'ADDING'}"
+			value="#{messages['titulo.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{agendaBean.viewState eq 'EDITING'}"
+			value="#{messages['titulo.page-description-editing']}">
+			<f:param value="#{agendaBean.parcela.id}" />
+		</o:outputFormat>
+	</ui:define>
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['financial']}</a></li>
+		<li><a href="formAgenda.xhtml">#{breadcrumb['entries.agenda']}</a></li>
+	</ui:define>
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['list.agendaFinanceira']}"></p:outputLabel>
+					</h2>
+				</div>
+				<div class="box-body">
+					<div class="row">
+						<div class="navbar-form">
+							<p:toolbar id="navegador">
+								<f:facet name="left">
+									<p:commandButton update="empresaForm" process="empresaForm"
+										value="#{menu['new']}" action="#{agendaBean.newTitulo}"
+										onstart="PF('formBlock').block()"
+										disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+										styleClass="btn btn-flat btn-success"
+										oncomplete="PF('formBlock').unblock()" rendered="true" />
+									<p:commandButton process="empresaForm" value="#{menu['view']}"
+										action="#{agendaBean.changeToEdit(agendaBean.agenda.idParc)}"
+										onstart="PF('formBlock').block()"
+										update="empresaForm pageDescription"
+										disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_EDIT) eq 'false'}"
+										styleClass="btn btn-flat btn-success"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{agendaBean.viewState eq 'EDITING'}" />
+								</f:facet>
+								<f:facet name="right">
+								</f:facet>
+							</p:toolbar>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-6">
+							<div class="box box-info box-body with-border">
+								<div class="row">
+									<div class="form-group col-md-4">
+										<p:outputLabel for="selectLancamento"
+											value="#{label['label.tipoLancamento']} " rendered="true" />
+										<p:selectOneMenu id="selectLancamento"
+											value="#{agendaBean.tipoLancamento}"
+											converter="omnifaces.GenericEnumConverter" style="width:100%"
+											rendered="true" required="false" editable="false"
+											requiredMessage="#{validation['tipoLancamento.null']}">
+											<f:selectItem itemValue="#{null}" noSelectionOption="true"
+												itemLabel="#{messages['cliente.form.select-one']}" />
+											<f:selectItems value="#{agendaBean.listaTiposLancamento()}" />
+										</p:selectOneMenu>
+									</div>
+									<div class="form-group col-md-4">
+										<p:outputLabel for="selectParcelaStatus"
+											value="#{label['label.parcelaStatus']} " rendered="true" />
+										<p:selectOneMenu id="selectParcelaStatus"
+											value="#{agendaBean.statusParcela}"
+											converter="omnifaces.GenericEnumConverter" style="width:100%"
+											rendered="true" required="false" editable="false"
+											requiredMessage="#{validation['parcelaStatus.null']}">
+											<f:selectItem itemValue="#{null}" noSelectionOption="true"
+												itemLabel="#{messages['cliente.form.select-one']}" />
+											<f:selectItems value="#{agendaBean.listaParcelaStatus()}" />
+										</p:selectOneMenu>
+									</div>
+									<div class="form-group col-md-4">
+										<p:outputLabel value="#{label['label.start']}" for="idEmissao" />
+										<br />
+										<p:calendar value="#{agendaBean.dataIni}" id="idEmissao"
+											pattern="dd/MM/yyyy" converter="localDateConverter" />
+									</div>
+								</div>
+								<div class="row">
+									<div class="form-group col-md-8">
+										<p:outputLabel value="#{label['label.origem']}"
+											for="procuraOrigemImput" />
+										<p:inputText value="#{agendaBean.procuraOrigem}"
+											id="procuraOrigemImput" styleClass="form-control" />
+									</div>
+									<div class="form-group col-md-4">
+										<p:outputLabel value="#{label['label.finish']}"
+											for="idDataEnt" />
+										<br />
+										<p:calendar value="#{agendaBean.dataFim}" id="idDataEnt"
+											pattern="dd/MM/yyyy" converter="localDateConverter" />
+									</div>
+									<div class="form-group col-md-4">
+										<p:outputLabel value="#{label['label.financeiro.despesa.especial']}"
+											for="booleanFiltroDP" />
+										<p:selectBooleanCheckbox value="#{agendaBean.filtroDPEspecial}"
+											id="booleanFiltroDP" style="width:50%"
+											disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}">
+										</p:selectBooleanCheckbox>
+<!-- 										rendered="#{agendaBean.tipoLancamento.name() eq 'tpDebito' or agendaBean.tipoLancamento.name() eq 'tpALL'} " -->
+									</div>
+									<div class="form-group col-md-4">
+										<br />
+										<p:commandButton value="#{label['label.search']}"
+											process="empresaForm"
+											actionListener="#{agendaBean.initializeListing()}"
+											onstart="PF('formBlock').block()"
+											oncomplete="PF('formBlock').unblock()"
+											update="labelCredito labelCreditoRec labelCreditoLiq labelDebito labelDebitoPag labelDebitoLiq agendaFinanceira"
+											id="buttonPesquisa" style="width:60%;margin:5px"
+											styleClass="btn btn-flat btn-info" icon="fa fa-search" />
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="box box-info box-body with-border">
+								<div class="row">
+									<div class="form-group col-md-4">
+										<p:outputLabel value="#{label['label.list.totalCredito']} "
+											for="labelCredito" />
+										<br />
+										<p:outputLabel value="#{agendaBean.totalCredito}"
+											id="labelCredito"
+											style="color:blue;font-weight:bold;font-size:18px">
+											<f:convertNumber type="currency" currencyCode="BRL" />
+										</p:outputLabel>
+									</div>
+									<div class="form-group col-md-4">
+										<p:outputLabel value="#{label['label.list.totalCreditoRec']} "
+											for="labelCreditoRec" />
+										<br />
+										<p:outputLabel value="#{agendaBean.totalCreditoRec}"
+											id="labelCreditoRec"
+											style="color:blue;font-weight:bold;font-size:18px">
+											<f:convertNumber type="currency" currencyCode="BRL" />
+										</p:outputLabel>
+									</div>
+									<div class="form-group col-md-4">
+										<p:outputLabel value="#{label['label.list.totalCreditoLiq']} "
+											for="labelCreditoLiq" />
+										<br />
+										<p:outputLabel value="#{agendaBean.totalCreditoLiq}"
+											id="labelCreditoLiq"
+											style="color:blue;font-weight:bold;font-size:18px">
+											<f:convertNumber type="currency" currencyCode="BRL" />
+										</p:outputLabel>
+									</div>
+								</div>
+								<div class="row">
+									<div class="form-group col-md-4">
+										<p:outputLabel value="#{label['label.list.totalDebito']} "
+											for="labelDebito" />
+										<br />
+										<p:outputLabel value="#{agendaBean.totalDebito}"
+											id="labelDebito"
+											style="color:red;font-weight:bold;font-size:18px">
+											<f:convertNumber type="currency" currencyCode="BRL" />
+										</p:outputLabel>
+									</div>
+									<div class="form-group col-md-4">
+										<p:outputLabel value="#{label['label.list.totalDebitoPag']} "
+											for="labelDebitoPag" />
+										<br />
+										<p:outputLabel value="#{agendaBean.totalDebitoPag}"
+											id="labelDebitoPag"
+											style="color:red;font-weight:bold;font-size:18px">
+											<f:convertNumber type="currency" currencyCode="BRL" />
+										</p:outputLabel>
+									</div>
+									<div class="form-group col-md-4">
+										<p:outputLabel value="#{label['label.list.totalDebitoLiq']} "
+											for="labelDebitoLiq" />
+										<br />
+										<p:outputLabel value="#{agendaBean.totalDebitoLiq}"
+											id="labelDebitoLiq"
+											style="color:red;font-weight:bold;font-size:18px">
+											<f:convertNumber type="currency" currencyCode="BRL" />
+										</p:outputLabel>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="form-group col-md-12">
+							<p:dataTable id="agendaFinanceira" var="lista"
+								widgetVar="listaAgenda" value="#{agendaBean.listaParcelas}"
+								paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+								paginator="true" rows="10" selection="#{agendaBean.agenda}" 
+								selectionMode="single" lazy="false" rowKey="#{lista.idParc}"
+								sortBy="#{lista.vencimento}" rowsPerPageTemplate="5,10,15">
+
+								<p:ajax event="rowSelect" listener="#{agendaBean.onRowSelect}"
+									process="empresaForm" update="navegador" />
+
+								<p:column headerText="#{label['label.id']}" rendered="true"
+									style="width:10%">
+									<h:outputLabel value="#{lista.idParc}" />
+								</p:column>
+								<p:column headerText="#{label['label.list.nfeRef.nNfe']}" rendered="true"
+									style="width:10%">
+									<h:outputLabel value="#{lista.numeroNfe == null ? lista.numeroNFeRec : lista.numeroNfe}" />
+								</p:column>
+								<p:column headerText="#{label['label.financial.origemParcela']}" 
+									  rendered="true" style="width:40%">
+									<h:outputLabel value="#{lista.descricao}" />
+								</p:column>
+								<p:column headerText="#{label['label.financial.numParcela']}"
+									rendered="true" style="width:10%">
+									<h:outputLabel
+										value="#{lista.numParcela} - #{lista.QParcelas}" />
+								</p:column>
+								<p:column headerText="#{label['label.financial.vencimento']}"
+									rendered="true" sortBy="#{lista.vencimento}" style="width:10%">
+									<h:outputLabel value="#{lista.vencimento}" />
+								</p:column>
+								<p:column headerText="#{label['label.financial.dataPagamento']}"
+									rendered="true" sortBy="#{lista.dataRecebimento}"
+									style="width:10%">
+									<h:outputLabel value="#{lista.dataRecebimento}" />
+								</p:column>
+								<p:column headerText="#{label['label.financial.tipoPagamento']}"
+									rendered="true" sortBy="#{lista.tipoPagamento}"
+									style="width:10%">
+									<h:outputLabel value="#{lista.tipoPagamento}" />
+								</p:column>
+								<p:column headerText="#{label['label.caixa.valorPagamento']}"
+									style="width:15%">
+									<h:outputText value="#{lista.exibeValorCobrado()}"
+										styleClass="#{lista.tipoLancamento == 'tpDebito' ? 'ca' : 'azul'}">
+										<f:convertNumber type="currency" currencySymbol="R$"
+											maxFractionDigits="2" currencyCode="BRL" />
+									</h:outputText>
+								</p:column>
+								<p:column headerText="#{label['label.caixa.saldoEmAberto']}"
+									style="width:15%">
+									<h:outputText value="#{lista.valorParcela}"
+										styleClass="#{lista.tipoLancamento == 'tpDebito' ? 'ca' : 'azul'}">
+										<f:convertNumber type="currency" currencySymbol="R$"
+											maxFractionDigits="2" currencyCode="BRL" />
+									</h:outputText>
+								</p:column>
+								<p:column
+									headerText="#{label['label.financial.statuasParcela']}"
+									rendered="true" sortBy="#{lista.status}" style="width:10%">
+									<h:outputLabel value="#{agendaBean.descricaoParcela(lista.status)}" />
+								</p:column>
+								<p:column headerText="#{label['label.list.Action']}"
+									style="width:6%">
+									<p:commandButton process="empresaForm" title="#{menu['financeiro.detail']}"
+										disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_REPORT) eq 'false'}"
+										onstart="PF('formBlock').block()"
+										oncomplete="PF('formBlock').unblock()"
+										action="#{agendaBean.detalhePagamento(lista)}"
+										icon="fa fa-circle-info"
+										styleClass="btn btn-flat"
+										update="empresaForm">
+									</p:commandButton>
+								</p:column>
+
+							</p:dataTable>
+							<p:outputLabel value="Exportar:" 
+							rendered="#{userSessionBean.hasRole(authorization.FINANCEIRO_REPORT)}"/>
+							<p:commandLink ajax="false" onstart="PF('formBlock').block()" target="blank" process=""
+								oncomplete="PF('formBlock').unblock()" action="#{agendaBean.geraPDF()}" id="buttomRelAgendaFinanceira"
+								rendered="#{userSessionBean.hasRole(authorization.FINANCEIRO_REPORT)}">
+								<p:graphicImage name="/nsym/img/download-pdf.png" width="26"
+									style="right:0;" />
+								
+							</p:commandLink>
+						</div>
+					</div>
+				</div>
+			</div>
+		</h:form>
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="formDetail" prependId="false">
+			<ui:include 
+				src="/main/financial/financeiro/tools/dialogDetalhesPagamento.xhtml" />
+		</h:form>
+	</ui:define>
+</ui:composition>

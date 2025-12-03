@@ -1,0 +1,129 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="Cliente" />
+
+	<f:metadata>
+		<f:viewAction action="#{clienteBean.initializeListing()}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['cliente.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{clienteBean.viewState eq 'ADDING'}"
+			value="#{messages['cliente.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{clienteBean.viewState eq 'EDITING'}"
+			value="#{messages['cliente.page-description-editing']}">
+			<f:param value="#{clienteBean.cliente.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li><a href="formListcliente.xhtml">#{breadcrumb['entries.client']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="Lista de clientes"></p:outputLabel>
+					</h2>
+				</div>
+
+				<div class="box-body row">
+					<div class="form-group col-md-12">
+						<p:dataTable id="filiais" var="lista" widgetVar="listaCliente"
+							value="#{clienteBean.clientesModel}"
+							paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+							paginator="true" rows="20" selection="#{clienteBean.cliente}"
+							selectionMode="single" lazy="true" rowKey="#{lista.id}"
+							sortBy="#{lista.razaoSocial}" rowsPerPageTemplate="10,20,30">
+
+							<p:ajax event="rowSelect" listener="#{clienteBean.onRowSelect}"
+								update="empresaForm" />
+
+							<p:column headerText="Id" rendered="true">
+								<h:outputLabel value="#{lista.id}" />
+							</p:column>
+
+							<p:column sortBy="#{lista.razaoSocial}" headerText="Razao Social"
+								style="width:30%">
+								<h:outputText value="#{lista.razaoSocial}" />
+							</p:column>
+
+							<p:column sortBy="#{lista.nomeFantasia}"
+								headerText="Nome Fantasia" style="width:30%">
+								<h:outputText value="#{lista.nomeFantasia}" />
+							</p:column>
+
+							<p:column headerText="Cnpj" rendered="true">
+								<p:outputLabel value="#{lista.cnpj}" />
+							</p:column>
+
+							<p:column headerText="Inscricao" rendered="true">
+								<p:outputLabel value="#{lista.inscEstadual}" />
+							</p:column>
+
+						</p:dataTable>
+						<p:outputLabel value="Exportar:" />
+						<h:commandLink>
+							<p:graphicImage name="/nsym/img/excel.png" width="28"
+								style="right:0;" />
+							<p:dataExporter type="xls" target="filiais"
+								fileName="listaCliente" />
+						</h:commandLink>
+
+					</div>
+
+				</div>
+
+				<div class="box-footer align-right">
+					<p:commandButton update="empresaForm" process="empresaForm"
+						value="#{menu['new']}" action="#{clienteBean.newCliente}"
+						onstart="PF('formBlock').block()"
+						styleClass="btn btn-flat btn-success"
+						oncomplete="PF('formBlock').unblock()" rendered="true" />
+					<p:commandButton process="empresaForm" value="#{menu['view']}"
+						action="#{clienteBean.changeToEdit(clienteBean.cliente.id)}"
+						onstart="PF('formBlock').block()"
+						update="empresaForm pageDescription"
+						styleClass="btn btn-flat btn-success"
+						oncomplete="PF('formBlock').unblock()"
+						rendered="#{clienteBean.viewState eq 'EDITING'}" />
+					<p:spacer width="10" />
+					<p:commandButton immediate="true" value="#{menu['back']}"
+						action="#{userBean.toDashboard}"
+						styleClass="btn btn-flat btn-default" />
+				</div>
+			</div>
+		</h:form>
+
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+</ui:composition>

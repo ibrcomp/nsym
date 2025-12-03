@@ -1,0 +1,136 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="Cadastros" />
+	<ui:param name="activeSubmenu" value="Colaborador" />
+
+	<f:metadata>
+		<f:viewAction action="#{colaboradorBean.initializeListing()}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['colaborador.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{colaboradorBean.viewState eq 'ADDING'}"
+			value="#{messages['colaborador.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{colaboradorBean.viewState eq 'EDITING'}"
+			value="#{messages['colaborador.page-description-editing']}">
+			<f:param value="#{colaboradorBean.colaborador.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li><a href="formListColaborador.xhtml">#{breadcrumb['entries.colaborador']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{messages['colaborador.page-list']}"></p:outputLabel>
+					</h2>
+				</div>
+
+				<div class="box-body row">
+					<div class="navbar-form">
+						<p:toolbar id="navegador">
+							<f:facet name="left">
+								<p:commandButton update="empresaForm" process="empresaForm"
+									value="#{menu['new']}"
+									action="#{colaboradorBean.newColaborador}"
+									onstart="PF('formBlock').block()"
+									styleClass="btn btn-flat btn-success"
+									disabled="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+									oncomplete="PF('formBlock').unblock()" rendered="true" />
+								<p:commandButton process="empresaForm" value="#{menu['view']}"
+									action="#{colaboradorBean.changeToEdit(colaboradorBean.colaborador.id)}"
+									onstart="PF('formBlock').block()"
+									update="empresaForm pageDescription"
+									styleClass="btn btn-flat btn-success"
+									oncomplete="PF('formBlock').unblock()"
+									disabled="#{userSessionBean.hasRole(authorization.COLABORADOR_VIEW) eq 'false'}"
+									rendered="#{colaboradorBean.viewState eq 'EDITING'}" />
+							</f:facet>
+							<f:facet name="right">
+								<p:commandButton immediate="true" value="#{menu['back']}"
+									action="#{userBean.toDashboard}"
+									styleClass="btn btn-flat btn-default" />
+							</f:facet>
+						</p:toolbar>
+					</div>
+					<div class="form-group col-md-12">
+						<p:dataTable id="colaboradores" var="lista"
+							widgetVar="listaColaborador"
+							value="#{colaboradorBean.colaboradorModel}"
+							paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+							paginator="true" rows="20"
+							selection="#{colaboradorBean.colaborador}" selectionMode="single"
+							lazy="true" rowKey="#{lista.id}" sortBy="#{lista.nome}"
+							rowsPerPageTemplate="10,20,30">
+
+							<p:ajax event="rowSelect"
+								listener="#{colaboradorBean.onRowSelect}" update="empresaForm" />
+
+							<p:column headerText="#{label['label.list.id']}" rendered="true">
+								<h:outputText value="#{lista.id}" />
+							</p:column>
+
+							<p:column sortBy="#{lista.nome}"
+							filterMatchMode="contains" filterBy="#{lista.nome}"
+								headerText="#{label['label.list.name']}" style="width:30%">
+								<p:outputLabel value="#{lista.nome}" />
+							</p:column>
+
+							<p:column headerText="#{label['label.list.function']}"
+								rendered="true">
+								<h:outputText value="#{lista.cargo.cargo}" />
+							</p:column>
+
+
+						</p:dataTable>
+						<p:outputLabel value="#{label['label.list.export']} :" />
+						<h:commandLink>
+							<p:graphicImage name="/nsym/img/excel.png" width="28"
+								style="right:0;" />
+							<p:dataExporter type="xls" target="colaboradores"
+								fileName="listaColaborador" />
+						</h:commandLink>
+
+					</div>
+
+				</div>
+
+				<div class="box-footer align-right">
+				</div>
+			</div>
+		</h:form>
+
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+</ui:composition>

@@ -1,0 +1,15 @@
+eclipse.preferences.version=1
+encoding//WebContent/WEB-INF/Relatorios/Estoque/RelEstoqueGeral.jrxml=UTF-8
+encoding//WebContent/WEB-INF/Relatorios/Financeiro/RelAgendaFinanceira.jrxml=UTF-8
+encoding//WebContent/WEB-INF/Relatorios/Fiscal/RelNatOpera.jrxml=UTF-8
+encoding//WebContent/WEB-INF/Relatorios/Vendas/RelCupomPDV.jrxml=UTF-8
+encoding//WebContent/WEB-INF/Relatorios/Vendas/RelCupomPDVA4.jrxml=UTF-8
+encoding//WebContent/WEB-INF/Relatorios/Vendas/RelVendasFabricanteDepartamentoM.jrxml=UTF-8
+encoding//WebContent/WEB-INF/Relatorios/Vendas/RelVendasProgramadas.jrxml=UTF-8
+encoding//WebContent/WEB-INF/Relatorios/Vendas/RelVendasVendedorFilial.jrxml=UTF-8
+encoding//WebContent/WEB-INF/Relatorios/Vendas/RelVendasVendedorMatriz.jrxml=UTF-8
+encoding//WebContent/WEB-INF/Relatorios/Vendas/RelVendidosFilial.jrxml=UTF-8
+encoding//WebContent/WEB-INF/Relatorios/Vendas/RelVendidosMatriz.jrxml=UTF-8
+encoding//src/br/com/ibrcomp/interceptor/RollbackInterceptor.java=UTF-8
+encoding//src/br/com/nsym/application/channels/AcbrComunica.java=UTF-8
+separateDerivedEncodings=true

@@ -1,0 +1,211 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="Estoque" />
+	<ui:param name="activeSubMenu" value="NotasEmitidasCompra" />
+
+	<f:metadata>
+		<f:viewAction action="#{recebimentoBean.initializeListingCompra()}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['recebimento.nfe.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{recebimentoBean.viewState eq 'ADDING'}"
+			value="#{messages['recebimento.nfe.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{recebimentoBean.viewState eq 'EDITING'}"
+			value="#{messages['recebimento.nfe.page-description-editing']}">
+			<f:param value="#{recebimentoBean.nfe.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li><a href="formListNfe.xhtml">#{breadcrumb['entries.recNfe']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{label['label.recebimento.nfe.list']}" />
+					</h2>
+				</div>
+
+				<div class="box-body">
+					<div class="row">
+						<div class="navbar-form">
+							<p:toolbar id="navegador">
+								<f:facet name="left">
+									<!-- 								action="#{recebimentoBean.preencheListaNfeNaoConfirmada()}" -->
+									<p:commandButton process="empresaForm"
+										value="#{label['label.estoque.ListOfEntryNotesIssued']}"
+										action="#{recebimentoBean.preencheListaNfeNaoConfirmada()}"
+										onstart="PF('formBlock').block()"
+										styleClass="btn btn-flat btn-primary"
+										oncomplete="PF('formBlock').unblock()"
+										update="nfeCompra respSefazList"
+										disabled="#{userSessionBean.hasRole(authorization.ESTOQUE_INSERT) eq 'false'}" />
+									<p:spacer width="5" />
+									<!-- 									<p:commandButton process="empresaForm" value="teste"  -->
+									<!-- 										actionListener="#{recebimentoBean.exibeLeituraNFEentrada()}" -->
+									<!-- 										onstart="PF('formBlock').block()" -->
+									<!-- 										styleClass="btn btn-flat btn-primary" -->
+									<!-- 										oncomplete="PF('formBlock').unblock()" -->
+									<!-- 										update="nfeCompra respSefazList" -->
+									<!-- 										disabled="#{userSessionBean.hasRole(authorization.ESTOQUE_INSERT) eq 'false'}" /> -->
+								</f:facet>
+								<f:facet name="right">
+									<p:commandButton process="empresaForm"
+										value="#{label['label.estoque.confirmOperation']}"
+										action="#{recebimentoBean.confirmaOperacao()}"
+										onstart="PF('formBlock').block()"
+										styleClass="btn btn-flat btn-info"
+										oncomplete="PF('formBlock').unblock()"
+										update="nfeCompra respSefazList"
+										disabled="#{userSessionBean.hasRole(authorization.ESTOQUE_INSERT) eq 'false'}" />
+									<p:spacer width="5" />
+									<p:commandButton process="empresaForm"
+										value="#{label['label.estoque.ignoranceOfTheOperation']}"
+										action="#{recebimentoBean.desconheceOperacao()}"
+										onstart="PF('formBlock').block()"
+										styleClass="btn btn-flat btn-warning"
+										oncomplete="PF('formBlock').unblock()" update="respSefazList"
+										disabled="#{userSessionBean.hasRole(authorization.ESTOQUE_INSERT) eq 'false'}" />
+									<p:spacer width="5" />
+									<p:commandButton process="empresaForm"
+										value="#{label['label.estoque.operationNotPerformed']}"
+										action="#{recebimentoBean.toNaoRealizada()}"
+										onstart="PF('formBlock').block()"
+										styleClass="btn btn-flat btn-danger"
+										oncomplete="PF('formBlock').unblock()" update="respSefazList"
+										disabled="#{userSessionBean.hasRole(authorization.ESTOQUE_INSERT) eq 'false'}" />
+									<p:spacer width="5" />
+									<!-- 									<p:confirmDialog global="true"> -->
+									<!-- 										<p:commandButton value="#{menu.yes}" -->
+									<!-- 											styleClass="ui-confirmdialog-yes" icon="ui-icon-check" /> -->
+									<!-- 										<p:commandButton value="#{menu.no}" -->
+									<!-- 											styleClass="ui-confirmdialog-no" icon="ui-icon-close" /> -->
+									<!-- 									</p:confirmDialog> -->
+									<span class="ui-separator"> <span
+										class="ui-icon ui-icon-grip-dotted-vertical" />
+									</span>
+									<p:commandButton immediate="true" value="#{menu['back']}"
+										action="#{userBean.toDashboard}"
+										styleClass="btn btn-flat btn-default" />
+								</f:facet>
+							</p:toolbar>
+						</div>
+					</div>
+					<div class="row">
+						<div class="form-group col-md-12">
+							<p:dataTable id="nfeCompra" var="lista" widgetVar="listaNfe"
+								value="#{recebimentoBean.listaNaoConfirmada}"
+								paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+								paginator="true" rows="10"
+								selection="#{recebimentoBean.nfNaoConfirmada}"
+								selectionMode="single" lazy="false" rowKey="#{lista.id}"
+								sortBy="#{lista.nsu}" sortOrder="descending" styleClass="table"
+								rowStyleClass="#{lista.situacao == 'Aut' ? 'sa' : lista.situacao == 'Den' ? 'sa': lista.situacao == 'Can' ? 'ca': lista.confirmada == 'TRUE' ? 'en' :null}">
+
+								<p:ajax event="rowSelect"
+									listener="#{recebimentoBean.onRowSelect}" process="empresaForm"
+									update="navegador" />
+
+								<p:column headerText="Chave de acesso" rendered="true"
+									sortBy="#{lista.chNfe}" style="width:28%">
+									<h:outputLabel value="#{lista.chNfe}" />
+								</p:column>
+
+								<p:column headerText="Emissão" rendered="true"
+									sortBy="#{lista.dhEmissao}" style="width:12%">
+									<h:outputLabel value="#{lista.dhEmissao.toString()}" />
+								</p:column>
+
+								<p:column sortBy="#{lista.XNome}" headerText="Razão Social">
+									<h:outputText value="#{lista.XNome}" />
+								</p:column>
+
+								<p:column sortBy="#{lista.valorNf}" headerText="Valor Nfe"
+									style="width:10%">
+									<h:outputText value="#{lista.valorNf}" />
+								</p:column>
+
+								<p:column sortBy="#{lista.nsu}" headerText="NSU"
+									style="width:10%">
+									<h:outputText value="#{lista.nsu}" />
+								</p:column>
+
+								<p:column sortBy="#{lista.situacao}" headerText="Status"
+									style="width:10%">
+									<h:outputText value="#{lista.situacao.toString()}" />
+								</p:column>
+
+								<p:column sortBy="#{lista.estoqueAtualizado}"
+									headerText="Estoque" style="width:5%">
+									<h:outputText value="#{lista.estoqueAtualizado}"
+										styleClass="#{lista.estoqueAtualizado == true ? 'en' : 'ca'}" />
+								</p:column>
+
+							</p:dataTable>
+							<p:outputLabel value="Exportar:" />
+							<h:commandLink>
+								<p:graphicImage name="/nsym/img/excel.png" width="28"
+									style="right:0;" />
+								<p:dataExporter type="xls" target="nfe" fileName="listaDeNfe" />
+							</h:commandLink>
+
+						</div>
+					</div>
+				</div>
+
+				<div class="box-footer">
+					<div class="row">
+						<div class="align-left col-md-12">
+							<div class="form-group col-md-12">
+								<p:outputLabel value="Resposta Sefaz" for="respSefazList" />
+								<p:inputTextarea rows="6" cols="100" immediate="true"
+									disabled="true" styleClass="form-control"
+									counterTemplate="{0} caracteres restantes"
+									value="#{recebimentoBean.respostaAcbrLocal}" id="respSefazList"
+									autoResize="false" />
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</h:form>
+
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="formRecebimentoNfe" prependId="false">
+			<ui:include src="/main/estoque/dialogOperacaoNaoRealizada.xhtml" />
+		</h:form>
+	</ui:define>
+</ui:composition>

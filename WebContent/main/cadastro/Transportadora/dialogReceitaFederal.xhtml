@@ -1,0 +1,59 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="receitaFederalDialog"
+	width="50%" modal="true" resizable="false" closeOnEscape="true"
+	widgetVar="dialogReceitaFederal"
+	header="#{messages['receita.consulta.title']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-2">
+				<p:outputLabel value="#{messages['receita.dialog.subtitle']}" />
+			</h2>
+		</div>
+		<div class="box-body row">
+			<div class="form-group col-sm-4">
+				<p:outputLabel for="cnpjConsulta" value="#{label['label.cnpj']}" />
+				<p:inputText id="cnpjConsulta"
+					value="#{transportadoraBean.valorCnpj}" styleClass="form-control" />
+			</div>
+			<div class="form-group col-sm-2">
+				<p:outputLabel value="UF" for="ufValue" />
+				<p:selectOneMenu value="#{transportadoraBean.siglaSeleciona}"
+					id="ufValue" filter="true" required="false"
+					disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+					converter="omnifaces.GenericEnumConverter" style="width:100%">
+					<f:selectItem itemValue="#{null}" noSelectionOption="true"
+						itemLabel="#{messages['filial.form.select-one']}" />
+					<f:selectItems value="#{transportadoraBean.ufSigla}" />
+				</p:selectOneMenu>
+
+			</div>
+			<!-- 			<div class="form-group col-sm-4"> -->
+			<!-- 				<p:outputLabel for="imgCaptcha" value="#{label['label.captcha']}" /> -->
+			<!-- 				<p:graphicImage value="#{imagemBean.fileContent}" rendered="#{empresaBean.exibeImagem}" cache="false" /> -->
+			<!-- 				<p:inputText id="imgCaptcha" value="#{empresaBean.valorCaptcha}" -->
+			<!-- 					styleClass="form-control" /> -->
+			<!-- 			</div> -->
+			<!-- 			<div class="form-group col-sm-4"> -->
+			<!-- 				<p:outputLabel></p:outputLabel> -->
+			<!-- 			</div> -->
+		</div>
+		<div class="box-footer align-right">
+
+			<p:commandButton
+				actionListener="#{transportadoraBean.telaResultadoReceitaFederal()}"
+				process="testeEnvio" style="align-left"
+				onstart="PF('dialogReceitaFederal').block() "
+				oncomplete="PF('dialogResultadoReceitaFederal').unblock()"
+				update="empresaForm" value="#{label['label.search']}"
+				styleClass="btn btn-flat btn-search" icon="fa fa-search-plus" />
+
+		</div>
+	</div>
+
+
+</p:dialog>
+

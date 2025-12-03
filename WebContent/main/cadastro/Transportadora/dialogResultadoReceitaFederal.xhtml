@@ -1,0 +1,114 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	id="resultadoReceitaFederalDialog" width="50%" modal="true"
+	resizable="false" closeOnEscape="true"
+	widgetVar="dialogResultadoReceitaFederal"
+	header="#{messages['receita.dialog.title']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-2">
+				<p:outputLabel value="#{messages['receita.dialog.subtitle']}" />
+			</h2>
+		</div>
+		<div class="box-body row">
+			<div class="form-group col-sm-4">
+				<p:outputLabel for="resultadoCNPJ" value="#{label['label.cnpj']}" />
+				<p:inputText id="resultadoCNPJ"
+					value="#{transportadoraBean.receita.receitaCNPJ}"
+					styleClass="form-control"
+					rendered="#{transportadoraBean.consultaReceitaOk}" readonly="true" />
+			</div>
+			<div class="form-group col-sm-4">
+				<p:outputLabel for="resultadoInscEstadual"
+					value="#{label['label.ie']}" />
+				<p:inputText id="resultadoInscEstadual"
+					value="#{transportadoraBean.receita.receitaIE}"
+					styleClass="form-control"
+					rendered="#{transportadoraBean.consultaReceitaOk}" readonly="true" />
+			</div>
+			<div class="form-group col-sm-4">
+				<p:outputLabel for="resultadoEnquadramento"
+					value="#{messages['empresa.form.regime']}" />
+				<p:inputText id="resultadoEnquadramento"
+					value="#{transportadoraBean.receita.receitaRegime}"
+					styleClass="form-control"
+					rendered="#{transportadoraBean.consultaReceitaOk}" readonly="true" />
+			</div>
+			<div class="form-group col-sm-10">
+				<p:outputLabel for="resultadoRazaoSocial"
+					value="#{label['label.razao']}" />
+				<p:inputText id="resultadoRazaoSocial"
+					value="#{transportadoraBean.receita.receitaRazao}"
+					styleClass="form-control"
+					rendered="#{transportadoraBean.consultaReceitaOk}" readonly="true" />
+			</div>
+			<div class="form-group col-sm-10">
+				<p:outputLabel for="resultadoFantasia"
+					value="#{label['label.fantasia']}" />
+				<p:inputText id="resultadoFantasia"
+					value="#{transportadoraBean.receita.receitaFantasia}"
+					styleClass="form-control"
+					rendered="#{transportadoraBean.consultaReceitaOk}" readonly="true" />
+			</div>
+			<div class="form-group col-sm-2">
+				<p:outputLabel for="resultadoCep" value="#{label['label.cep']}" />
+				<p:inputText id="resultadoCep"
+					value="#{transportadoraBean.receita.receitaCep}"
+					styleClass="form-control"
+					rendered="#{transportadoraBean.consultaReceitaOk}" readonly="true" />
+			</div>
+			<div class="form-group col-sm-6">
+				<p:outputLabel for="resultadoLogradouro"
+					value="#{label['label.logradouro']}" />
+				<p:inputText id="resultadoLogradouro"
+					value="#{transportadoraBean.receita.receitaLogradouro}"
+					styleClass="form-control"
+					rendered="#{transportadoraBean.consultaReceitaOk}" readonly="true" />
+			</div>
+			<div class="form-group col-sm-2">
+				<p:outputLabel for="resultadoNumero"
+					value="#{label['label.numero']}" />
+				<p:inputText id="resultadoNumero"
+					value="#{transportadoraBean.receita.receitaNumero}"
+					styleClass="form-control"
+					rendered="#{transportadoraBean.consultaReceitaOk}" readonly="true" />
+			</div>
+			<div class="form-group col-sm-4">
+				<p:outputLabel for="resultadoComplemento"
+					value="#{label['label.complemento']}" />
+				<p:inputText id="resultadoComplemento"
+					value="#{transportadoraBean.receita.receitaComplemento}"
+					styleClass="form-control"
+					rendered="#{transportadoraBean.consultaReceitaOk}" readonly="true" />
+			</div>
+
+			<div class="form-group col-sm-4">
+				<p:outputLabel for="resultadoSituacao"
+					value="#{label['label.situacaoContribuinte']}" />
+				<p:inputText id="resultadoSituacao"
+					value="#{transportadoraBean.receita.receitaSituacaoCadastral}"
+					styleClass="form-control"
+					rendered="#{transportadoraBean.consultaReceitaOk}" readonly="true" />
+			</div>
+
+
+		</div>
+		<div class="box-footer align-right">
+
+			<p:commandButton
+				actionListener="#{transportadoraBean.transfereConsultaReceita()}"
+				process="testeEnvio" style="align-left"
+				oncomplete="PF('dialogResultadoReceitaFederal').hide()"
+				update="empresaForm" value="#{label['label.transefere']}"
+				styleClass="btn btn-flat btn-search" icon="fa fa-search-plus" />
+
+		</div>
+	</div>
+
+
+</p:dialog>
+

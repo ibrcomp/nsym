@@ -1,0 +1,164 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="FABRICA" />
+	<ui:param name="activeSubmenu" value="LinhaProd" />
+
+	<f:metadata>
+		<f:viewAction action="#{etapaProducaoBean.initializeFormLinhaProd(param.linhaID)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['fabrica.LinhaProducao.list.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{etapaProducaoBean.viewState eq 'ADDING'}"
+			value="#{messages['fabrica.LinhaProducao.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{etapaProducaoBean.viewState eq 'EDITING'}"
+			value="#{messages['fabrica.LinhaProducao.page-description-editing']}">
+			<f:param value="#{etapaProducaoBean.etapa.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries.fabrica']}</a></li>
+		<li><a href="formListEtapaProd.xhtml">#{breadcrumb['entries.etapaProducao']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['entries.etapaProducao']}"></p:outputLabel>
+					</h2>
+				</div>
+				<div class="box-body">
+					<div class="navbar-form">
+						<p:toolbar id="navegador">
+							<f:facet name="left">
+								<p:commandButton update="empresaForm" process="empresaForm"
+									value="#{menu['save']}"
+									action="#{etapaProducaoBean.doSalvarLinha()}"
+									onstart="PF('formBlock').block()"
+									styleClass="btn btn-flat btn-success"
+									disabled="#{userSessionBean.hasRole(authorization.FABRICA_INSERT) eq 'false'}"
+									oncomplete="PF('formBlock').unblock()"
+									rendered="#{etapaProducaoBean.viewState eq 'ADDING'}"
+									icon="fa fa-hdd-o" />
+
+<!-- 								<p:commandButton process="empresaForm" value="#{menu['update']}" -->
+<!-- 									action="#{etapaProducaoBean.doSalvarLinha()}" -->
+<!-- 									onstart="PF('formBlock').block()" -->
+<!-- 									update="empresaForm pageDescription" -->
+<!-- 									styleClass="btn btn-flat btn-warning" -->
+<!-- 									disabled="#{userSessionBean.hasRole(authorization.FABRICA_EDIT) eq 'false'}" -->
+<!-- 									oncomplete="PF('formBlock').unblock()" -->
+<!-- 									rendered="#{etapaProducaoBean.viewState eq 'EDITING'}" /> -->
+
+							</f:facet>
+							<f:facet name="right">
+<!-- 								<p:commandButton process="empresaForm" value="#{menu['delete']}" -->
+<!-- 									action="#{etapaProducaoBean.doExcluirLinha()}" immediate="true" -->
+<!-- 									styleClass="btn btn-flat btn-danger" -->
+<!-- 									disabled="#{userSessionBean.hasRole(authorization.FABRICA_DELETE) eq 'false'}" -->
+<!-- 									rendered="#{etapaProducaoBean.viewState eq 'EDITING'}"> -->
+<!-- 									<p:confirm header="Atenção" message="Excluir? " -->
+<!-- 										icon="ui-icon-alert" /> -->
+<!-- 								</p:commandButton> -->
+
+<!-- 								<p:confirmDialog global="true"> -->
+<!-- 									<p:commandButton value="#{menu.yes}" -->
+<!-- 										styleClass="ui-confirmdialog-yes" icon="ui-icon-check" /> -->
+<!-- 									<p:commandButton value="#{menu.no}" -->
+<!-- 										styleClass="ui-confirmdialog-no" icon="ui-icon-close" /> -->
+<!-- 								</p:confirmDialog> -->
+
+								<p:commandButton immediate="true" value="#{menu['back']}"
+									action="#{etapaProducaoBean.toListLinha()}"
+									styleClass="btn btn-flat btn-default"
+									icon="fa fa-arrow-circle-o-left" />
+							</f:facet>
+						</p:toolbar>
+					</div>
+					<div class="row">
+						<div class="form-group col-md-6">
+							<p:outputLabel value="#{label['label.descricao']}: "
+								for="descricao" />
+							<p:inputText value="#{etapaProducaoBean.linha.descricao}"
+								id="descricao" required="true" immediate="true"
+								readonly="#{userSessionBean.hasRole(authorization.FABRICA_INSERT) eq 'false'}"
+								requiredMessage="#{validation['linhaProducao.descricao']}"
+								maxlength="100" label="descricao" styleClass="form-control" />
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-6">
+							<div class="box box-warning box-body">
+								<p:pickList id="linhaProducao"
+									value="#{etapaProducaoBean.sequenciaProducaoDL}" var="etapa"
+									effect="bounce" itemValue="#{etapa}"
+									itemLabel="#{etapa.descricao}" showSourceControls="true"
+									showTargetControls="true" showCheckbox="true"
+									showSourceFilter="true" showTargetFilter="true"
+									filterMatchMode="contains"
+									converter="primeFacesPickListConverter" responsive="true">
+
+									<f:facet name="sourceCaption">#{label['label.pickList.Source.Etapa']}</f:facet>
+									<f:facet name="targetCaption">#{label['label.pickList.Target.Etapa']}</f:facet>
+
+									<p:column>
+										<h:outputText value="#{etapa.descricao}" />
+									</p:column>
+
+								</p:pickList>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="box box-warning box-body">
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="box-footer align-right">
+
+
+			</div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="resources/nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+		<h:form id="testeEnvio" prependId="false">
+			<div class="box">
+				<div class="box-body ">
+					<div class="align-right col-md-12">
+					</div>
+
+				</div>
+			</div>
+		</h:form>
+	</ui:define>
+	<ui:define name="popups">
+	</ui:define>
+</ui:composition>

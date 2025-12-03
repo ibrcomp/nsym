@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<jdbcDataAdapter
+	class="net.sf.jasperreports.data.jdbc.JdbcDataAdapterImpl">
+	<name>Mysql</name>
+	<classpath>C:\trabalho\eclipse-workspace-2022-06\nsym\WebContent\WEB-INF\lib\mysql-connector-java-8.0.21.jar</classpath>
+	<driver>com.mysql.jdbc.Driver</driver>
+	<username>nsym_ibrahim</username>
+	<password>NA1906ib20!8</password>
+	<url>jdbc:mysql://www.nsym.com.br:3306/nsym_empDS</url>
+	<database></database>
+	<savePassword>true</savePassword>
+	<serverAddress></serverAddress>
+	<autoCommit>false</autoCommit>
+	<readOnly>false</readOnly>
+</jdbcDataAdapter>

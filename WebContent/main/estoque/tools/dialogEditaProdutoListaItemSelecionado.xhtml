@@ -1,0 +1,271 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	id="EditaItemListaSelecionadosDialog" width="70%" modal="true"
+	resizable="false" closeOnEscape="true"
+	widgetVar="dialogEditaItemListaSelecionados"
+	header="#{messages['recebimento.nfe-page-xml']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-2">
+				<p:outputLabel value="#{messages['recebimento.nfe.new.item.list']}" />
+			</h2>
+		</div>
+		<div class="box-body with-border">
+			<div class="row">
+				<p:dataTable var="item" id="itensSelecionadosNovo"
+					paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true" rows="1" selectionMode="single"
+					rowKey="#{item.id}"
+					value="#{recebimentoBean.listaItensSelecionados}">
+
+					<p:ajax event="rowSelect"
+						listener="#{recebimentoBean.onrowSelectItemNovo}"
+						update="dialogTabMestre" />
+
+					<p:column headerText="Código" rendered="true" style="width:15%">
+						<h:outputLabel value="#{item.CProd}" />
+					</p:column>
+
+					<p:column headerText="EAN" rendered="true" style="width:15%">
+						<h:outputLabel value="#{item.ean}" />
+					</p:column>
+
+					<p:column headerText="NCM" rendered="true" style="width:10%">
+						<h:outputLabel value="#{item.ncm}" />
+					</p:column>
+
+					<p:column headerText="Descricao" rendered="true">
+						<h:outputLabel value="#{item.XProduto}" />
+					</p:column>
+				</p:dataTable>
+			</div>
+			<p:tabView prependId="false" id="dialogTabMestre">
+				<p:tab title="Cadastro" id="tabDialogCadastro">
+					<div class="box-body">
+						<div class="row">
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.ref']}" for="ref" />
+								<p:inputText value="#{recebimentoBean.produto.referencia}"
+									styleClass="form-control" id="ref" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel for="tipoEstoqueControle"
+									value="#{label['label.produto.tipoEstoque']}" />
+								<p:selectOneMenu id="tipoEstoqueControle"
+									disabled="#{userSessionBean.hasRole(authorization.ESTOQUE_RECEBIMENTO_INSERT) eq 'false'}"
+									value="#{recebimentoBean.produto.tipoEstoque}" required="true"
+									converter="omnifaces.GenericEnumConverter">
+									<f:selectItem
+										itemLabel="#{messages['cliente.form.select-one']}"
+										noSelectionOption="true" itemValue="#{null}" />
+									<f:selectItems value="#{recebimentoBean.tipoControleEstoque}"
+										var="tipoControle" />
+									<p:ajax update="formTabDialogGrade" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.ncm']}: " for="ncm">
+									<!-- 										<p:commandButton -->
+									<!-- 											actionListener="#{produtoBean.telaDepartamento()}" -->
+									<!-- 											styleClass="btn btn-flat btn-info" -->
+									<!-- 											disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}" -->
+									<!-- 											icon="fa fa-plus-square " style="width:15px;height:15px" /> -->
+								</p:outputLabel>
+								<p:autoComplete id="ncm" dropdown="true" forceSelection="true"
+									value="#{recebimentoBean.produto.ncm}" scrollHeight="300"
+									completeMethod="#{produtoBean.completaNcm}" var="ncm"
+									styleClass="ui-autocomplete" itemLabel="#{ncm.ncm}"
+									itemValue="#{ncm}" minQueryLength="1">
+									<o:converter converterId="omnifaces.ListConverter"
+										list="#{produtoBean.listaNcm()}" />
+									<p:column>
+										<h:outputText value="#{ncm.ncm}" style="font-weight: bold" />
+									</p:column>
+
+									<p:column>
+										<h:outputText value="#{ncm.descricao}" />
+									</p:column>
+								</p:autoComplete>
+
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel for="tipoMedida"
+									value="#{label['label.tipoMedida']}" />
+								<p:selectOneMenu id="tipoMedida"
+									disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}"
+									value="#{recebimentoBean.produto.tipoMedida}"
+									converter="omnifaces.GenericEnumConverter">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['cliente.form.select-one']}" />
+									<f:selectItems value="#{produtoBean.tipoMedidaType}" />
+								</p:selectOneMenu>
+							</div>
+						</div>
+						<div class="row">
+							<div class="form-group col-md-2">
+								<p:outputLabel for="finalidade"
+									value="#{label['label.finalidade']}" />
+								<p:selectOneMenu id="finalidade"
+									disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}"
+									value="#{recebimentoBean.produto.finalidade}"
+									converter="omnifaces.GenericEnumConverter">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['cliente.form.select-one']}" />
+									<f:selectItems value="#{produtoBean.finalidadeType}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-5">
+								<p:outputLabel value="#{label['label.descricao']}: "
+									for="descri" />
+								<p:inputText value="#{recebimentoBean.produto.descricao}"
+									id="descri" styleClass="form-control" />
+							</div>
+						</div>
+						<div class="row">
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.dep']}: " for="depar" />
+								<p:autoComplete id="depar" dropdown="false"
+									value="#{recebimentoBean.produto.departamento}"
+									completeMethod="#{recebimentoBean.completaDepartamento}"
+									var="departa" itemLabel="#{departa.departamento}"
+									itemValue="#{departa}" minQueryLength="1">
+									<o:converter converterId="omnifaces.ListConverter"
+										list="#{recebimentoBean.listaDepartamento()}" />
+								</p:autoComplete>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.secao']}: " for="secaopro" />
+								<p:autoComplete id="secaopro" dropdown="false"
+									value="#{recebimentoBean.produto.secao}"
+									completeMethod="#{produtoBean.completaSecao}" var="secao"
+									itemLabel="#{secao.secao}" itemValue="#{secao}"
+									minQueryLength="1">
+									<o:converter converterId="omnifaces.ListConverter"
+										list="#{produtoBean.listaSecao()}" />
+								</p:autoComplete>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.subsecao']}: "
+									for="subsecaopro" />
+								<p:autoComplete id="subsecaopro" dropdown="false"
+									value="#{recebimentoBean.produto.subSecao}"
+									completeMethod="#{produtoBean.completaSubSecao}" var="subSecao"
+									itemLabel="#{subSecao.subSecao}" itemValue="#{subSecao}"
+									minQueryLength="1">
+									<o:converter converterId="omnifaces.ListConverter"
+										list="#{produtoBean.listaSubSecao()}" />
+								</p:autoComplete>
+							</div>
+						</div>
+					</div>
+				</p:tab>
+				<p:tab title="Grade" id="tabDialogGrade">
+					<h:form id="formTabDialogGrade" prependId="false">
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-4">
+
+									<p:outputLabel value="#{label['label.barras.cores']}"
+										for="tabcorSelect"
+										rendered="#{recebimentoBean.produto.tipoEstoque eq 'MA'}" />
+									<p:selectOneMenu id="tabcorSelect"
+										value="#{recebimentoBean.cor}"
+										converter="omnifaces.SelectItemsConverter"
+										rendered="#{recebimentoBean.produto.tipoEstoque eq 'MA'}">
+										<f:selectItem
+											itemLabel="#{messages['cliente.form.select-one']}"
+											noSelectionOption="true" itemValue="#{null}" />
+										<f:selectItems value="#{recebimentoBean.listaCores}"
+											itemLabel="#{cor.nome}" var="cor" itemValue="#{cor}">
+										</f:selectItems>
+										<f:ajax render="@form" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.barras.tamanho']}"
+										for="tabtamSelect"
+										rendered="#{recebimentoBean.produto.tipoEstoque ne 'BA'}" />
+									<p:selectOneMenu id="tabtamSelect"
+										value="#{recebimentoBean.tamanho}"
+										rendered="#{recebimentoBean.produto.tipoEstoque ne 'BA'}"
+										converter="omnifaces.SelectItemsConverter">
+										<f:selectItem
+											itemLabel="#{messages['cliente.form.select-one']}"
+											noSelectionOption="false" itemValue="#{null}" />
+										<f:selectItems value="#{recebimentoBean.listaTamanhos}"
+											itemLabel="#{tam.tamanho}" var="tam" itemValue="#{tam}">
+										</f:selectItems>
+										<f:ajax render="@form" />
+									</p:selectOneMenu>
+								</div>
+							</div>
+						</div>
+					</h:form>
+				</p:tab>
+				<p:tab id="tabDialogCentroCustos" title="Centro de Custos">
+					<div class="box-body">
+						<div class="row">
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.preco.custo']}: "
+									for="custo" />
+								<p:inputNumber value="#{recebimentoBean.custoProduto.custo}"
+									id="custo" decimalPlaces="2" thousandSeparator="."
+									decimalSeparator="," symbol="R$" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.preco.a']}: " for="preco1" />
+								<p:inputNumber value="#{recebimentoBean.custoProduto.preco1}"
+									decimalPlaces="2" id="preco1" thousandSeparator="."
+									decimalSeparator="," symbol="R$" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.preco.b']}: " for="preco2" />
+								<p:inputNumber value="#{recebimentoBean.custoProduto.preco2}"
+									decimalPlaces="2" id="preco2" thousandSeparator="."
+									decimalSeparator="," symbol="R$" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.preco.c']}: " for="preco3" />
+								<p:inputNumber value="#{recebimentoBean.custoProduto.preco3}"
+									decimalPlaces="2" id="preco3" thousandSeparator="."
+									decimalSeparator="," symbol="R$" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.preco.d']}: " for="preco4" />
+								<p:inputNumber value="#{recebimentoBean.custoProduto.preco4}"
+									decimalPlaces="2" id="preco4" thousandSeparator="."
+									decimalSeparator="," symbol="R$" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.preco.e']}: " for="preco5" />
+								<p:inputNumber value="#{recebimentoBean.custoProduto.preco5}"
+									decimalPlaces="2" id="preco5" thousandSeparator="."
+									decimalSeparator="," symbol="R$" />
+							</div>
+						</div>
+					</div>
+				</p:tab>
+			</p:tabView>
+			<div class="box-footer align-right">
+				<p:commandButton update="EditaItemListaSelecionadosDialog"
+					process="formPopupInsereProd" value="#{menu['save']}"
+					action="#{recebimentoBean.doSalvarNewProduto()}"
+					onstart="PF('formBlock').block()"
+					styleClass="btn btn-flat btn-success"
+					oncomplete="PF('formBlock').unblock()"
+					rendered="#{recebimentoBean.viewState eq 'ADDING'}"
+					icon="fa fa-hdd-o" />
+			</div>
+		</div>
+	</div>
+</p:dialog>
+

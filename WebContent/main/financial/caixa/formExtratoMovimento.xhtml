@@ -1,0 +1,123 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="Caixa" />
+	<ui:param name="activeSubmenu" value="MotivoMovimento" />
+
+	<f:metadata>
+		<f:viewAction action="#{motivoMovimentoCaixaBean.initializeListing()}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['motivo.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText
+			rendered="#{motivoMovimentoCaixaBean.viewState eq 'ADDING'}"
+			value="#{messages['motivo.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{motivoMovimentoCaixaBean.viewState eq 'EDITING'}"
+			value="#{messages['motivo.page-description-editing']}">
+			<f:param value="#{motivoMovimentoCaixaBean.motivo.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['financeiro.tools']}</a></li>
+		<li><a href="formListMotivoMovimento.xhtml">#{breadcrumb['financeiro.motivo']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{label['label.motivo.list']}" />
+					</h2>
+				</div>
+				<div class="navbar-form">
+					<p:toolbar>
+						<f:facet name="left">
+							<p:commandButton update="empresaForm" process="empresaForm"
+								value="#{menu['new']}"
+								action="#{motivoMovimentoCaixaBean.newMotivo}"
+								onstart="PF('formBlock').block()"
+								styleClass="btn btn-flat btn-success"
+								disabled="#{userSessionBean.hasRole(authorization.CAIXA_INSERT) eq 'false'}"
+								oncomplete="PF('formBlock').unblock()" rendered="true" />
+							<p:commandButton process="empresaForm" value="#{menu['view']}"
+								action="#{motivoMovimentoCaixaBean.changeToEdit(motivoMovimentoCaixaBean.motivo.id)}"
+								onstart="PF('formBlock').block()"
+								update="empresaForm pageDescription"
+								styleClass="btn btn-flat btn-warning"
+								oncomplete="PF('formBlock').unblock()"
+								disabled="#{userSessionBean.hasRole(authorization.CAIXA_VIEW) eq 'false'}"
+								rendered="#{motivoMovimentoCaixaBean.viewState eq 'EDITING'}" />
+							<p:spacer width="10" />
+						</f:facet>
+						<f:facet name="right">
+							<p:commandButton immediate="true" value="#{menu['back']}"
+								action="#{userBean.toDashboard}"
+								styleClass="btn btn-flat btn-default" />
+
+						</f:facet>
+					</p:toolbar>
+				</div>
+				<div class="box-body row">
+					<div class="form-group col-md-12">
+						<p:dataTable id="secoes" var="lista" widgetVar="listaSecoes"
+							value="#{motivoMovimentoCaixaBean.motivoModel}"
+							paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+							paginator="true" rows="10"
+							selection="#{motivoMovimentoCaixaBean.motivo}"
+							selectionMode="single" lazy="true" rowKey="#{lista.id}"
+							sortBy="#{lista.motivo}" rowsPerPageTemplate="10,20,30">
+
+							<p:ajax event="rowSelect"
+								listener="#{motivoMovimentoCaixaBean.onRowSelect}"
+								update="empresaForm" />
+
+							<p:column headerText="#{label['label.codigo']}" rendered="true"
+								style="width:15%">
+								<h:outputLabel value="#{lista.id}" />
+							</p:column>
+
+							<p:column sortBy="#{lista.motivo}"
+								headerText="#{label['label.descricao']}"
+								filterBy="#{lista.motivo}" filterMatchMode="contains">
+								<h:outputText value="#{lista.motivo}" />
+							</p:column>
+
+						</p:dataTable>
+					</div>
+
+				</div>
+
+			</div>
+		</h:form>
+
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+</ui:composition>

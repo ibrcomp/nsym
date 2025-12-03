@@ -1,0 +1,396 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="FINANCEIRO" />
+	<ui:param name="activeSubmenu" value="Agenda" />
+
+	<f:metadata>
+		<f:viewAction action="#{agendaBean.initializeForm(param.recID)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['banco.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{agendaBean.viewState eq 'ADDING'}"
+			value="#{messages['titulo.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{agendaBean.viewState eq 'EDITING'}"
+			value="#{messages['titulo.page-description-editing']}">
+			<f:param value="#{agendaBean.parcela.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['financial']}</a></li>
+		<li><a href="formAgenda.xhtml">#{breadcrumb['entries.titulo']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['financial']}"></p:outputLabel>
+					</h2>
+				</div>
+				<div class="box-body">
+					<div class="row">
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.financial.vencimento']}: "
+								for="inputVencimento" />
+							<p:calendar value="#{agendaBean.parcela.vencimento}"
+								id="inputVencimento" required="true" immediate="true"
+								pattern="dd/MM/yyyy" converter="localDateConverter"
+								disabled="#{agendaBean.disableChange()}"
+								readonly="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false' or agendaBean.disableChange()}" />
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.caixa.valorPagamento']} "
+								for="inputValor" />
+							<p:inputNumber value="#{agendaBean.parcela.valorParcela}"
+								id="inputValor" required="true" immediate="false"
+								readonly="#{agendaBean.readOnly()}" decimalPlaces="2"
+								thousandSeparator="." decimalSeparator="," symbol="R$" />
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.dataEmissao']}: "
+								for="inputEmissao" />
+							<br />
+							<p:outputLabel value="#{agendaBean.parcela.inclusionAsLocalDate}"
+								id="inputEmissao" required="true" immediate="true"
+								readonlyInput="true" showOn="false" pattern="dd/MM/yyyy"
+								converter="localDateConverter" disabled="false" readonly="true}" />
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel for="selectPagamento"
+								value="#{label['label.financial.tipoPagamento']} "
+								rendered="true" />
+							<p:selectOneMenu id="selectPagamento"
+								value="#{agendaBean.parcela.tipoPagamento}"
+								converter="omnifaces.GenericEnumConverter" style="width:100%"
+								rendered="true" required="false" immediate="false"
+								requiredMessage="#{validation['tipoPagamento.null']}"
+								disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false' or agendaBean.disableChange()}">
+								<f:selectItem itemValue="#{null}" noSelectionOption="true"
+									itemLabel="#{messages['cliente.form.select-one']}" />
+								<f:selectItems value="#{agendaBean.listaPagamentos()}" />
+								<p:ajax event="change"
+									listener="#{agendaBean.exibeCompPagamento}"
+									update="panelDeatil tabParcelas" />
+							</p:selectOneMenu>
+						</div>
+						<div class="form-group col-md-2">
+							<h:panelGrid columns="1" id="panelDeatil">
+								<br />
+								<p:commandButton process="empresaForm"
+									value="#{menu['financeiro.detail']}" id="buttonDetail"
+									action="#{agendaBean.exibeCompPagamento}"
+									update="empresaForm pageDescription"
+									styleClass="btn btn-flat btn-primary"
+									disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_EDIT) eq 'false' or agendaBean.viewState eq 'DETAILING'}"
+									rendered="#{agendaBean.detailView}" />
+							</h:panelGrid>
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel for="selectLancamento"
+								value="#{label['label.tipoLancamento']} " rendered="true" />
+							<p:selectOneMenu id="selectLancamento"
+								value="#{agendaBean.parcela.tipoLancamento}"
+								converter="omnifaces.GenericEnumConverter" style="width:100%"
+								rendered="true" required="false" editable="false"
+								requiredMessage="#{validation['tipoLancamento.null']}"
+								disabled="#{agendaBean.readOnly()}">
+								<f:selectItem itemValue="#{null}" noSelectionOption="true"
+									itemLabel="#{messages['cliente.form.select-one']}" />
+								<f:selectItems value="#{agendaBean.listaTiposLancamento()}" />
+								<p:ajax event="change"
+									listener="#{agendaBean.zeraListaRecorrente()}"
+									update="tabParcelas" />
+							</p:selectOneMenu>
+						</div>
+					</div>
+					<div class="row">
+						<div class="form-group col-md-4">
+							<p:outputLabel value="#{label['label.financial.origemParcela']} "
+								for="labelOrigem" />
+							<p:outputLabel value="#{agendaBean.parcela.origemParcela}"
+								id="labelOrigem" required="false" immediate="true"
+								rendered="#{agendaBean.viewState eq 'EDITING' or agendaBean.viewState eq 'DETAILING'}"
+								readonly="#{agendaBean.viewState eq 'EDITING' or agendaBean.viewState eq 'DETAILING'}"
+								styleClass="form-control" />
+							<p:inputText value="#{agendaBean.parcela.descricao}"
+								id="inputDesc" required="false"
+								disabled="#{agendaBean.viewState eq 'EDITING' or agendaBean.viewState eq 'DETAILING'}"
+								rendered="#{agendaBean.viewState eq 'ADDING'}"
+								styleClass="form-control" />
+						</div>
+
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.financeiro.pessoal']}"
+								for="booleanPessoal" />
+							<p:selectBooleanCheckbox value="#{agendaBean.parcela.pessoal}"
+								id="booleanPessoal" style="width:50%"
+								disabled="#{userSessionBean.hasRole(authorization.FINANCIAL_PERIOD_INSERT) eq 'false' or agendaBean.viewState eq 'EDITING' or agendaBean.viewState eq 'DETAILING'}">
+							</p:selectBooleanCheckbox>
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel
+								value="#{label['label.financeiro.despesa.especial']}"
+								for="booleanDPEspecial" />
+							<br />
+							<p:selectBooleanCheckbox value="#{agendaBean.parcela.dpEspecial}"
+								id="booleanDPEspecial" style="width:50%"
+								disabled="#{userSessionBean.hasRole(authorization.FINANCIAL_PERIOD_INSERT) eq 'false' or agendaBean.viewState eq 'EDITING' or agendaBean.viewState eq 'DETAILING'}">
+							</p:selectBooleanCheckbox>
+						</div>
+					</div>
+					<div class="cold-md-6">
+						<div class="row">
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.financeiro.recorrente']}"
+									for="booleanRecorrente" />
+								<p:selectBooleanCheckbox
+									value="#{agendaBean.parcela.recorrente}" id="booleanRecorrente"
+									style="width:50%" immediate="false"
+									disabled="#{userSessionBean.hasRole(authorization.FINANCIAL_PERIOD_INSERT) eq 'false' or agendaBean.viewState eq 'EDITING' or agendaBean.viewState eq 'DETAILING'}">
+									<p:ajax update="display display2" event="change" />
+								</p:selectBooleanCheckbox>
+							</div>
+							<div class="form-group col-md-2">
+								<h:panelGrid columns="1" id="display">
+									<p:outputLabel
+										value="#{label['label.financeiro.quatRecorrencia']} "
+										id="labelQRecorre" for="inputQRecorre"
+										rendered="#{agendaBean.parcela.recorrente}" />
+									<p:inputNumber value="#{agendaBean.parcela.QRecorrencia}"
+										id="inputQRecorre" required="false" immediate="false"
+										readonly="#{agendaBean.viewState eq 'EDITING' or agendaBean.viewState eq 'DETAILING'}"
+										decimalPlaces="0" thousandSeparator="." decimalSeparator=","
+										rendered="#{agendaBean.parcela.recorrente}">
+									</p:inputNumber>
+									<p:commandButton update="tabParcelas" 
+										value="#{menu['financeiro.gerar']}" actionListener="#{agendaBean.geraTitulos()}"
+										onstart="PF('formBlock').block()"
+										styleClass="btn btn-flat btn-success"
+										disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{agendaBean.viewState eq 'ADDING' and agendaBean.parcela.recorrente}"
+										icon="fa fa-hdd-o" />
+								</h:panelGrid>
+							</div>
+							<div class="form-group col-md-4">
+								<h:panelGrid columns="1" id="display2">
+									<p:outputLabel value="#{label['label.caixa.list.ParcelaNfe']}"
+										rendered="#{agendaBean.parcela.recorrente and agendaBean.viewState eq 'ADDING'}"
+										style="font-size:18px;font-weight:bold;" />
+									<p:dataTable id="tabParcelas" var="parcela"
+										rendered="#{agendaBean.parcela.recorrente and agendaBean.viewState eq 'ADDING'}"
+										value="#{agendaBean.listaParcelasRecorrentes}"
+										editable="#{agendaBean.viewState eq 'ADDING'}">
+										<f:facet name="Header">
+											<p:outputLabel value="#{label['label.pagamento.titulo']}" />
+										</f:facet>
+										<p:column headerText="#{label['label.financial.numParcela']}"
+											style="width:15%">
+											<p:cellEditor>
+												<f:facet name="output">
+													<p:outputLabel value="#{parcela.numParcela}"
+														disabled="true" />
+												</f:facet>
+												<f:facet name="input">
+													<h:outputText value="#{parcela.numParcela}" disabled="true" />
+												</f:facet>
+											</p:cellEditor>
+										</p:column>
+										<p:column headerText="#{label['label.pagamento.parcela']}"
+											style="width:30%">
+											<p:cellEditor>
+												<f:facet name="output">
+													<p:outputLabel value="#{parcela.valorParcela}" >
+														<f:convertNumber type="currency" currencyCode="BRL" />
+													</p:outputLabel>
+												</f:facet>
+												<f:facet name="input">
+													<p:inputText value="#{parcela.valorParcela}" id="vParcela">
+														<f:convertNumber type="currency" currencyCode="BRL" />
+													</p:inputText>
+												</f:facet>
+											</p:cellEditor>
+										</p:column>
+										<p:column headerText="#{label['label.financial.vencimento']}"
+											style="width:40%">
+											<p:cellEditor>
+												<f:facet name="output">
+													<p:outputLabel value="#{parcela.vencimento}">
+														<f:converter converterId="localDateConverter" />
+														
+													</p:outputLabel>
+												</f:facet>
+												<f:facet name="input">
+													<p:calendar value="#{parcela.vencimento}" id="dVencimento"
+														pattern="dd/MM/yyyy" converter="localDateConverter" />
+												</f:facet>
+											</p:cellEditor>
+										</p:column>
+										<p:column style="width:15%">
+											<p:rowEditor />
+										</p:column>
+									</p:dataTable>
+								</h:panelGrid>
+							</div>
+						</div>
+					</div>
+					<div class="cold-md-12">
+						<div class="row">
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.financeiro.obs']}"
+									for="inputOBS" />
+								<p:inputTextarea rows="6" cols="200" immediate="true"
+									readonly="#{agendaBean.viewState eq 'DETAILING'}"
+									value="#{agendaBean.parcela.obs}" id="inputOBS"
+									required="false" styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel
+									value="#{label['label.financeiro.valorOriginal']} "
+									for="inputValor" />
+								<br />
+								<h:outputText value="#{agendaBean.parcela.exibeValorCobrado()}"
+									styleClass="#{agendaBean.parcela.tipoLancamento == 'tpDebito' ? 'ca' : 'azul'}">
+									<f:convertNumber type="currency" currencySymbol="R$"
+										maxFractionDigits="2" currencyCode="BRL" />
+								</h:outputText>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel
+									value="#{label['label.financeiro.recebidoPago']} "
+									for="inputValor" />
+								<br />
+								<h:outputText value="#{agendaBean.parcela.valorRecebido}"
+									styleClass="#{agendaBean.parcela.tipoLancamento == 'tpDebito' ? 'ca' : 'azul'}">
+									<f:convertNumber type="currency" currencySymbol="R$"
+										maxFractionDigits="2" currencyCode="BRL" />
+								</h:outputText>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="box-footer align-right">
+				<p:commandButton update="empresaForm" process="empresaForm"
+					value="#{menu['save']}" action="#{agendaBean.salvaTitulo()}"
+					onstart="PF('formBlock').block()"
+					styleClass="btn btn-flat btn-success"
+					disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+					oncomplete="PF('formBlock').unblock()"
+					rendered="#{agendaBean.viewState eq 'ADDING'}" icon="fa fa-hdd-o" />
+
+				<p:commandButton process="empresaForm" value="#{menu['update']}"
+					action="#{agendaBean.salvaTitulo()}"
+					onstart="PF('formBlock').block()"
+					update="empresaForm pageDescription"
+					styleClass="btn btn-flat btn-warning"
+					disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_EDIT) eq 'false'}"
+					oncomplete="PF('formBlock').unblock()"
+					rendered="#{agendaBean.viewState eq 'EDITING'}" />
+
+			</div>
+			<p:dialog header="#{label['label.inf.cheque']}" widgetVar="dlgFormaCheque" minHeight="40"
+				width="350" showEffect="fade" id="dlgFormaChequeID" modal="true">
+				<div class="form-group col-md-4">
+					<p:outputLabel value="#{label['label.banco']}  "
+						for="inputNumBanco" style="width:100%" />
+					<p:inputText value="#{agendaBean.chequeInf.numBanco}" id="inputNumBanco"
+						onkeypress="setaFoco(this)" immediate="true" style="width:100%">
+					</p:inputText>
+				</div>
+				<div class="form-group col-md-6">
+					<p:outputLabel value="#{label['label.agencia']}  " for="inputNumAgencia"
+						style="width:100%" />
+					<p:inputText value="#{agendaBean.chequeInf.numAgencia}" id="inputNumAgencia"
+						immediate="true" style="width:100%">
+					</p:inputText>
+				</div>
+				<div class="form-group col-md-6">
+					<p:outputLabel value="#{label['label.numCheque']}  " for="inputNumCheque"
+						style="width:100%" />
+					<p:inputText value="#{agendaBean.chequeInf.numCheque}" id="inputNumCheque"
+						immediate="true" style="width:100%">
+					</p:inputText>
+				</div>
+				<f:facet name="footer">
+					<div class="form-group col-md-6">
+						<p:commandButton value="#{menu['back']}"
+							styleClass="ui-confirmdialog-no btn-flat btn-default"
+							onclick="PF('dlgFormaCheque').hide()" />
+					</div>
+				</f:facet>
+			</p:dialog>
+			<p:dialog header="#{label['label.inf.cartao']}"
+				widgetVar="dlgFormCartao" minHeight="40" width="350"
+				showEffect="fade" id="dlgFormCartaoID" modal="true">
+				<div class="form-group col-md-4">
+					<p:outputLabel value="#{label['label.cartao.aut']}  "
+						for="inputAut" style="width:100%" />
+					<p:inputText value="#{agendaBean.cartaoInf.numAut}"
+						id="inputAut" onkeypress="setaFoco(this)" immediate="true"
+						style="width:100%">
+					</p:inputText>
+				</div>
+				<div class="form-group col-md-6">
+					<p:outputLabel value="#{label['label.cartao.controle']}  "
+						for="inputControle" style="width:100%" />
+					<p:inputText value="#{agendaBean.cartaoInf.numControl}"
+						id="inputControle" immediate="true" style="width:100%">
+					</p:inputText>
+				</div>
+				<f:facet name="footer">
+					<div class="form-group col-md-6">
+						<p:commandButton value="#{menu['back']}"
+							styleClass="ui-confirmdialog-no btn-flat btn-default"
+							onclick="PF('dlgFormCartao').hide()" />
+					</div>
+				</f:facet>
+			</p:dialog>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="resources/nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+		<h:form id="testeEnvio" prependId="false">
+			<div class="box">
+				<div class="box-body ">
+					<div class="align-right col-md-12">
+						<p:spacer width="10" />
+						<p:commandButton immediate="true" value="#{menu['back']}"
+							action="#{agendaBean.toAgenda()}"
+							styleClass="btn btn-flat btn-default"
+							icon="fa fa-arrow-circle-o-left" />
+					</div>
+
+				</div>
+			</div>
+		</h:form>
+	</ui:define>
+	<ui:define name="popups">
+	</ui:define>
+</ui:composition>

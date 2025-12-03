@@ -1,0 +1,263 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="FABRICA" />
+	<ui:param name="activeSubmenu" value="RISCO" />
+	<f:metadata>
+		<f:viewAction action="#{fabricaBean.initializeFormRisco(param.idRisco)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+       #{breadcrumb['entries.risco']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{fabricaBean.viewState eq 'ADDING'}"
+			value="#{messages['fabrica.modelo.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{fabricaBean.viewState eq 'EDITING'}"
+			value="#{messages['fabrica.modelo.page-description-editing']}">
+			<f:param value="#{fabricaBean.risco.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries.fabrica']}</a></li>
+		<li><a href="formCadModelos.xhtml">#{breadcrumb['entries.risco']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['entries.risco']}"></p:outputLabel>
+					</h2>
+				</div>
+				<div class="box-body ">
+				<p:focus for="ref" context="empresaForm" />
+<!-- 				<p:defaultCommand target="insereItem" /> -->
+					<div class="form-group col-md-12">
+						<div class="row">
+							<p:toolbar id="navegador">
+								<f:facet name="left">
+									<p:commandButton update="empresaForm" process="empresaForm"
+										value="#{menu['save']}" action="#{fabricaBean.doSalvarRisco()}"
+										onstart="PF('formBlock').block()"
+										disabled="#{userSessionBean.hasRole(authorization.RISCO_INSERT) eq 'false'}"
+										styleClass="btn btn-flat btn-success"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{fabricaBean.viewState eq 'ADDING'}"
+										icon="fa fa-hdd-o" />
+
+									<p:commandButton process="empresaForm"
+										value="#{menu['update']}" action="#{fabricaBean.doSalvarRisco()}"
+										onstart="PF('formBlock').block()"
+										update="empresaForm pageDescription"
+										styleClass="btn btn-flat btn-warning"
+										disabled="#{userSessionBean.hasRole(authorization.RISCO_EDIT) eq 'false'}"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{fabricaBean.viewState eq 'EDITING'}" />
+
+								</f:facet>
+								<f:facet name="right">
+									<p:commandButton process="empresaForm"
+										value="#{menu['delete']}"
+										action="#{fabricaBean.doExcluirRisco()}"
+										onstart="PF('formBlock').block()"
+										update="empresaForm pageDescription"
+										styleClass="btn btn-flat btn-danger"
+										disabled="#{userSessionBean.hasRole(authorization.RISCO_DELETE) eq 'false'}"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{fabricaBean.viewState eq 'EDITING'}">
+										<p:confirm header="Atenção" message="Excluir? "
+											icon="ui-icon-alert" />
+									</p:commandButton>
+
+									<p:confirmDialog global="true">
+										<p:commandButton value="#{menu.yes}"
+											styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
+										<p:commandButton value="#{menu.no}"
+											styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+									</p:confirmDialog>
+									<p:commandButton immediate="true" value="#{menu['back']}"
+										action="#{fabricaBean.toListRisco()}"
+										styleClass="btn btn-flat btn-default" />
+								</f:facet>
+							</p:toolbar>
+						</div>
+					</div>
+					<div class="col-md-12">
+						<div class="row">
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.ref']}: " for="ref" />
+								<p:inputText value="#{fabricaBean.risco.codigo}" id="ref"
+									required="true" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.RISCO_INSERT) eq 'false'}"
+									requiredMessage="#{validation['risco.referencia.isempty']}"
+									maxlength="100" styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-6">
+								<p:outputLabel value="#{label['label.descricao']}: "
+									for="descricao" />
+								<p:inputText value="#{fabricaBean.risco.descricao}"
+									id="descricao" required="true" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.RISCO_INSERT) eq 'false'}"
+									requiredMessage="#{validation['risco.description.isempty']}"
+									maxlength="100" styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-4">
+								<p:outputLabel value="#{label['label.op.modelo']}: "
+									for="secaopro" />
+								<p:selectOneMenu value="#{fabricaBean.modelo}"
+									filter="true" filterMatchMode="contains" id="secaopro"
+									required="true"
+									disabled="#{userSessionBean.hasRole(authorization.RISCO_INSERT) eq 'false'}"
+									converter="omnifaces.SelectItemsConverter" style="width:100%"
+									immediate="false">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{fabricaBean.listaModelos()}"
+										itemLabel="#{item.referencia} - #{item.descricao}" var="item" />
+									<p:ajax event="change" listener="#{fabricaBean.pegaGradeRisco()}" update="listaGradeTable" />	 								
+								</p:selectOneMenu>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-12">
+						<div class="col-md-6">
+							<div class="box box-success box-body">
+								<div class="row">
+									<div class="form-group col-md-12">
+									<p:outputLabel
+											value="#{messages['fabrica.producao.text.list.grade']}" />
+										<p:dataTable id="listaGradeTable" var="listGrade"
+											styleClass="table" widgetVar="listGradeWidg"
+											value="#{fabricaBean.listaGrade}"
+											paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+ 							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+											paginator="true" rows="20" lazy="false" rowKey="#{lista.id}"
+											sortBy="#{listGrade.tamanho.tamanho}" editable="true"
+											editMode="cell" rowsPerPageTemplate="20,30">
+											<p:ajax event="cellEdit" listener="#{fabricaBean.onCellEdit}"
+												process="listaGradeTable" update="listaGradeTable" />
+											<p:column headerText="#{label['label.list.tamanho']}"
+												rendered="true" style="width:15%">
+												<p:outputLabel value="#{listGrade.tamanho.tamanho}" />
+											</p:column>
+
+											<p:column headerText="#{label['label.nfe.item.quantidade']}"
+												style="width:45%" rendered="true">
+												<p:cellEditor>
+													<f:facet name="output">
+														<h:outputText value="#{listGrade.quantidade}" />
+													</f:facet>
+													<f:facet name="input">
+														<p:inputText value="#{listGrade.quantidade}"
+															style="width:100%">
+														</p:inputText>
+													</f:facet>
+												</p:cellEditor>
+											</p:column>
+											<p:columnGroup type="footer">
+												<p:row>
+													<p:column colspan="1"
+														style="text-align:right;font-size:18px;font-weight:bold;"
+														footerText="#{label['label.op.fichaTecnica.totGrade']}" />
+													<p:column>
+														<f:facet name="footer">
+															<h:outputText value="#{fabricaBean.totalGradeTemp} un."
+																style="font-size:18px;color:blue;font-weight:bold;">
+															</h:outputText>
+														</f:facet>
+													</p:column>
+												</p:row>
+											</p:columnGroup>
+										</p:dataTable>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="box box-success box-body">
+								<div class="form-group col-md-12">
+									<div class="row">
+										<div class="form-group col-md-4">
+											<p:outputLabel value="#{label['label.fabrica.fichaTecnica.larg']}: " for="larg" />
+											<p:inputText value="#{fabricaBean.risco.largura}" id="larg"
+												required="true" immediate="true"
+												readonly="#{userSessionBean.hasRole(authorization.RISCO_INSERT) eq 'false'}"
+												requiredMessage="#{validation['risco.referencia.isempty']}"
+												maxlength="100" styleClass="form-control" />
+										</div>
+										<div class="form-group col-md-4">
+											<p:outputLabel value="#{label['label.fabrica.fichaTecnica.qCompr']}: " for="compr" />
+											<p:inputText value="#{fabricaBean.risco.largura}" id="compr"
+												required="true" immediate="true"
+												readonly="#{userSessionBean.hasRole(authorization.RISCO_INSERT) eq 'false'}"
+												requiredMessage="#{validation['risco.referencia.isempty']}"
+												maxlength="100" styleClass="form-control" />
+										</div>
+									</div>
+									<div class="row">
+										<div class="form-group col-md-8">
+											<p:outputLabel value="#{label['label.fabrica.tipoEnfesto']}: "
+												for="tipoEnfesto" />
+											<p:selectOneMenu value="#{fabricaBean.risco.tipoEnfesto}" filter="true"
+												filterMatchMode="contains" id="tipoEnfesto" required="true"
+												disabled="#{userSessionBean.hasRole(authorization.RISCO_INSERT) eq 'false'}"
+												converter="omnifaces.GenericEnumConverter" 
+												autoWidth="false"
+												style="width:100%" immediate="false">
+												<f:selectItem itemValue="#{null}" noSelectionOption="true"
+													itemLabel="#{messages['filial.form.select-one']}" />
+												<f:selectItems value="#{fabricaBean.listaTipoEnfesto()}" itemDescription="#{item.explicacao}"
+													itemLabel="#{item.toString()}"
+													var="item" />
+											</p:selectOneMenu>
+										</div>
+									</div>
+									<div class="row">
+										<div class="form-group col-md-4">
+											<p:outputLabel value="#{label['label.caixa.valorPagamento']} " for="custo" />
+											<p:inputText value="#{fabricaBean.risco.custoRisco}" id="custo"
+												required="false" immediate="true"
+												readonly="#{userSessionBean.hasRole(authorization.RISCO_INSERT) eq 'false'}"
+												maxlength="100" styleClass="form-control" />
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="resources/nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="formPopup" prependId="false">
+<!-- 			<ui:include src="/main/fabrica/util/dialogPesquisaMaterialFabrica.xhtml" /> -->
+		</h:form>
+	</ui:define>
+</ui:composition>

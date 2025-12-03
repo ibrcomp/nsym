@@ -1,0 +1,305 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="Caixa" />
+	<ui:param name="activeSubMenu" value="Recebimento" />
+
+	<f:metadata>
+		<f:viewAction action="#{caixaBean.initializeListing()}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['caixaRecebimento.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{caixaBean.viewState eq 'ADDING'}"
+			value="#{messages['caixaRecebimento.page-description']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{caixaBean.viewState eq 'EDITING'}"
+			value="#{messages['caixaRecebimento.page-description']}">
+			<f:param value="#{caixaBean.agrupado.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['caixaRecebimento']}</a></li>
+		<li><a href="formCaixaRecebimento.xhtml">#{breadcrumb['caixaRecebimento.agrupa']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['caixaRecebimento.agrupa']}"></p:outputLabel>
+					</h2>
+				</div>
+				<div class="navbar-form">
+					<p:toolbar>
+						<f:facet name="left">
+							<p:commandButton immediate="true"
+								value="#{menu['caixa.agrupado']}" update="empresaForm"
+								process="empresaForm"
+								rendered="#{caixaBean.viewState eq 'ADDING'}"
+								actionListener="#{caixaBean.telaListaAgPedido()}"
+								styleClass="btn btn-flat btn-info" />
+
+						</f:facet>
+						<f:facet name="right">
+							<p:commandButton immediate="true"
+								value="#{menu['caixa.devolucao']}" update="empresaForm"
+								process="empresaForm"
+								rendered="#{caixaBean.viewState eq 'ADDING'}"
+								actionListener="#{caixaBean.telaListaDevConfirm()}"
+								icon="fa fa-basket-shopping"
+								styleClass="btn btn-flat btn-primary" />
+
+							<p:commandButton immediate="true"
+								value="#{menu['caixa.transfer']}" update="empresaForm"
+								process="empresaForm"
+								rendered="#{caixaBean.viewState eq 'ADDING' }"
+								actionListener="#{caixaBean.telaListaTranferConfirm()}"
+								icon="fa fa-arrow-right-arrow-left"
+								styleClass="btn btn-flat btn-warning" />
+								
+							<p:commandButton immediate="true" value="#{menu['back']}"
+								action="#{pedidoBean.toTelaPrincipal}"
+								styleClass="btn btn-flat btn-default" />
+						</f:facet>
+					</p:toolbar>
+				</div>
+				<div class="row">
+					<div class="col-md-12">
+						<div class="box box-success box-body">
+							<div class="form-group col-md-6">
+								<h4>#{messages['caixaRecebimento.info.controle.add']}</h4>
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.id']}" for="idControle"
+										style="width:100%"
+										rendered="#{caixaBean.viewState eq 'ADDING'}" />
+									<p:inputNumber value="#{caixaBean.controle}"
+										rendered="#{caixaBean.viewState eq 'ADDING'}" id="idControle"
+										maxValue="99999" minValue="0" immediate="true"
+										style="width:100%">
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-4">
+									<br />
+									<p:commandButton value="#{label['label.search']}"
+										process="empresaForm"
+										rendered="#{caixaBean.viewState eq 'ADDING'}"
+										actionListener="#{caixaBean.localizaNaListaPedido()}"
+										onstart="PF('formBlock').block()"
+										oncomplete="PF('formBlock').unblock()" update="pedidosReceber"
+										id="buttonInsereCupom" style="width:80%;margin:5px"
+										styleClass="btn btn-flat btn-info" icon="fa fa-search" />
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-6">
+					<div class="box box-success box-body">
+						<h:form id="pedPendentes" prependId="false">
+							<div class="form-group col-md-12">
+								<h4>#{messages['caixaRecebimento.info.list.add']}</h4>
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.start']}" for="idEmissao"
+										rendered="#{caixaBean.viewState eq 'ADDING'}" />
+									<p:calendar value="#{caixaBean.dataInicial}" id="idEmissao"
+										rendered="#{caixaBean.viewState eq 'ADDING'}"
+										pattern="dd/MM/yyyy" converter="localDateConverter" />
+								</div>
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.finish']}" for="idDataEnt"
+										rendered="#{caixaBean.viewState eq 'ADDING'}" />
+									<p:calendar value="#{caixaBean.dataFinal}" id="idDataEnt"
+										rendered="#{caixaBean.viewState eq 'ADDING'}"
+										pattern="dd/MM/yyyy" converter="localDateConverter" />
+								</div>
+								<div class="form-group col-md-4">
+									<br />
+									<p:commandButton value="#{label['label.search']}"
+										rendered="#{caixaBean.viewState eq 'ADDING'}"
+										process="empresaForm"
+										actionListener="#{caixaBean.novaLista()}"
+										update="pedidos pedReceber" id="buttonPesquisa"
+										style="width:80%;margin:5px"
+										styleClass="btn btn-flat btn-info" icon="fa fa-search" />
+								</div>
+							</div>
+							<div class="form-group col-md-12">
+								<p:dataTable id="pedidos" var="lista" widgetVar="listaPedido"
+									rendered="#{caixaBean.viewState eq 'ADDING'}"
+									value="#{caixaBean.listPedidoModel}"
+									paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+ 								{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+									paginator="true" rows="20" selection="#{caixaBean.pedido}"
+									rowKey="#{lista.id}" selectionMode="single" lazy="true"
+									sortField="#{lista.pedidoStatus}"
+									rowsPerPageTemplate="10,20,30"
+									rowStyleClass="#{lista.pedidoStatus.sigla == 'ARC' ? 'sa' : lista.pedidoStatus.sigla == 'CAN' ? 'ca': lista.pedidoStatus.sigla == 'AGC' ? 'ee' : lista.pedidoStatus.sigla == 'REC' ? 'en' : null}">
+
+									<p:ajax event="rowSelect" listener="#{caixaBean.onRowSelect}"
+										update="pedidosReceber" />
+									<p:column headerText="#{label['label.venda.list.controle']}"
+										rendered="true" style="width:12%">
+										<h:outputLabel value="#{lista.controle.controle}" />
+									</p:column>
+									<p:column headerText="#{label['label.dataEmissao']}"
+										rendered="true" sortBy="#{lista.inclusion}" style="width:15%">
+										<h:outputLabel value="#{lista.inclusionAsLocalDate}" />
+									</p:column>
+
+									<p:column headerText="#{label['label.nome']}">
+										<h:outputText value="#{lista.destino.nome()}" />
+									</p:column>
+
+									<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+										style="width:15%">
+										<h:outputLabel value="#{lista.valorTotalPedido}">
+											<f:convertNumber type="currency" currencySymbol="R$"
+												maxFractionDigits="2" currencyCode="BRL" />
+										</h:outputLabel>
+									</p:column>
+
+									<p:column sortBy="#{lista.pedidoStatus}"
+										headerText="#{label['label.status.pedido']}" style="width:15%">
+										<h:outputText value="#{lista.pedidoStatus.toString()}" />
+									</p:column>
+								</p:dataTable>
+							</div>
+						</h:form>
+					</div>
+				</div>
+				<div class="col-md-6">
+					<div class="box box-success box-body">
+						<h:form id="pedReceber" prependId="false">
+							<h4>#{messages['caixaRecebimento.info.list.agrupar']}</h4>
+							<div class="form-group col-md-4">
+								<br />
+								<p:commandButton value="#{label['label.caixa.receber']}"
+									rendered="#{caixaBean.viewState eq 'ADDING'}"
+									process="pedReceber" action="#{caixaBean.agrupa()}"
+									onstart="PF('formBlock').block()" update="empresaForm"
+									id="buttonAgrupa" style="width:80%;margin:5px"
+									styleClass="btn btn-flat btn-success" icon="fa fa-wallet" />
+							</div>
+							<div class="form-group col-md-12">
+								<p:dataTable id="pedidosReceber" var="listaReceber"
+									rendered="#{caixaBean.viewState eq 'ADDING'}"
+									widgetVar="listaPedidoReceber"
+									value="#{caixaBean.listaPedidosSelecionados}"
+									paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+						 	{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+									paginator="true" rows="20" lazy="true"
+									rowKey="#{listaReceber.id}" rowsPerPageTemplate="10,20,30"
+									sortField="#{listaReceber.pedidoStatus}"
+									rowStyleClass="#{listaReceber.pedidoStatus.sigla == 'ARC' ? 'sa' : listaReceber.pedidoStatus.sigla == 'CAN' ? 'ca': listaReceber.pedidoStatus.sigla == 'AGC' ? 'ee' : listaReceber.pedidoStatus.sigla == 'REC' ? 'en' : null}">
+
+									<p:column headerText="#{label['label.venda.list.controle']}"
+										rendered="true" style="width:10%">
+										<h:outputLabel value="#{listaReceber.controle.controle}" />
+									</p:column>
+
+									<p:column headerText="#{label['label.dataEmissao']}"
+										rendered="true" sortBy="#{lista.inclusion}" style="width:15%">
+										<h:outputLabel value="#{listaReceber.inclusionAsLocalDate}" />
+									</p:column>
+
+									<p:column headerText="#{label['label.nome']}">
+										<h:outputText value="#{listaReceber.destino.nome()}" />
+									</p:column>
+
+									<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+										style="width:15%">
+										<h:outputLabel value="#{listaReceber.valorTotalPedido}">
+											<f:convertNumber type="currency" currencySymbol="R$"
+												maxFractionDigits="2" currencyCode="BRL" />
+										</h:outputLabel>
+									</p:column>
+
+									<p:column sortBy="#{lista.pedidoStatus}"
+										headerText="#{label['label.status.pedido']}" style="width:10%">
+										<h:outputText value="#{listaReceber.pedidoStatus.toString()}" />
+									</p:column>
+
+									<p:column sortBy="#{lista.fiscalStatus}" exportable="false"
+										headerText="#{label['label.status.fiscal']}" style="width:10%">
+										<h:outputText value="#{listaReceber.fiscalStatus.toString()}" />
+									</p:column>
+									<p:column headerText="#{label['label.list.Action']}">
+										<p:commandButton process="pedReceber" icon="fa fa-remove"
+											title="#{menu['delete']}"
+											styleClass="btn btn-flat btn-danger"
+											actionListener="#{caixaBean.excluiItem(listaReceber)}"
+											update="pedidosReceber" />
+									</p:column>
+
+									<p:columnGroup type="footer">
+										<p:row>
+											<p:column colspan="3"
+												style="text-align:right;font-size:18px;font-weight:bold;"
+												footerText="#{label['label.nfe.item.valorTotal']}:" />
+											<p:column>
+												<f:facet name="footer">
+													<h:outputText value="#{caixaBean.totalGT}"
+														style="font-size:18px;color:blue;font-weight:bold;">
+														<f:convertNumber type="currency" currencySymbol="R$"
+															maxFractionDigits="2" currencyCode="BRL" />
+													</h:outputText>
+												</f:facet>
+											</p:column>
+										</p:row>
+									</p:columnGroup>
+								</p:dataTable>
+							</div>
+						</h:form>
+					</div>
+				</div>
+
+				<div class="box-footer">
+					<div class="align-left"></div>
+					<div class="align-right"></div>
+				</div>
+			</div>
+		</h:form>
+
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="formPopup" prependId="false">
+			<ui:include
+				src="/main/financial/caixa/tools/dialogPesquisaAgPedido.xhtml" />
+		</h:form>
+		<h:form id="formDev" prependId="false">
+			<ui:include
+				src="/main/financial/caixa/devolucao/dialogConfirmDevolucao.xhtml" />
+		</h:form>
+		<h:form id="formTransf" prependId="false">
+			<ui:include
+				src="/main/financial/caixa/transferencia/dialogConfirmTransferencia.xhtml" />
+		</h:form>
+	</ui:define>
+</ui:composition>

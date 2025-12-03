@@ -1,0 +1,156 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="Cadastros" />
+	<ui:param name="activeSubmenu" value="Produto" />
+
+	<f:metadata>
+		<f:viewAction action="#{produtoBean.initializeListing()}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['produto.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{produtoBean.viewState eq 'ADDING'}"
+			value="#{messages['produto.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{produtoBean.viewState eq 'EDITING'}"
+			value="#{messages['produto.page-description-editing']}">
+			<f:param value="#{produtoBean.produto.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li><a href="formListProduto.xhtml">#{breadcrumb['entries.product']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['list.product']}"></p:outputLabel>
+					</h2>
+				</div>
+
+				<div class="box-body">
+					<div class="row">
+						<div class="navbar-form">
+							<p:toolbar id="navegador">
+								<f:facet name="left">
+									<p:commandButton update="empresaForm" process="empresaForm"
+										value="#{menu['new']}" action="#{produtoBean.newProduto}"
+										onstart="PF('formBlock').block()"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}"
+										styleClass="btn btn-flat btn-success"
+										oncomplete="PF('formBlock').unblock()" rendered="true" />
+									<p:commandButton process="empresaForm" value="#{menu['view']}"
+										action="#{produtoBean.changeToEdit(produtoBean.produto.id)}"
+										onstart="PF('formBlock').block()"
+										update="empresaForm pageDescription"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUTO_VIEW) eq 'false'}"
+										styleClass="btn btn-flat btn-success"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{produtoBean.viewState eq 'EDITING'}" />
+
+								</f:facet>
+								<f:facet name="right">
+									<p:commandButton immediate="true" value="#{menu['back']}"
+										action="#{userBean.toDashboard}"
+										styleClass="btn btn-flat btn-default" />
+								</f:facet>
+							</p:toolbar>
+						</div>
+						<div class="form-group col-md-12">
+							<p:dataTable id="produtos" var="lista" widgetVar="listaProdutos"
+								value="#{produtoBean.produtoModel}"
+								paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+								paginator="true" rows="10" selection="#{produtoBean.produto}"
+								selectionMode="single" lazy="true" rowKey="#{lista.id}"
+								sortBy="#{lista.descricao}" rowsPerPageTemplate="5,10,15">
+
+								<p:ajax event="rowSelect" listener="#{produtoBean.onRowSelect}"
+									process="empresaForm" update="navegador" />
+
+								<p:column headerText="#{label['label.list.ref']}"
+									rendered="true" style="width:10%"
+									filterBy="#{lista.referencia}" sortBy="#{lista.referencia}">
+									<h:outputLabel value="#{lista.referencia}" />
+								</p:column>
+
+								<p:column sortBy="#{lista.descricao}"
+									headerText="#{label['label.descricao']}"
+									filterBy="#{lista.descricao}" style="width:30%">
+									<h:outputText value="#{lista.descricao}" />
+								</p:column>
+
+								<p:column headerText="#{label['label.preco.a']}">
+									<ui:repeat var="estoque" value="#{lista.listaCustoProduto}">
+										<p:outputLabel value="#{estoque.preco1}" />
+									</ui:repeat>
+								</p:column>
+
+								<p:column headerText="#{label['label.preco.b']}">
+									<ui:repeat var="estoque" value="#{lista.listaCustoProduto}" >
+										<p:outputLabel value="#{estoque.preco2}" />
+									</ui:repeat>
+								</p:column>
+
+								<p:column headerText="#{label['label.preco.c']}">
+									<ui:repeat var="estoque" value="#{lista.listaCustoProduto}">
+										<p:outputLabel value="#{estoque.preco3}" />
+									</ui:repeat>
+								</p:column>
+
+								<p:column headerText="#{label['label.preco.d']}">
+									<ui:repeat var="estoque" value="#{lista.listaCustoProduto}" >
+										<p:outputLabel value="#{estoque.preco4}" />
+									</ui:repeat>
+								</p:column>
+								<p:column headerText="#{label['label.preco.e']}">
+									<ui:repeat var="estoque" value="#{lista.listaCustoProduto}">
+										<p:outputLabel value="#{estoque.preco5}" />
+									</ui:repeat>
+								</p:column>
+
+							</p:dataTable>
+<!-- 							<p:outputLabel value="#{label['label.list.export']}:" /> -->
+<!-- 							<h:commandLink> -->
+<!-- 								<p:graphicImage name="/nsym/img/excel.png" width="28" -->
+<!-- 									style="right:0;" /> -->
+<!-- 								<p:dataExporter type="xls" target="produtos" -->
+<!-- 									fileName="listaProduto" /> -->
+<!-- 							</h:commandLink> -->
+						</div>
+					</div>
+				</div>
+			</div>
+		</h:form>
+
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+</ui:composition>

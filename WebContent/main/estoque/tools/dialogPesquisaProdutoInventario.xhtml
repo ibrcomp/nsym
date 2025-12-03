@@ -1,0 +1,96 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	id="PesquisaProdutoInventarioDialog" width="70%" modal="true"
+	resizable="false" closeOnEscape="true"
+	widgetVar="dialogPesquisaProdutoInventario"
+	header="#{messages['nfe.page-serch-produto']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-2">
+				<p:outputLabel value="#{messages['nfe.page-list-produto']}" />
+			</h2>
+		</div>
+		<div class="box-body ">
+			<div class="row">
+				<div class="navbar-form">
+					<p:toolbar>
+						<f:facet name="right">
+							<p:commandButton value="#{menu['back']}"
+								onclick="PF('dialogPesquisaProdutoInventario').hide()"
+								styleClass="btn btn-flat btn-primary" />
+						</f:facet>
+					</p:toolbar>
+				</div>
+			</div>
+			<div class="row">
+				<p:messages id="messagesDialogInventario" closable="true" />
+				<div class="form-group col-md-12">
+					<p:dataTable id="produtos" var="lista" widgetVar="listaProdutos"
+						value="#{estoqueGeralBean.produtoModel}"
+						paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+						paginator="true" rows="5" selection="#{recebimentoBean.produto}"
+						selectionMode="single" lazy="true" rowKey="#{lista.id}"
+						sortBy="#{lista.descricao}">
+
+						<p:ajax event="rowSelect"
+							listener="#{estoqueGeralBean.onRowSelectProduto}"
+							oncomplete="PF('dialogPesquisaProdutoInventario').hide()"
+							update="idRefItem" process="@form" />
+
+						<p:column headerText="#{label['label.list.ref']}" rendered="true"
+							style="width:20%" filterBy="#{lista.referencia}"
+							sortBy="#{lista.referencia}">
+							<h:outputLabel value="#{lista.referencia}" />
+						</p:column>
+
+						<p:column sortBy="#{lista.descricao}"
+							headerText="#{label['label.descricao']}"
+							filterBy="#{lista.descricao}" style="width:35%">
+							<h:outputText value="#{lista.descricao}" />
+						</p:column>
+
+						<p:column headerText="#{label['label.preco.a']}">
+							<ui:repeat var="estoque" value="#{lista.listaCustoProduto}">
+								<p:outputLabel value="#{estoque.preco1}" />
+							</ui:repeat>
+						</p:column>
+						<p:column headerText="#{label['label.preco.b']}">
+							<ui:repeat var="estoque" value="#{lista.listaCustoProduto}">
+								<p:outputLabel value="#{estoque.preco2}" />
+							</ui:repeat>
+						</p:column>
+						<p:column headerText="#{label['label.preco.c']}">
+							<ui:repeat var="estoque" value="#{lista.listaCustoProduto}">
+								<p:outputLabel value="#{estoque.preco3}" />
+							</ui:repeat>
+						</p:column>
+						<p:column headerText="#{label['label.preco.d']}">
+							<ui:repeat var="estoque" value="#{lista.listaCustoProduto}">
+								<p:outputLabel value="#{estoque.preco4}" />
+							</ui:repeat>
+						</p:column>
+						<p:column headerText="#{label['label.preco.e']}">
+							<ui:repeat var="estoque" value="#{lista.listaCustoProduto}">
+								<p:outputLabel value="#{estoque.preco5}" />
+							</ui:repeat>
+						</p:column>
+
+
+					</p:dataTable>
+				</div>
+			</div>
+		</div>
+	</div>
+	<pe:blockUI target="produtos" widgetVar="formBlockList">
+		<p:graphicImage width="32" height="32" library="nsym"
+			name="img/loading.gif" />
+	</pe:blockUI>
+</p:dialog>
+

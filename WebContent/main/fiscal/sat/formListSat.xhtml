@@ -1,0 +1,278 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="NFE" />
+	<ui:param name="activeSubmenu" value="Sat" />
+
+	<f:metadata>
+		<f:viewAction action="#{satBean.initializeListing()}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['satAvulso.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{satBean.viewState eq 'ADDING'}"
+			value="#{messages['nfe.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{satBean.viewState eq 'EDITING'}"
+			value="#{messages['nfe.page-description-editing']}">
+			<f:param value="#{satBean.cfe.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['fiscal']}</a></li>
+		<li><a href="formListSat.xhtml">#{breadcrumb['fiscal.sat.list']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{label['label.nfe.list']}" />
+					</h2>
+				</div>
+
+				<div class="box-body">
+					<div class="row">
+						<div class="navbar-form">
+							<p:toolbar id="navegador">
+								<f:facet name="left">
+									<p:commandButton update="empresaForm" process="empresaForm"
+										value="#{menu['new']}" action="#{satBean.newCFe}"
+										onstart="PF('formBlock').block()"
+										styleClass="btn btn-flat btn-primary" icon="ui-icon-document"
+										disabled="#{userSessionBean.hasRole(authorization.SAT_INSERT) eq 'false'}"
+										oncomplete="PF('formBlock').unblock()" rendered="true" />
+
+									<!-- 										<p:commandButton update="empresaForm" process="empresaForm" -->
+									<!-- 										value="#{menu.view}" action="#{satBean.changeToEdit(satBean.cfe.id)}" -->
+									<!-- 										onstart="PF('formBlock').block()" -->
+									<!-- 										styleClass="btn btn-flat btn-warning" icon="ui-icon-document" -->
+									<!-- 										disabled="#{userSessionBean.hasRole(authorization.SAT_INSERT) eq 'false'}" -->
+									<!-- 										oncomplete="PF('formBlock').unblock()" rendered="true" /> -->
+
+									<span class="ui-separator"> <span
+										class="ui-icon ui-icon-grip-dotted-vertical" />
+									</span>
+
+									<p:commandButton process="empresaForm"
+										value="Consuta Status Sat"
+										action="#{satBean.consultaStatusSat()}"
+										onstart="PF('formBlock').block()"
+										update="empresaForm pageDescription respSefazList"
+										styleClass="btn btn-flat btn-success"
+										oncomplete="PF('formBlock').unblock()"
+										disabled="#{userSessionBean.hasRole(authorization.SAT_VIEW) eq 'false'}" />
+
+
+
+								</f:facet>
+								<f:facet name="right">
+									<p:commandButton title="Imprimir" icon="fa fa-print"
+										process="empresaForm"
+										rendered="#{satBean.viewState eq 'EDITING'}"
+										action="#{satBean.imprimiSat()}" />
+									<p:commandButton title="E-mail" icon="fa fa-at"
+										process="empresaForm"
+										rendered="#{satBean.viewState eq 'EDITING'}"
+										action="#{satBean.telaEmailAvulso()}" />
+									<span class="ui-separator"> <span
+										class="ui-icon ui-icon-grip-dotted-vertical" />
+									</span>
+									<p:commandButton value="Emitir CFe" process="empresaForm"
+										action="#{satBean.doEmitirPelaLista()}"
+										onstart="PF('formBlock').block()"
+										styleClass="btn btn-flat btn-info"
+										oncomplete="PF('formBlock').unblock()" update="empresaForm"
+										rendered="#{satBean.viewState eq 'EDITING'}"
+										icon="fa fa-arrow-circle-o-left">
+									</p:commandButton>
+									<p:spacer width="5" />
+									<!-- 									<p:commandButton process="empresaForm" value="Cancelar NFE" -->
+									<!-- 										action="#{satBean.doExcluir()}" -->
+									<!-- 										onstart="PF('formBlock').block()" -->
+									<!-- 										styleClass="btn btn-flat btn-warning" -->
+									<!-- 										oncomplete="PF('formBlock').unblock()" update="respSefazList" -->
+									<!-- 										disabled="#{userSessionBean.hasRole(authorization.SAT_INSERT) eq 'false'}" -->
+									<!-- 										rendered="#{satBean.viewState eq 'EDITING'}" /> -->
+									<p:spacer width="5" />
+									<p:commandButton process="empresaForm"
+										value="#{menu['delete']}" action="#{satBean.doExcluir()}"
+										immediate="true" update="empresaForm"
+										styleClass="btn btn-flat btn-danger"
+										disabled="#{userSessionBean.hasRole(authorization.SAT_DELETE) eq 'false'}"
+										rendered="#{satBean.viewState eq 'EDITING'}">
+										<p:confirm header="Atenção" message="Excluir? "
+											icon="ui-icon-alert" />
+									</p:commandButton>
+
+									<p:confirmDialog global="true">
+										<p:commandButton value="#{menu.yes}"
+											styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
+										<p:commandButton value="#{menu.no}"
+											styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+									</p:confirmDialog>
+									<span class="ui-separator"> <span
+										class="ui-icon ui-icon-grip-dotted-vertical" />
+									</span>
+									<p:commandButton immediate="true" value="#{menu['back']}"
+										action="#{userBean.toDashboard}"
+										styleClass="btn btn-flat btn-default" />
+								</f:facet>
+							</p:toolbar>
+						</div>
+					</div>
+					<div class="row">
+						<div class="form-group col-md-12">
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.start']}" for="idEmissao" />
+								<p:calendar value="#{satBean.dataIncial}" id="idEmissao"
+									pattern="dd/MM/yyyy" converter="localDateConverter" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.finish']}" for="idDataEnt" />
+								<p:calendar value="#{satBean.dataFinal}" id="idDataEnt"
+									pattern="dd/MM/yyyy" converter="localDateConverter" />
+							</div>
+							<div class="form-group col-md-2">
+								<br />
+								<p:commandButton value="#{label['label.search']}"
+									process="empresaForm"
+									actionListener="#{satBean.filtroPeriodoListaCfe()}"
+									onstart="PF('formBlock').block()"
+									oncomplete="PF('formBlock').unblock()" update="empresaForm"
+									id="buttonPesquisa" style="width:80%;margin:5px"
+									styleClass="btn btn-flat btn-info" icon="fa fa-search" />
+							</div>
+						</div>
+						<div class="form-group col-md-12">
+							<p:dataTable id="cfe" var="lista" widgetVar="listaCFe"
+								value="#{satBean.cfeModel}"
+								paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+								paginator="true" rows="10" selection="#{satBean.cfe}"
+								selectionMode="single" lazy="true" rowKey="#{lista.id}"
+								sortBy="#{lista.id}" sortOrder="descending" styleClass="table"
+								rowStyleClass="#{lista.statusEmissao == 'EN' ? 'en' : lista.statusEmissao == 'SA' ? 'sa': lista.statusEmissao == 'EE' ? 'ee' : lista.statusEmissao == 'CA' ? 'ca': lista.statusEmissao == 'IN' ? 'in' : null}">
+
+								<p:ajax event="rowSelect" listener="#{satBean.onRowSelect}"
+									process="empresaForm" update="navegador" />
+
+								<p:column headerText="Número cfe" rendered="true"
+									sortBy="#{lista.numeroNota}" style="width:30%">
+									<h:outputLabel value="#{lista.numeroNota}" />
+								</p:column>
+
+								<p:column headerText="Emissão" rendered="true"
+									sortBy="#{lista.dataEmissao}" style="width:10%">
+									<h:outputLabel value="#{lista.dataEmissao.toString()}" />
+								</p:column>
+
+								<p:column sortBy="#{lista.destinatario.nome}"
+									headerText="Razão Social" filterBy="#{lista.destinatario.nome}"
+									filterMatchMode="contains">
+									<h:outputText value="#{lista.destinatario.nome}" />
+								</p:column>
+
+								<p:column sortBy="#{lista.statusEmissao}"
+									headerText="#{label['label.nfe.item.valorTotal']}"
+									style="width:15%">
+									<h:outputText value="#{lista.VCFe}">
+										<f:convertNumber type="currency" currencyCode="BRL" />
+									</h:outputText>
+								</p:column>
+
+								<p:column sortBy="#{lista.statusEmissao}" headerText="Status"
+									style="width:15%">
+									<h:outputText value="#{lista.statusEmissao.toString()}" />
+								</p:column>
+
+								<p:columnGroup type="footer">
+									<p:row>
+										<p:column colspan="3"
+											style="text-align:right;font-size:18px;font-weight:bold;"
+											footerText="#{label['label.nfe.item.valorTotal']}:" />
+										<p:column>
+											<f:facet name="footer">
+												<h:outputText value="#{satBean.totalListaCFe}"
+													style="font-size:18px;color:blue;font-weight:bold;">
+													<f:convertNumber type="currency" currencySymbol="R$"
+														maxFractionDigits="2" currencyCode="BRL" />
+												</h:outputText>
+											</f:facet>
+										</p:column>
+									</p:row>
+								</p:columnGroup>
+
+							</p:dataTable>
+							<p:outputLabel value="Exportar:" />
+							<h:commandLink>
+								<p:graphicImage name="/nsym/img/download-pdf.png" width="26"
+									style="right:0;" />
+								<p:dataExporter type="pdf" target="cfe" fileName="listaDecfe"
+									options="#{satBean.criaPdfOpt()}"
+									preProcessor="#{satBean.preProcessPDF}" />
+							</h:commandLink>
+
+						</div>
+					</div>
+				</div>
+
+				<div class="box-footer">
+					<div class="row">
+						<div class="align-left col-md-12">
+							<div class="form-group col-md-12">
+								<p:outputLabel value="Resposta Sefaz" for="respSefazList" />
+								<p:inputTextarea rows="6" cols="100" immediate="true"
+									disabled="true" styleClass="form-control"
+									counterTemplate="{0} caracteres restantes"
+									value="#{satBean.respostaAcbrLocal}" id="respSefazList"
+									autoResize="false" />
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</h:form>
+
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+	<ui:define name="popups">
+		<!-- 		<h:form id="formPopupsCancel" prependId="false"> -->
+		<!-- 			<ui:include src="/main/fiscal/dialogCancelaNfe.xhtml" /> -->
+		<!-- 		</h:form>		 -->
+		<!-- 		<h:form id="formPopups" prependId="false"> -->
+		<!-- 			<ui:include src="/main/fiscal/tools/dialogCCeNfe.xhtml" /> />			 -->
+		<!-- 		</h:form> -->
+		<h:form id="formPopupEmail" prependId="false">
+			<ui:include src="/main/fiscal/sat/tools/dialogEmailCFe.xhtml" />
+		</h:form>
+		<!-- 		<h:form id="formPopupInu" prependId="false"> -->
+		<!-- 			<ui:include src="/main/fiscal/tools/dialogInutiliza.xhtml" /> -->
+		<!-- 		</h:form> -->
+	</ui:define>
+</ui:composition>

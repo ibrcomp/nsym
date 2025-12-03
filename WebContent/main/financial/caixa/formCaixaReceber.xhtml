@@ -1,0 +1,457 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="Caixa" />
+	<ui:param name="activeSubMenu" value="Recebimento" />
+
+	<f:metadata>
+		<f:viewAction
+			action="#{caixaBean.initializeFormCaixa(param.idAgPedido)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{breadcrumb['caixaRecebimento']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{caixaBean.viewState eq 'ADDING'}"
+			value="#{breadcrumb['caixaRecebimento.recebe']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{caixaBean.viewState eq 'EDITING'}"
+			value="#{breadcrumb['caixaRecebimento.recebe']}}">
+			<f:param value="#{caixaBean.agrupado.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['caixaRecebimento']}</a></li>
+		<li><a href="formCaixaReceberxhtml">#{breadcrumb['caixaRecebimento.recebe']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['caixaRecebimento.recebe']}"></p:outputLabel>
+					</h2>
+				</div>
+			</div>
+			<div class="navbar-form">
+				<p:toolbar>
+					<f:facet name="left">
+						<p:commandButton immediate="true" value="#{menu['save']}" id="buttonSave"
+							action="#{caixaBean.creditoUtilizado()}"
+							styleClass="btn btn-flat btn-success" />
+						<span class="ui-separator"> <span
+							class="ui-icon ui-icon-grip-dotted-vertical" />
+						</span>
+						<p:dialog header="Atenção!" widgetVar="dlg3" minHeight="40"
+							width="350" showEffect="fade" id="dlg3id" modal="true">
+							<p class="p-m-0">Este cliente ainda possui crédito disponível
+								que não foi totalmente utilizado! Deseja continuar assim mesmo?.</p>
+							<f:facet name="footer">
+								<p:commandButton value="#{label['label.no']}"
+									styleClass="ui-confirmdialog-no ui-button-flat p-mr-2"
+									style="width: 6rem" onclick="PF('dlg3').hide()" />
+								<p:commandButton value="#{label['label.yes']}"
+									style="width: 5rem"
+									action="#{caixaBean.salvaEImprimi()}" />
+							</f:facet>
+						</p:dialog>
+						<p:commandButton immediate="true"
+							value="#{menu['fiscal.sat.printCFe']}"
+							action="#{caixaBean.geraCFe()}"
+							rendered="#{userSessionBean.hasRole(authorization.SAT_INSERT) eq 'true'}"
+							onstart="PF('formBlock').block()"
+							oncomplete="PF('formBlock').unblock()"
+							styleClass="btn btn-flat btn-warning" />
+						<span class="ui-separator"> <span
+							class="ui-icon ui-icon-grip-dotted-vertical" />
+						</span>
+						<p:dialog header="Atenção!" widgetVar="dlgCPFCFe" minHeight="80"
+							responsive="true" width="30%" showEffect="fade" id="dlgCPFCFeID"
+							modal="true">
+							<p class="p-m-0">Informe o CPF/CNPJ para emitir o cupom
+								fiscal, caso queira, informe tambêm o nome do cliente.</p>
+							<p class="p-m-0">Para emitir o cupom fiscal sem CPF, deixe os
+								campos vazios e clique em EmitirCFE</p>
+							<div class="form-group col-md-4">
+								<p:outputLabel value="#{label['label.documento']}  "
+									for="inputCPFCFe" style="width:100%" />
+								<p:inputText value="#{caixaBean.documento}" id="inputCPFCFe"
+									onkeypress="setaFoco(this)" immediate="true" style="width:100%">
+								</p:inputText>
+							</div>
+							<div class="form-group col-md-6">
+								<p:outputLabel value="#{label['label.nome']}  "
+									for="inputNomeCFe" style="width:100%" />
+								<p:inputText value="#{caixaBean.destino.nome}" id="inputNomeCFe"
+									immediate="true" style="width:100%">
+								</p:inputText>
+							</div>
+							<f:facet name="footer">
+								<div class="form-group col-md-6">
+									<p:commandButton value="#{menu['back']}"
+										styleClass="ui-confirmdialog-no btn-flat btn-default"
+										onclick="PF('dlgCPFCFe').hide()" />
+								</div>
+								<div class="form-group col-md-6">
+									<p:commandButton value="#{menu['fiscal.sat.printCFe']}"
+										onstart="PF('formCPF').block()"
+										oncomplete="PF('formCPF').unblock()"
+										styleClass="btn btn-flat btn-warning"
+										action="#{caixaBean.informadoCPF}" />
+								</div>
+								<div class="form-group col-md-6">
+									<p:commandButton value="#{menu['fiscal.nfce.print']}"
+										onstart="PF('formCPF').block()"
+										oncomplete="PF('formCPF').unblock()"
+										styleClass="btn btn-flat btn-warning"
+										action="#{caixaBean.informadoCPFNFCe}" />
+								</div>
+							</f:facet>
+						</p:dialog>
+						<!-- 						<p:commandButton immediate="true"  -->
+						<!-- 							value="#{menu['fiscal.cad.nfe']}" -->
+						<!-- 							rendered="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'true'}" -->
+						<!-- 							onstart="PF('formBlock').block()" -->
+						<!-- 							oncomplete="PF('formBlock').unblock()" -->
+						<!-- 							styleClass="btn btn-flat btn-primary" /> -->
+					</f:facet>
+					<f:facet name="right">
+						<span class="ui-separator"> <span
+							class="ui-icon ui-icon-grip-dotted-vertical" />
+						</span>
+						<p:commandButton immediate="true" value="#{menu['back']}"
+							action="#{caixaBean.toListRecebimento()}"
+							styleClass="btn btn-flat btn-default" />
+					</f:facet>
+				</p:toolbar>
+			</div>
+			<div class="box box-info">
+				<div class="box-body with-border">
+					<h:form id="formLancaPag" prependId="false">
+						<p:defaultCommand target="insereItem" />
+						<div class="col-md-4">
+							<!-- Lado Esquerdo da tela -->
+							<div class="row">
+								<div class="form-group col-md-4">
+									<p:outputLabel value="Vl.Bruto" for="labelBruto"
+										style="width:100%" />
+									<p:outputLabel value="#{caixaBean.totalBruto}" id="labelBruto"
+										style="color:#f39c12;font-size:18px">
+										<f:convertNumber type="currency" currencyCode="BRL" />
+									</p:outputLabel>
+									<p:outputLabel value="#{label['label.nfe.totalNfe']}"
+										for="labelTotal" style="width:100%" />
+									<p:outputLabel value="#{caixaBean.totalGT}" id="labelTotal"
+										style="color: #3c8dbc;font-size:18px">
+										<f:convertNumber type="currency" currencyCode="BRL" />
+									</p:outputLabel>
+								</div>
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.caixa.agPedido']}"
+										for="idControle" style="width:100%" />
+									<p:outputLabel value="#{caixaBean.agrupado.id}" id="idControle"
+										style="width:50%">
+									</p:outputLabel>
+									<p:outputLabel value="#{label['label.caixa.available.credit']}"
+										for="labelCredit" style="width:100%" />
+									<p:outputLabel
+										value="#{caixaBean.credito.saldoCreditoDevolucao}"
+										id="labelCredit" style="color: #185732;font-size:18px">
+										<f:convertNumber type="currency" currencyCode="BRL" />
+									</p:outputLabel>
+								</div>
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.caixa.valorResto']}"
+										for="labelResto" style="width:100%" />
+									<p:outputLabel value="#{caixaBean.resto}" id="labelResto"
+										style="color:red;font-size:18px">
+										<f:convertNumber type="currency" currencyCode="BRL" />
+									</p:outputLabel>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.desconto.forma']} "
+										for="tDesc" style="width:100%" />
+									<p:selectBooleanCheckbox value="#{caixaBean.tipoDesconto}"
+										onkeypress="setaFoco(this)" id="tDesc" style="width:50%">
+
+									</p:selectBooleanCheckbox>
+								</div>
+								<div class="form-group col-md-3">
+									<p:outputLabel value="#{label['label.desconto']} "
+										for="inputValorDesconto" style="width:100%" />
+									<p:inputNumber value="#{caixaBean.desconto}"
+										id="inputValorDesconto" onkeypress="setaFoco(this)"
+										maxValue="9999999.99" minValue="0.0" immediate="true"
+										decimalSeparator="," emptyValue="0" thousandSeparator="."
+										style="width:100%" size="5" decimalPlaces="2">
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.acrescimo.forma']} "
+										for="tAcresc" style="width:100%" />
+									<p:selectBooleanCheckbox value="#{caixaBean.tipoAcrescimo}"
+										onkeypress="setaFoco(this)" id="tAcresc" style="width:50%">
+
+									</p:selectBooleanCheckbox>
+								</div>
+								<div class="form-group col-md-3">
+									<p:outputLabel value="#{label['label.acrescimo']} "
+										for="inputValorAcrescimo" style="width:100%" />
+									<p:inputNumber value="#{caixaBean.acrescimo}"
+										id="inputValorAcrescimo" onkeypress="setaFoco(this)"
+										maxValue="9999999.99" emptyValue="0" minValue="0.0"
+										immediate="true" decimalSeparator="," thousandSeparator="."
+										style="width:100%" size="5" decimalPlaces="2">
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-2">
+									<br />
+									<p:commandButton
+										actionListener="#{caixaBean.recalculaTotais()}"
+										process="formLancaPag"
+										oncomplete="$(function(){PrimeFaces.focus('listaForma');});"
+										update="labelTotal labelResto" id="buttonRecalcula"
+										style="width:100%;margin:5px"
+										styleClass="btn btn-flat btn-info" icon="fa fa-percent" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-6">
+									<p:outputLabel value="#{label['label.nfe.Pagamento']}"
+										for="listaForma"></p:outputLabel>
+									<p:selectOneMenu value="#{caixaBean.forma}" id="listaForma"
+										filter="true" filterMatchMode="contains"
+										disabled="#{userSessionBean.hasRole(authorization.CAIXA_INSERT) eq 'false'}"
+										required="false" converter="omnifaces.SelectItemsConverter"
+										style="width:100%">
+										<f:selectItem itemValue="#{null}" noSelectionOption="false"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{caixaBean.listaPagamentos}"
+											var="forma" itemLabel="#{forma.descricao}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.caixa.valorPagamento']} "
+										for="inputValorRecebido" style="width:100%" />
+									<p:inputNumber value="#{caixaBean.valorRecebido}"
+										id="inputValorRecebido" onkeypress="setaFoco(this)"
+										maxValue="9999999.99" symbol="R$" emptyValue="0"
+										minValue="0.0" immediate="true" decimalSeparator=","
+										thousandSeparator="." style="width:100%" size="5"
+										decimalPlaces="2">
+									</p:inputNumber>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.insert']} "
+										for="insereItem" style="width:100%" />
+									<p:commandButton
+										actionListener="#{caixaBean.inserePagamento()}"
+										process="formLancaPag"
+										oncomplete="$(function(){PrimeFaces.focus('idRefItem');});"
+										update="labelResto labelCredit listaForma inputValorRecebido inputTroco dtPagamentos tabParcelas"
+										id="insereItem" style="width:70%;margin:5px"
+										styleClass="btn btn-flat btn-warning" icon="fa fa-plus" />
+								</div>
+								<div class="form-group col-md-3">
+									<p:outputLabel value="#{label['label.caixa.troco']} "
+										for="inputTroco" style="width:100%" id="outInputLabel" />
+									<p:outputLabel value="#{caixaBean.troco}" id="inputTroco"
+										style="font-size:18px">
+										<f:convertNumber type="currency" currencyCode="BRL" />
+									</p:outputLabel>
+								</div>
+							</div>
+						</div>
+						<!-- Lado Direito da tela -->
+						<div class="col-md-4">
+							<p:outputLabel value="#{label['label.caixa.lis.formaPagamento']}"
+								style="font-size:18px;font-weight:bold;" />
+							<p:dataTable id="dtPagamentos" var="lista"
+								widgetVar="listaPedido"
+								value="#{caixaBean.listaFormaPagamentoInserido}"
+								paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+ 								{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+								paginator="true" rows="5" rowKey="#{lista.key.id}" lazy="true"
+								sortBy="#{lista.key.descricao}" rowsPerPageTemplate="5,10,15">
+
+								<p:column headerText="#{label['label.nfe.Pagamento']}"
+									rendered="true" style="width:50%">
+									<h:outputLabel value="#{lista.key.descricao}" />
+								</p:column>
+								<p:column headerText="#{label['label.caixa.valorPagamento']}"
+									style="width:30%">
+									<h:outputLabel value="#{lista.value}">
+										<f:convertNumber type="currency" currencySymbol="R$"
+											maxFractionDigits="2" currencyCode="BRL" />
+									</h:outputLabel>
+								</p:column>
+
+								<p:column headerText="#{label['label.list.Action']}"
+									rendered="#{caixaBean.viewState eq 'ADDING'}">
+									<p:commandButton process="dtPagamentos" icon="fa fa-remove"
+										title="#{menu['delete']}" styleClass="btn btn-flat btn-danger"
+										rendered="#{caixaBean.viewState eq 'ADDING'}"
+										actionListener="#{caixaBean.removePagamento(lista.key)}"
+										update="labelResto labelCredit inputValorRecebido inputTroco dtPagamentos tabParcelas" />
+								</p:column>
+
+								<p:columnGroup type="footer">
+									<p:row>
+										<p:column colspan="1"
+											style="text-align:right;font-size:18px;font-weight:bold;"
+											footerText="#{label['label.nfe.item.valorTotal']}:" />
+										<p:column>
+											<f:facet name="footer">
+												<h:outputText value="#{caixaBean.totalRecebido}"
+													style="font-size:18px;color:blue;font-weight:bold;">
+													<f:convertNumber type="currency" currencySymbol="R$"
+														maxFractionDigits="2" currencyCode="BRL" />
+												</h:outputText>
+											</f:facet>
+										</p:column>
+									</p:row>
+								</p:columnGroup>
+							</p:dataTable>
+						</div>
+						<div class="4">
+							<p:outputLabel value="#{label['label.caixa.list.ParcelaNfe']}"
+								style="font-size:18px;font-weight:bold;" />
+							<p:dataTable id="tabParcelas" var="parcela"
+								value="#{caixaBean.listaParcelasPagamento}" editable="true">
+								<f:facet name="Header">
+									<p:outputLabel value="#{label['label.pagamento.titulo']}" />
+								</f:facet>
+								<p:column headerText="#{label['label.financial.numParcela']}"
+									style="width:15%">
+									<p:cellEditor>
+										<f:facet name="output">
+											<p:outputLabel value="#{parcela.numParcela}" disabled="true" />
+										</f:facet>
+										<f:facet name="input">
+											<h:outputText value="#{parcela.numParcela}" disabled="true" />
+										</f:facet>
+									</p:cellEditor>
+								</p:column>
+								<p:column headerText="#{label['label.pagamento.parcela']}"
+									style="width:30%">
+									<p:cellEditor>
+										<f:facet name="output">
+											<p:inputText value="#{parcela.valorParcela}">
+												<f:convertNumber type="currency" currencyCode="BRL" />
+											</p:inputText>
+										</f:facet>
+										<f:facet name="input">
+											<p:inputText value="#{parcela.valorParcela}" id="vParcela">
+												<f:convertNumber type="currency" currencyCode="BRL" />
+											</p:inputText>
+										</f:facet>
+									</p:cellEditor>
+								</p:column>
+								<p:column headerText="#{label['label.financial.vencimento']}"
+									style="width:40%">
+									<p:cellEditor>
+										<f:facet name="output">
+											<p:calendar value="#{parcela.vencimento}"
+												pattern="dd/MM/yyyy" converter="localDateConverter"
+												disabled="true" />
+										</f:facet>
+										<f:facet name="input">
+											<p:calendar value="#{parcela.vencimento}" id="dVencimento"
+												pattern="dd/MM/yyyy" converter="localDateConverter" />
+										</f:facet>
+									</p:cellEditor>
+								</p:column>
+								<p:column style="width:15%">
+									<p:rowEditor />
+								</p:column>
+							</p:dataTable>
+						</div>
+					</h:form>
+				</div>
+			</div>
+			<div class="box box-info">
+				<div class="box-body with-border">
+					<div class="col-md-6">
+						<p:outputLabel value="#{label['label.caixa.inf.pag.listPedidos']}"
+							style="font-size:18px;font-weight:bold;" />
+						<p:dataTable id="dtPedidosAg" var="lista" widgetVar="listaPedido"
+							value="#{caixaBean.listaPedidosSelecionados}"
+							paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+ 								{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+							paginator="true" rows="20" rowKey="#{lista.id}" lazy="true"
+							sortField="#{lista.pedidoStatus}" rowsPerPageTemplate="10,20,30"
+							rowStyleClass="#{lista.pedidoStatus.sigla == 'ARC' ? 'sa' : lista.pedidoStatus.sigla == 'CAN' ? 'ca': lista.pedidoStatus.sigla == 'AGC' ? 'ee' : lista.pedidoStatus.sigla == 'REC' ? 'en' : null}">
+
+							<p:column headerText="#{label['label.venda.list.id']}"
+								rendered="true" style="width:12%">
+								<h:outputLabel value="#{lista.id}" />
+							</p:column>
+							<p:column headerText="#{label['label.dataEmissao']}"
+								rendered="true" sortBy="#{lista.dataEmissao}" style="width:15%">
+								<h:outputLabel value="#{lista.dataEmissao.toString()}" />
+							</p:column>
+
+							<p:column headerText="#{label['label.nome']}">
+								<h:outputText value="#{lista.destino.nome()}" />
+							</p:column>
+
+							<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+								style="width:15%">
+								<h:outputLabel value="#{lista.valorTotalPedido}">
+									<f:convertNumber type="currency" currencySymbol="R$"
+										maxFractionDigits="2" currencyCode="BRL" />
+								</h:outputLabel>
+							</p:column>
+
+							<p:column sortBy="#{lista.atendente}"
+								headerText="#{label['label.colaborador']}" style="width:15%">
+								<h:outputText value="#{lista.atendente.id}" />
+							</p:column>
+						</p:dataTable>
+					</div>
+				</div>
+			</div>
+		</h:form>
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+		<pe:blockUI target="formLancaPag" widgetVar="formLanca">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+		<pe:blockUI target="dlgCPFCFeID" widgetVar="formCPF">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/guear.gif" />
+		</pe:blockUI>
+	</ui:define>
+
+	<ui:define name="sub-content">
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="formPopup" prependId="false">
+		</h:form>
+	</ui:define>
+</ui:composition>

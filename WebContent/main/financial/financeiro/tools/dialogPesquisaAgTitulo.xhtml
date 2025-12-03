@@ -1,0 +1,122 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="PesquisaAgTituloDialog"
+	width="50%" modal="true" resizable="false" closeOnEscape="true"
+	widgetVar="dialogPesquisaAgTitulo"
+	header="#{messages['financeiro.Agrupa.page.title']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-12">
+				<p:outputLabel
+					value="#{messages['financeiro.dialog.box-title.agTitulo']}" />
+			</h2>
+		</div>
+		<div class="box-body ">
+			<div class="row">
+				<div class="navbar-form">
+					<p:toolbar>
+						<f:facet name="left">
+							<p:commandButton immediate="true"
+								value="#{menu['caixa.agrupado.excluir']}"
+								action="#{agendaBean.removeAgrupamento()}"
+								onstart="PF('formBlockList').block()"
+								styleClass="btn btn-flat btn-info" />
+						</f:facet>
+						<f:facet name="right">
+							<p:commandButton value="#{menu['back']}"
+								onclick="PF('dialogPesquisaAgTitulo').hide()"
+								styleClass="btn btn-flat btn-primary" />
+						</f:facet>
+					</p:toolbar>
+				</div>
+			</div>
+			<div class="row">
+				<p:messages id="messagesDialog" closable="true" />
+				<p:focus context="formAgrupado" for="idAgDataEnt" />
+				<div class="form-group col-md-12">
+
+					<div class="form-group col-md-4">
+						<p:outputLabel value="#{label['label.start']}  " for="idAgEmissao" />
+						<p:calendar value="#{agendaBean.dataIni}" id="idAgEmissao" 
+							pattern="dd/MM/yyyy" converter="localDateConverter" />
+					</div>
+					<div class="form-group col-md-4">
+						<p:outputLabel value="#{label['label.finish']}  "
+							for="idAgDataEnt" />
+						<p:calendar value="#{agendaBean.dataFim}" id="idAgDataEnt"
+							pattern="dd/MM/yyyy" converter="localDateConverter" />
+					</div>
+					<div class="form-group col-md-4">
+						<p:commandButton value="#{label['label.search']}"
+							process="formAgrupado"
+							actionListener="#{agendaBean.novaListaAgTitulos()}" 
+							update="listaAgPedidos" id="buttonPesquisaAgPedidos"
+							onstart="PF('formBlockList').block()"
+							oncomplete="PF('formBlockList').unblock()"
+							style="width:80%;margin:5px" styleClass="btn btn-flat btn-info"
+							icon="fa fa-search" />
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="form-group col-md-12">
+					<p:dataTable id="listaAgPedidos" var="lista"
+						widgetVar="listaAgPedidosTeste" value="#{agendaBean.listaAgTitulos}"
+						paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+						paginator="true" rows="10" selection="#{agendaBean.agTitulo}"
+						selectionMode="single" lazy="true" rowKey="#{lista.id}">
+
+						<p:ajax event="rowSelect"
+							listener="#{agendaBean.onRowSelectAgTitulo}" process="@form" />
+
+						<p:column headerText="#{label['label.list.agrupado.id']}"
+							style="width:20%">
+							<p:outputLabel value="#{lista.id}" />
+						</p:column>
+
+						<p:column headerText="#{label['label.dataEmissao']}"
+							style="width:20%" rendered="true" sortBy="#{lista.dataCriacao}">
+							<h:outputLabel value="#{lista.dataCriacao.toString()}" />
+						</p:column>
+
+						<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+							style="width:20%">
+							<p:outputLabel value="#{lista.valorTotal}">
+								<f:convertNumber type="currency" currencySymbol="R$"
+									maxFractionDigits="2" currencyCode="BRL" />
+							</p:outputLabel>
+						</p:column>
+
+						<p:column headerText="#{label['label.list.razao']}"
+							rendered="true" sortBy="#{lista.id}">
+							<ui:repeat value="#{lista.listaTitulosAgrupados}" var="control">
+								<li><h:outputLabel value="#{control.valorParcela}" /></li>
+							</ui:repeat>
+						</p:column>
+					</p:dataTable>
+				</div>
+			</div>
+			<div class="row">
+				<div class="form-group col-md-4">
+					<p:commandButton value="#{label['label.caixa.receber']}"
+						process="formAgrupado" action="#{agendaBean.telaReceberAgrupado()}"
+						id="buttonTelaReceber" onstart="PF('formBlockList').unblock()"
+						style="width:80%;margin:5px" styleClass="btn btn-flat btn-warning"
+						icon="fa fa-wallet">
+					</p:commandButton>
+				</div>
+			</div>
+		</div>
+	</div>
+	<pe:blockUI target="listaAgPedidos" widgetVar="formBlockList">
+		<p:graphicImage width="32" height="32" library="nsym"
+			name="img/loading.gif" />
+	</pe:blockUI>
+</p:dialog>
+

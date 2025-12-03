@@ -1,0 +1,276 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="FABRICA" />
+	<ui:param name="activeSubmenu" value="Modelos" />
+	<f:metadata>
+		<f:viewAction action="#{fabricaBean.initializeForm(param.modId)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+       #{breadcrumb['entries.fabrica']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{fabricaBean.viewState eq 'ADDING'}"
+			value="#{messages['fabrica.modelo.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{fabricaBean.viewState eq 'EDITING'}"
+			value="#{messages['fabrica.modelo.page-description-editing']}">
+			<f:param value="#{fabricaBean.modelo.referencia}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries.fabrica']}</a></li>
+		<li><a href="formCadModelos.xhtml">#{breadcrumb['entries.modelo']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['entries.modelo']}"></p:outputLabel>
+					</h2>
+				</div>
+				<div class="box-body ">
+				<p:focus for="ref" context="empresaForm" />
+				<p:defaultCommand target="insereItem" />
+					<div class="form-group col-md-12">
+						<div class="row">
+							<p:toolbar id="navegador">
+								<f:facet name="left">
+									<p:commandButton update="empresaForm" process="empresaForm"
+										value="#{menu['save']}" action="#{fabricaBean.doSalvar()}"
+										onstart="PF('formBlock').block()"
+										disabled="#{userSessionBean.hasRole(authorization.MODELO_INSERT) eq 'false'}"
+										styleClass="btn btn-flat btn-success"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{fabricaBean.viewState eq 'ADDING'}"
+										icon="fa fa-hdd-o" />
+
+									<p:commandButton process="empresaForm"
+										value="#{menu['update']}" action="#{fabricaBean.doSalvar()}"
+										onstart="PF('formBlock').block()"
+										update="empresaForm pageDescription"
+										styleClass="btn btn-flat btn-warning"
+										disabled="#{userSessionBean.hasRole(authorization.MODELO_EDIT) eq 'false'}"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{fabricaBean.viewState eq 'EDITING'}" />
+
+								</f:facet>
+								<f:facet name="right">
+									<p:commandButton immediate="true" value="#{menu['back']}"
+										action="#{fabricaBean.toListModelo()}"
+										styleClass="btn btn-flat btn-default" />
+								</f:facet>
+							</p:toolbar>
+						</div>
+					</div>
+					<div class="col-md-12">
+						<div class="row">
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.ref']}: " for="ref" />
+								<p:inputText value="#{fabricaBean.modelo.referencia}" id="ref"
+									required="true" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.MODELO_INSERT) eq 'false'}"
+									requiredMessage="#{validation['modelo.referencia.isempty']}"
+									maxlength="100" styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-6">
+								<p:outputLabel value="#{label['label.descricao']}: "
+									for="descricao" />
+								<p:inputText value="#{fabricaBean.modelo.descricao}"
+									id="descricao" required="true" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.MODELO_INSERT) eq 'false'}"
+									requiredMessage="#{validation['modelo.description.isempty']}"
+									maxlength="100" styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-4">
+								<p:outputLabel value="#{label['label.colecao']}: " for="colec" />
+								<p:inputText value="#{fabricaBean.modelo.colecao}" id="colec"
+									required="true" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.MODELO_INSERT) eq 'false'}"
+									maxlength="100" styleClass="form-control" />
+							</div>
+						</div>
+						<div class="row">
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.secao']}: " for="secaopro" />
+								<p:selectOneMenu value="#{fabricaBean.modelo.secao}"
+									filter="true" filterMatchMode="contains" id="secaopro"
+									required="true"
+									disabled="#{userSessionBean.hasRole(authorization.MODELO_INSERT) eq 'false'}"
+									onchange="$(function(){PrimeFaces.focus('idRefItem');});"
+									converter="omnifaces.SelectItemsConverter" style="width:100%"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{produtoBean.listaSecao()}"
+										itemLabel="#{item.secao}" var="item" />
+								</p:selectOneMenu>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-12">
+						<div class="col-md-12">
+							<div class="box box-success box-body">
+								<h:form id="insertTec" prependId="false">
+								<p:outputLabel value="#{messages['fabrica.modelo.text.insetToList']}"/>
+									<div class="row">
+										<div class="form-group col-md-2">
+											<p:outputLabel value="#{label['label.nfe.item.codigo']}"
+												for="idRefItem">
+												<p:commandButton
+													actionListener="#{fabricaBean.telaListaMaterial()}"
+													styleClass="btn btn-flat btn-info"
+													disabled="#{userSessionBean.hasRole(authorization.MODELO_INSERT) eq 'false'}"
+													icon="fa fa-search" style="width:20px;height:20px"
+													process="insertTec" />
+											</p:outputLabel>
+											<h:inputText value="#{fabricaBean.ref}" id="idRefItem"
+												styleClass="form-control">
+
+											</h:inputText>
+										</div>
+										<div class="form-group col-md-1">
+											<p:outputLabel value="#{label['label.nfe.item.quantidade']}:"
+												for="idItemQuant" style="width:100%" />
+											<p:inputNumber value="#{fabricaBean.quantidade}"
+												id="idItemQuant" onkeypress="setaFoco(this)"
+												maxValue="9999999.99" minValue="0.0" immediate="true"
+												decimalSeparator="," thousandSeparator="." style="width:5%"
+												size="5">
+											</p:inputNumber>
+										</div>
+										<div class="form-group col-md-1">
+
+											<p:outputLabel value="#{label['label.insert']} "
+												for="insereItem" style="width:100%" />
+											<p:commandButton
+												actionListener="#{fabricaBean.insereMaterial()}"
+												process="insertTec"
+												oncomplete="$(function(){PrimeFaces.focus('idRefItem');});"
+												update="idRefItem idItemQuant listaItensProduto"
+												id="insereItem" style="width:60%;"
+												styleClass="btn btn-flat btn-warning" icon="fa fa-plus" />
+										</div>
+									</div>
+								</h:form>
+							</div>
+						</div>
+						<!-- 						<div class="col-md-6"> -->
+						<!-- 							<div class="box box-success box-body"> -->
+						<!-- 								<h:form id="insertTam" prependId="false"> -->
+						<!-- 									<div class="row"> -->
+						<!-- 									</div> -->
+						<!-- 								</h:form> -->
+						<!-- 							</div> -->
+						<!-- 						</div> -->
+					</div>
+					<div class="col-md-12">
+						<div class="col-md-6">
+							<div class="box box-success box-body">
+								<div class="row">
+									<div class="form-group col-md-12">
+									<p:outputLabel value="#{messages['fabrica.modelo.text.list.material']}"/>
+										<p:dataTable id="listaItensProduto" var="lista"
+											styleClass="table" widgetVar="listaItemNfe"
+											value="#{fabricaBean.modelo.listaDeMaterias}"
+											paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+											paginator="true" rows="20" lazy="true" rowKey="#{lista.id}"
+											sortBy="#{lista.produto.descricao}"
+											rowsPerPageTemplate="20,30">
+
+											<p:column headerText="#{label['label.ref']}" rendered="true"
+												style="width:15%">
+												<h:outputText value="#{lista.produto.referencia}" />
+											</p:column>
+
+											<p:column headerText="#{label['label.descricao']}"
+												style="width:45%" rendered="true">
+												<h:outputText value="#{lista.produto.descricao}" />
+											</p:column>
+
+											<p:column headerText="#{label['label.nfe.item.quantidade']}"
+												style="width:15%" rendered="true">
+												<h:outputText value="#{lista.quant}" />
+											</p:column>
+											
+											<p:column headerText="#{label['label.tipoMedida']}"
+												style="width:15%" rendered="true">
+												<h:outputText value="#{lista.produto.tipoMedida.toString()}" />
+											</p:column>
+
+											<p:column headerText="#{label['label.list.Action']}">
+												<p:commandButton process="listaItensProduto"
+													icon="fa fa-remove" title="#{menu['delete']}"
+													styleClass="btn btn-flat btn-danger"
+													actionListener="#{fabricaBean.excluiItem(lista)}"
+													update="listaItensProduto" />
+											</p:column>
+										</p:dataTable>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="box box-success box-body">
+								<div class="row">
+									<div class="form-group col-md-12">
+										<p:outputLabel value="#{label['label.barras.tamanho']}"
+											for="tamanhosBarra" />
+										<p:pickList id="tamanhosBarra" value="#{fabricaBean.tamanhos}"
+											var="itemTamanho" itemValue="#{itemTamanho}"
+											converter="primeFacesPickListConverter"
+											itemLabel="#{itemTamanho.tamanho}" showSourceControls="true"
+											showTargetControls="true" showCheckbox="true"
+											responsive="true" showSourceFilter="true"
+											showTargetFilter="true" filterMatchMode="contains">
+
+											<f:facet name="sourceCaption">Tamanhos disponíveis</f:facet>
+											<f:facet name="targetCaption">Tamanhos selecionadas</f:facet>
+
+											<p:column>
+												<h:outputText value="#{itemTamanho.tamanho}"
+													style="font-weight:bold" />
+											</p:column>
+										</p:pickList>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="resources/nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="formPopup" prependId="false">
+			<ui:include src="/main/fabrica/util/dialogPesquisaMaterialFabrica.xhtml" />
+		</h:form>
+	</ui:define>
+</ui:composition>

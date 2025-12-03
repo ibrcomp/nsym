@@ -1,0 +1,137 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="ConfirmDevolucaoDialog"
+	width="50%" modal="true" resizable="false" closeOnEscape="true"
+	widgetVar="dialogConfirmDevolucao"
+	header="#{messages['caixaRecebimento.devolucao.page-title']}">
+
+	<div class="box">
+		<p:focus context="formDev" for="listaDevolucao" />
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-12">
+				<p:outputLabel
+					value="#{messages['caixaRecebimento.dialog.devolucao']}" />
+			</h2>
+		</div>
+		<div class="box-body ">
+			<div class="row">
+				<div class="navbar-form">
+					<p:toolbar>
+						<f:facet name="left">
+							<p:commandButton immediate="true"
+								value="#{menu['caixa.devolucao.confirm']}"
+								actionListener="#{caixaBean.confirmaDevolucao()}"
+								onstart="PF('formBlockList').block()"
+								oncomplete="PF('dialogConfirmDevolucao').hide()"
+								styleClass="btn btn-flat btn-info" />
+						</f:facet>
+						<f:facet name="right">
+							<p:commandButton value="#{menu['back']}"
+								onclick="PF('dialogConfirmDevolucao').hide()"
+								styleClass="btn btn-flat btn-primary" />
+						</f:facet>
+					</p:toolbar>
+				</div>
+			</div>
+			<div class="row">
+				<p:messages id="messagesDialogDev" closable="true" />
+				<div class="form-group col-md-12">
+
+					<div class="form-group col-md-4">
+						<p:outputLabel value="#{label['label.start']}  "
+							for="idDevEmissao" />
+						<p:calendar value="#{caixaBean.dataInicial}" id="idDevEmissao"
+							pattern="dd/MM/yyyy" converter="localDateConverter" />
+					</div>
+					<div class="form-group col-md-4">
+						<p:outputLabel value="#{label['label.finish']}  "
+							for="idDevDataEnt" />
+						<p:calendar value="#{caixaBean.dataFinal}" id="idDevDataEnt"
+							pattern="dd/MM/yyyy" converter="localDateConverter" />
+					</div>
+					<div class="form-group col-md-4">
+						<p:commandButton value="#{label['label.search']}"
+							process="formDev"
+							actionListener="#{caixaBean.geraNovaListaDevolucoes()}"
+							update="listaDevolucao" id="buttonPesquisaDevolvidos"
+							onstart="PF('formBlockList').block()"
+							oncomplete="PF('dialogConfirmDevolucao').unblock()"
+							style="width:80%;margin:5px" styleClass="btn btn-flat btn-info"
+							icon="fa fa-search" />
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="form-group col-md-12">
+					<p:dataTable id="listaDevolucao" var="lista"
+						widgetVar="listaAgPedidosTeste"
+						value="#{caixaBean.novaListaDevolvidos}"
+						paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+						paginator="true" rows="10" selection="#{caixaBean.pedido}"
+						selectionMode="single" lazy="true" rowKey="#{lista.id}">
+
+						<p:ajax event="rowSelect"
+							listener="#{caixaBean.onRowSelectPedidoDev}" process="@form" />
+
+						<!-- 						<p:column headerText="#{label['label.list.agrupado.id']}" -->
+						<!-- 							style="width:20%"> -->
+						<!-- 								<p:outputLabel value="#{lista.id}"/> -->
+						<!-- 						</p:column> -->
+
+						<p:column headerText="#{label['label.venda.list.controle']}"
+							rendered="true" style="width:12%">
+							<h:outputLabel value="#{lista.controle.controle}" />
+						</p:column>
+
+						<p:column headerText="#{label['label.dataEmissao']}"
+							style="width:20%" rendered="true" sortBy="#{lista.dataEmissao}">
+							<h:outputLabel value="#{lista.dataEmissao.toString()}" />
+						</p:column>
+
+						<p:column headerText="#{label['label.nome']}">
+							<h:outputText value="#{lista.destino.nome()}" />
+						</p:column>
+
+						<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+							style="width:20%">
+							<p:outputLabel value="#{lista.valorTotalPedido}">
+								<f:convertNumber type="currency" currencySymbol="R$"
+									maxFractionDigits="2" currencyCode="BRL" />
+							</p:outputLabel>
+						</p:column>
+
+						<!-- 						<p:column headerText="#{label['label.list.razao']}" -->
+						<!-- 							rendered="true"  sortBy="#{lista.id}"> -->
+						<!-- 							<ui:repeat value="#{lista.listaPedidosRecebidos}" var="control"> -->
+						<!-- 								<li><h:outputLabel value="#{control.destino.nome()}" /></li> -->
+						<!-- 							</ui:repeat> -->
+						<!-- 						</p:column> -->
+					</p:dataTable>
+				</div>
+			</div>
+			<!-- 			<div class="row"> -->
+			<!-- 				<div class="form-group col-md-4"> -->
+			<!-- 					<p:commandButton value="#{label['label.caixa.receber']}" -->
+			<!-- 						process="formPopup" -->
+			<!-- 						action="#{caixaBean.telaReceberAgrupado()}" -->
+			<!-- 						id="buttonTelaReceber" -->
+			<!-- 						onstart="PF('formBlockList').unblock()" -->
+			<!-- 						style="width:80%;margin:5px" styleClass="btn btn-flat btn-warning" -->
+			<!-- 						icon="fa fa-wallet"> -->
+			<!-- 						</p:commandButton> -->
+			<!-- 				</div> -->
+			<!-- 			</div> -->
+		</div>
+	</div>
+	<pe:blockUI target="listaDevolucao" widgetVar="formBlockList">
+		<p:graphicImage width="32" height="32" library="nsym"
+			name="img/loading.gif" />
+	</pe:blockUI>
+
+</p:dialog>
+

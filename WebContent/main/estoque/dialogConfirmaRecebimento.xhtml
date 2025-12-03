@@ -1,0 +1,73 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="confirmaRecebimento"
+	width="70%" modal="true" resizable="false" closeOnEscape="true"
+	widgetVar="dialogConfirmaRecebimento"
+	header="#{messages['recebimento.nfe.page-manifest']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-2">
+				<p:outputLabel
+					value="#{messages['recebimento.nfe.page-manifest-receive']}" />
+			</h2>
+		</div>
+		<div class="box-body">
+			<div class="row">
+				<div class="form-group col-md-6">
+					<p:outputLabel value="#{label['label.razao']}: " />
+					<p:inputText value="#{recebimentoBean.nfNaoConfirmada.XNome}"
+						style="font-style:italic; font:bold" styleClass="form-control"
+						readonly="true" />
+				</div>
+				<div class="form-group col-md-2">
+					<p:outputLabel value="#{label['label.cnpj']}: " />
+					<p:inputText value="#{recebimentoBean.nfNaoConfirmada.cnpjCpf}"
+						readonly="true" styleClass="form-control" />
+				</div>
+				<div class="form-group col-md-2">
+					<p:outputLabel value="#{label['label.ie']}" />
+					<p:inputText value="#{recebimentoBean.nfNaoConfirmada.ie}"
+						readonly="true" styleClass="form-control" />
+				</div>
+				<div class="form-group col-md-2">
+					<p:outputLabel value="#{label['label.dataEmissao']}" />
+					<p:inputText value="#{recebimentoBean.nfNaoConfirmada.dhEmissao}"
+						style="color:red;font-style:italic; font:bold" readonly="true"
+						styleClass="form-control" />
+				</div>
+				<div class="form-group col-md-4">
+					<p:outputLabel value="Chave de acesso" />
+					<p:inputText value="#{recebimentoBean.nfNaoConfirmada.chNfe}"
+						readonly="true" styleClass="form-control" />
+				</div>
+				<div class="form-group col-md-2">
+					<p:outputLabel value="Protocolo: " />
+					<p:inputText value="#{recebimentoBean.nfNaoConfirmada.NProtocolo}"
+						readonly="true" styleClass="form-control" />
+				</div>
+				<div class="form-group col-md-2">
+					<p:outputLabel value="#{label['label.nfe.totalNfe']}: " />
+					<p:inputText value="#{recebimentoBean.nfNaoConfirmada.valorNf}"
+						style="color:blue; font-style:italic; font:bold" readonly="true"
+						styleClass="form-control" />
+				</div>
+			</div>
+		</div>
+		<div class="box-footer align-right">
+
+			<p:commandButton process="formPopups" value="Confirma Recebimento"
+				action="#{recebimentoBean.registraNfeNaoConfirmada()}"
+				onstart="PF('formBlock').block()"
+				styleClass="btn btn-flat btn-warning"
+				oncomplete="PF('formBlock').unblock()"
+				onsuccess="PF('dialogConfirmaRecebimento').hide()"
+				disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}" />
+
+		</div>
+
+	</div>
+</p:dialog>
+

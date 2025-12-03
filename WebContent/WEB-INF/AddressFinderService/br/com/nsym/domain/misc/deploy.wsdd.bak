@@ -1,0 +1,89 @@
+<!-- Use this file to deploy some handlers/chains and services      -->
+<!-- Two ways to do this:                                           -->
+<!--   java org.apache.axis.client.AdminClient deploy.wsdd          -->
+<!--      after the axis server is running                          -->
+<!-- or                                                             -->
+<!--   java org.apache.axis.utils.Admin client|server deploy.wsdd   -->
+<!--      from the same directory that the Axis engine runs         -->
+
+<deployment
+    xmlns="http://xml.apache.org/axis/wsdd/"
+    xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+
+  <!-- Services from AddressFinderService WSDL service -->
+
+  <service name="AddressFinder" provider="java:RPC" style="wrapped" use="literal">
+      <parameter name="wsdlTargetNamespace" value="http://misc.domain.nsym.com.br"/>
+      <parameter name="wsdlServiceElement" value="AddressFinderService"/>
+      <parameter name="schemaQualified" value="http://misc.domain.nsym.com.br,http://cadastro.entity.model.domain.nsym.com.br,http://xml.apache.org/xml-soap,http://entity.model.domain.nsym.com.br"/>
+      <parameter name="wsdlServicePort" value="AddressFinder"/>
+      <parameter name="className" value="br.com.nsym.domain.misc.AddressFinderSoapBindingImpl"/>
+      <parameter name="wsdlPortType" value="AddressFinder"/>
+      <parameter name="typeMappingVersion" value="1.2"/>
+      <operation name="findAddressByLogradouro" qname="operNS:findAddressByLogradouro" xmlns:operNS="http://misc.domain.nsym.com.br" returnQName="retNS:findAddressByLogradouroReturn" xmlns:retNS="http://misc.domain.nsym.com.br" returnType="rtns:ArrayOf_xsd_anyType" xmlns:rtns="http://misc.domain.nsym.com.br" returnItemQName="tns:item" xmlns:tns="http://misc.domain.nsym.com.br" soapAction="" >
+        <parameter qname="pns:uf" xmlns:pns="http://misc.domain.nsym.com.br" type="tns:string" xmlns:tns="http://www.w3.org/2001/XMLSchema"/>
+        <parameter qname="pns:localidade" xmlns:pns="http://misc.domain.nsym.com.br" type="tns:string" xmlns:tns="http://www.w3.org/2001/XMLSchema"/>
+        <parameter qname="pns:logradouro" xmlns:pns="http://misc.domain.nsym.com.br" type="tns:string" xmlns:tns="http://www.w3.org/2001/XMLSchema"/>
+      </operation>
+      <operation name="findAddressByZipcode" qname="operNS:findAddressByZipcode" xmlns:operNS="http://misc.domain.nsym.com.br" returnQName="retNS:findAddressByZipcodeReturn" xmlns:retNS="http://misc.domain.nsym.com.br" returnType="rtns:Endereco" xmlns:rtns="http://cadastro.entity.model.domain.nsym.com.br" soapAction="" >
+        <parameter qname="pns:zipcode" xmlns:pns="http://misc.domain.nsym.com.br" type="tns:string" xmlns:tns="http://www.w3.org/2001/XMLSchema"/>
+      </operation>
+      <parameter name="allowedMethods" value="findAddressByLogradouro findAddressByZipcode"/>
+
+      <typeMapping
+        xmlns:ns="http://cadastro.entity.model.domain.nsym.com.br"
+        qname="ns:Endereco"
+        type="java:br.com.nsym.domain.model.entity.cadastro.Endereco"
+        serializer="org.apache.axis.encoding.ser.BeanSerializerFactory"
+        deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory"
+        encodingStyle=""
+      />
+      <typeMapping
+        xmlns:ns="http://entity.model.domain.nsym.com.br"
+        qname="ns:PersistentEntity"
+        type="java:br.com.nsym.domain.model.entity.PersistentEntity"
+        serializer="org.apache.axis.encoding.ser.BeanSerializerFactory"
+        deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory"
+        encodingStyle=""
+      />
+      <arrayMapping
+        xmlns:ns="http://misc.domain.nsym.com.br"
+        qname="ns:ArrayOf_xsd_anyType"
+        type="java:java.lang.Object[]"
+        innerType="cmp-ns:anyType" xmlns:cmp-ns="http://www.w3.org/2001/XMLSchema"
+        encodingStyle=""
+      />
+      <typeMapping
+        xmlns:ns="http://misc.domain.nsym.com.br"
+        qname="ns:>findAddressByLogradouro"
+        type="java:br.com.nsym.domain.misc.FindAddressByLogradouro"
+        serializer="org.apache.axis.encoding.ser.BeanSerializerFactory"
+        deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory"
+        encodingStyle=""
+      />
+      <typeMapping
+        xmlns:ns="http://misc.domain.nsym.com.br"
+        qname="ns:>findAddressByZipcodeResponse"
+        type="java:br.com.nsym.domain.misc.FindAddressByZipcodeResponse"
+        serializer="org.apache.axis.encoding.ser.BeanSerializerFactory"
+        deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory"
+        encodingStyle=""
+      />
+      <typeMapping
+        xmlns:ns="http://misc.domain.nsym.com.br"
+        qname="ns:>findAddressByLogradouroResponse"
+        type="java:br.com.nsym.domain.misc.FindAddressByLogradouroResponse"
+        serializer="org.apache.axis.encoding.ser.BeanSerializerFactory"
+        deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory"
+        encodingStyle=""
+      />
+      <typeMapping
+        xmlns:ns="http://misc.domain.nsym.com.br"
+        qname="ns:>findAddressByZipcode"
+        type="java:br.com.nsym.domain.misc.FindAddressByZipcode"
+        serializer="org.apache.axis.encoding.ser.BeanSerializerFactory"
+        deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory"
+        encodingStyle=""
+      />
+  </service>
+</deployment>

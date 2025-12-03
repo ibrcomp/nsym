@@ -1,0 +1,111 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="listaDePedidosDialog"
+	width="70%" modal="true" resizable="false" closeOnEscape="true"
+	widgetVar="dialogListaDePedidos"
+	header="#{breadcrumb['pedido.list']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-2">
+				<p:outputLabel value="#{breadcrumb['pedido.list']}" />
+			</h2>
+		</div>
+		<div class="box-body row">
+			<div class="form-group col-md-12">
+				<div class="form-group col-md-2">
+					<p:outputLabel value="#{label['label.start']}" for="idEmissao" />
+					<br />
+					<p:calendar value="#{pedidoBean.dataInicial}" id="idEmissao"
+						pattern="dd/MM/yyyy" converter="localDateConverter" />
+				</div>
+				<div class="form-group col-md-2">
+					<p:outputLabel value="#{label['label.finish']}" for="idDataEnt" />
+					<br />
+					<p:calendar value="#{pedidoBean.dataFinal}" id="idDataEnt"
+						pattern="dd/MM/yyyy" converter="localDateConverter" />
+				</div>
+				<div class="form-group col-md-2">
+					<br />
+					<p:commandButton value="#{label['label.search']}"
+						process="listaDePedidosDialog"
+						actionListener="#{pedidoBean.geraListaPedidosRecebidos()}"
+						onstart="PF('dialogPedidosBlock').block()"
+						oncomplete="PF('dialogPedidosBlock').unblock()" update="pedidos" 
+						id="buttonPesquisa" style="width:80%;margin:5px"
+						styleClass="btn btn-flat btn-info" icon="fa fa-search" />
+				</div>
+			</div>
+			<div class="form-group col-md-12">
+				<p:dataTable id="pedidos" var="lista" widgetVar="listaPedido"
+					value="#{pedidoBean.listaPedidosPorPeriodo}"
+					paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true" rows="5" 
+					 lazy="false" rowKey="#{lista.id}"
+					rowsPerPageTemplate="5,10" 
+					rowStyleClass="#{lista.pedidoStatus.sigla == 'ARC' ? 'sa' : lista.pedidoStatus.sigla == 'CAN' ? 'ca': 
+							lista.pedidoStatus.sigla == 'AGC' ? 'ee' : lista.pedidoTipo.sigla == 'TRA' ? 'transf' : 
+							lista.pedidoStatus.sigla == 'REC' ? 'en' : null}">
+
+					<p:column headerText="#{label['label.venda.list.controle']}"
+						rendered="true" style="width:10%">
+						<h:outputLabel value="#{lista.controle.controle}" />
+					</p:column>
+
+					<p:column headerText="#{label['label.dataEmissao']}"
+						rendered="true" sortBy="#{lista.inclusion}" style="width:10%">
+						<h:outputLabel value="#{lista.inclusionAsLocalDate}" />
+					</p:column>
+
+					<p:column headerText="#{label['label.nome']}">
+						<h:outputText value="#{lista.destino.nome()}" />
+					</p:column>
+
+					<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+						style="width:15%">
+						<h:outputLabel value="#{lista.valorTotalPedido}">
+							<f:convertNumber type="currency" currencySymbol="R$"
+								maxFractionDigits="2" currencyCode="BRL" />
+						</h:outputLabel>
+					</p:column>
+					<p:column sortBy="#{lista.pedidoStatus}"
+						headerText="#{label['label.pedidoTipo']}" style="width:10%">
+						<h:outputText value="#{lista.pedidoTipo.toString()}" />
+					</p:column>
+					<p:column sortBy="#{lista.pedidoStatus}"
+						headerText="#{label['label.status.pedido']}" style="width:15%">
+						<h:outputText value="#{lista.pedidoStatus.toString()}" />
+					</p:column>
+
+					<p:column sortBy="#{lista.fiscalStatus}" exportable="false"
+						styleClass="#{lista.fiscalStatus == 'NE' ? 'ca' : 
+							lista.fiscalStatus == 'ES'? 'transf' : lista.fiscalStatus == 'ED' ? 'ee' : null}"
+						headerText="#{label['label.status.fiscal']}" style="width:10%">
+						<h:outputText value="#{lista.fiscalStatus.toString()}" />
+					</p:column>
+
+					<p:column headerText="#{label['label.list.Action']}"
+						style="width:15%">
+						<p:commandLink process="empresaForm" title="#{menu['nfe']}"
+							styleClass="btn btn-flat"
+							disabled="#{lista.pedidoStatus ne 'REC' or lista.fiscalStatus ne 'NE'}"
+							action="#{nfeBean.nfePedido(lista.id)}"
+							onclick="PF('dialogListaDePedidos').hide()"
+							update="formPopups formSetCliente">
+							<p:graphicImage name="/nsym/img/nfe.png" width="25"
+								style="right:0;" />
+						</p:commandLink>
+					</p:column>
+
+				</p:dataTable>
+			</div>
+			<div class="box-footer align-right">
+			
+			</div>
+		</div>
+	</div>
+</p:dialog>
+

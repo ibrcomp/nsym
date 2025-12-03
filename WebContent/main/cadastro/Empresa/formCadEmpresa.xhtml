@@ -1,0 +1,692 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="Empresa" />
+
+	<f:metadata>
+		<f:viewAction action="#{empresaBean.initializeForm(param.empresaID)}" />
+		<f:viewAction
+			action="#{contatoBean.initializeFormT(param.empresaID,param.tipoCadastro)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['empresa.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{empresaBean.viewState eq 'ADDING'}"
+			value="#{messages['empresa.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{empresaBean.viewState eq 'EDITING'}"
+			value="#{messages['empresa.page-description-editing']}">
+			<f:param value="#{empresaBean.empresa.razaoSocial}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li><a href="formListEmpresa.xhtml">#{breadcrumb['entries.empresa']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row" id="men">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="Cadastro"></p:outputLabel>
+					</h2>
+				</div>
+				<p:tabView prependId="false">
+					<p:tab title="Cadastro" id="cadastroForm">
+						<div class="box-body row">
+							<div class="form-group col-md-3">
+								<p:outputLabel for="tipoRegime"
+									value="#{messages['empresa.form.regime']}: " />
+								<p:selectOneMenu id="tipoRegime"
+									value="#{empresaBean.empresa.enquadramento}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['empresa.form.select-one']}" />
+									<f:selectItems value="#{empresaBean.enquadramentoType}" />
+									<p:ajax update="@form" />
+								</p:selectOneMenu>
+							</div>
+
+							<div class="form-group col-md-2">
+
+								<p:outputLabel value="#{label['label.cnpj']}: " for="cnpj" />
+								<p:inputMask value="#{empresaBean.empresa.cnpj}" id="cnpj"
+									required="true" requiredMessage="#{validation['empresa.cnpj']}"
+									mask="99.999.999/9999-99" maxlength="18"
+									styleClass="form-control">
+									<p:keyFilter mask="int" />
+								</p:inputMask>
+
+
+							</div>
+
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.ie']}: " for="insc" />
+								<p:inputText value="#{empresaBean.empresa.inscEstadual}"
+									id="insc" required="false"
+									requiredMessage="Preencha o campo a Inscrição Estadual da Empresa"
+									maxlength="19" styleClass="form-control">
+									<p:tooltip id="toolInsc" for="insc" showEvent="focus"
+										hideEvent="blur" position="top"
+										value="#{messages['ie.enter']}" />
+									<!-- rendered="#{enderecoBean.estado.length() gt '0'}" -->
+								</p:inputText>
+								<p:message for="insc" />
+							</div>
+
+							<div class="form-group col-md-11">
+								<p:outputLabel value="#{label['label.razao']} " for="razao" />
+								<p:inputText value="#{empresaBean.empresa.razaoSocial}"
+									id="razao" required="true"
+									requiredMessage="#{validation['empresa.razaoSocial']}"
+									maxlength="100" label="razao" styleClass="form-control" />
+
+								<p:outputLabel value="#{label['label.fantasia']}" for="fantasia" />
+								<p:inputText value="#{empresaBean.empresa.nomeFantasia}"
+									id="fantasia" styleClass="form-control" />
+							</div>
+
+							<div class="form-group col-md-6">
+								<p:outputLabel value="#{label['label.email.nfe']}: "
+									for="emailNfe" />
+								<p:inputText value="#{empresaBean.emailStr}" id="emailNfe"
+									styleClass="form-control"
+									readonly="#{userSessionBean.hasRole(authorization.EMPRESA_INSERT) eq 'false'}" />
+
+							</div>
+
+							<div class="form-group col-md-8">
+								<p:outputLabel value="#{label['label.logradouro']}"
+									for="logradouro" />
+								<p:inputText value="#{empresaBean.endereco.logra}"
+									id="logradouro" styleClass="form-control" readonly="false"
+									immediate="false" />
+							</div>
+
+							<div class="form-group col-md-1">
+								<p:outputLabel value="#{label['label.numero']}" for="numero" />
+								<p:inputText value="#{empresaBean.endComplemento.numero}"
+									id="numero" styleClass="form-control" immediate="true" />
+							</div>
+
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.bairro']}" for="bairro" />
+								<p:inputText value="#{empresaBean.endereco.bairro}" id="bairro"
+									readonly="false" styleClass="form-control" />
+							</div>
+
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.municipio']}"
+									for="localidade" />
+								<p:inputText value="#{empresaBean.endereco.localidade}"
+									styleClass="form-control" id="localidade" readonly="true" />
+							</div>
+
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.estado']}" for="ibge" />
+								<p:inputText value="#{empresaBean.endereco.uf}" id="ibge"
+									readonly="true" styleClass="form-control">
+								</p:inputText>
+							</div>
+
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.complemento']}"
+									for="complemento" />
+								<p:inputText id="complemento"
+									value="#{empresaBean.endComplemento.complemento}"
+									styleClass="form-contol" />
+							</div>
+
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.cep']}" for="cep" />
+								<p:inputMask mask="99999-999"
+									value="#{empresaBean.endereco.cep}" id="cep" readonly="true"
+									styleClass="form-control" immediate="true" />
+							</div>
+
+
+							<div class="form-group col-md-10">
+								<p:outputLabel value="#{label['label.obs']}" for="obs" />
+								<p:inputTextarea value="#{empresaBean.endComplemento.obs}"
+									id="obs" maxlength="300" style="width:60%"></p:inputTextarea>
+							</div>
+						</div>
+					</p:tab>
+
+					<p:tab title="Contato" id="formContato"
+						rendered="#{empresaBean.visivelPorIdCliente}">
+						<div class="box-body row">
+							<div class="form-group col-md-6">
+								<p:dataTable id="listaContato" var="contato"
+									value="#{contatoBean.contatoModel}" selectionMode="single"
+									paginator="true" rows="10" lazy="true"
+									paginatorTemplate="{CurrentPageReport}
+									 {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+									rowKey="#{contato.id}" styleClass="from-control">
+									<p:ajax event="rowSelect" listener="#{contatoBean.onRowSelect}"
+										update="messages empresaForm @form" process="empresaForm" />
+									<p:ajax event="rowUnselect"
+										listener="#{contatoBean.onRowUnselect()}" />
+									<f:facet name="header">
+		            						#{label['label.contact.list']}
+		     						   </f:facet>
+									<p:column headerText="Contato">
+										<h:outputText value="#{contato.nome}" />
+									</p:column>
+									<p:column headerText="Telefone" id="listaTel" style="width:25%">
+										<ui:repeat value="#{contato.fone}" var="fone"
+											varStatus="foneStatus">
+
+											<li><p:outputLabel value="#{fone.fone}" /> <p:commandButton
+													update="messages empresaForm @form" process="empresaForm"
+													icon="fa fa-pencil" style="width:20px; margin-left: 15px;">
+													<f:actionListener
+														binding="#{contatoBean.editaFoneContato(fone)}" />
+												</p:commandButton></li>
+
+										</ui:repeat>
+									</p:column>
+									<p:column headerText="Email" style="width:50%;">
+										<ui:repeat value="#{contato.email}" var="email">
+											<li><p:outputLabel value="#{email.email}" /> <p:commandButton
+													update="messages empresaForm @form" process="empresaForm"
+													icon="fa fa-pencil" style="width:20px; margin-left: 15px;">
+													<f:actionListener
+														binding="#{contatoBean.editaEmailContato(email)}" />
+												</p:commandButton></li>
+										</ui:repeat>
+									</p:column>
+									<f:facet name="footer">
+										<p:commandButton process="empresaForm"
+											update="listaContato @form" icon="ui-icon-search"
+											value="Adiciona"
+											actionListener="#{empresaBean.telaTelefone()}"
+											rendered="#{empresaBean.visivelPorIdCliente}"
+											immediate="true" />
+									</f:facet>
+								</p:dataTable>
+
+							</div>
+							<div class="form-group col-sm-3">
+								<p:outputLabel value="#{label['label.telefone.DDI']}" for="ddi"
+									rendered="#{contatoBean.contatoDisponivel}" />
+								<p:inputMask value="#{contatoBean.fone.ddi}" id="ddi" mask="99"
+									styleClass="form-control"
+									rendered="#{contatoBean.contatoDisponivel}" immediate="true" />
+							</div>
+							<div class="form-group col-md-3">
+								<p:outputLabel for="ddd" value="#{label['label.telefone.ddd']}"
+									rendered="#{contatoBean.contatoDisponivel}" />
+								<p:inputMask value="#{contatoBean.fone.ddd}" id="ddd" mask="99"
+									styleClass="form-control" immediate="true"
+									rendered="#{contatoBean.contatoDisponivel}" />
+							</div>
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.Telefone']}" for="tel"
+									rendered="#{contatoBean.contatoDisponivel}" />
+								<p:inputText value="#{contatoBean.fone.fone}" id="tel"
+									styleClass="form-control"
+									rendered="#{contatoBean.contatoDisponivel}" maxlength="9">
+									<p:keyFilter mask="num" />
+								</p:inputText>
+								<p:outputLabel value="#{label['label.whatsApp']}" for="whats"
+									rendered="#{contatoBean.contatoDisponivel}" />
+								<p:selectBooleanCheckbox value="#{contatoBean.fone.whatsapp}"
+									id="whats" rendered="#{contatoBean.contatoDisponivel}" />
+							</div>
+							<div class="form-group col-md-3">
+								<p:outputLabel for="operadora"
+									value="#{label['label.telefone.operadora']}"
+									rendered="#{contatoBean.contatoDisponivel}" />
+								<p:selectOneMenu id="operadora"
+									value="#{contatoBean.fone.operadora}"
+									converter="omnifaces.GenericEnumConverter"
+									rendered="#{contatoBean.contatoDisponivel}" immediate="true"
+									styleClass="form-control">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['empresa.form.select-one']}" />
+									<f:selectItems var="op" itemValue="#{op}"
+										value="#{contatoBean.operadoraType}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.email']}" for="email"
+									rendered="#{contatoBean.alteraEmail}" />
+								<p:inputText value="#{contatoBean.email.email}" id="email"
+									rendered="#{contatoBean.alteraEmail eq 'true'}"
+									styleClass="form-control">
+									<f:validateRegex
+										pattern="^[\w!#$%’*+/=\-?^_`{|}~]+(\.[\w!#$%’*+/=\-?^_`{|}~]+)*@[\w-]+(\.[\w]+)*(\.[a-z]{2,})$" />
+								</p:inputText>
+
+							</div>
+							<div class="form-group col-md-2">
+								<br />
+								<p:commandButton value="#{menu['add']}"
+									actionListener="#{contatoBean.doSalva()}"
+									onstart="PF('formBlock').block()"
+									styleClass="form-control btn btn-flat btn-success"
+									oncomplete="PF('formBlock').unblock()"
+									rendered="#{contatoBean.contatoDisponivel eq 'true' or contatoBean.alteraEmail eq 'true'}"
+									icon="fa fa-hdd-o"
+									update="empresaForm formContato listaContato"
+									process="empresaForm" id="botaoAdiciona" />
+							</div>
+							<div class="form-group col-md-2">
+								<br />
+								<p:commandButton value="#{menu.cancel}"
+									actionListener="#{contatoBean.doCancela()}"
+									onstart="PF('formBlock').block()"
+									styleClass="btn btn-flat btn-cancel"
+									oncomplete="PF('formBlock').unblock()"
+									rendered="#{contatoBean.contatoDisponivel}" icon="fa fa-undo"
+									update="empresaForm formContato listaContato @form"
+									process="empresaForm" id="botaoCancela" />
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="#{label['label.empresa.configSystem']}"
+						id="configSystem">
+						<!-- ACBR -->
+						<div class="box-body">
+							<div class="box box-info with-border col-md-6">
+								<div class="row">
+									<h4 class="box-title">
+										<p:outputLabel value="#{label['label.param.configGeral']}"></p:outputLabel>
+									</h4>
+									<div class="form-group col-md-2">
+										<p:outputLabel
+											value="#{label['label.param.outOfStockFiscal']}"
+											for="booleanFiscalNegativo" />
+										<p:selectBooleanCheckbox
+											value="#{empresaBean.empresa.estoqueFiscalNegativo}"
+											id="booleanFiscalNegativo" immediate="true" />
+									</div>
+									<div class="form-group col-md-2">
+										<p:outputLabel
+											value="#{label['label.param.outOfStockFabrica']}"
+											for="booleanFabricaNegativo" />
+										<p:selectBooleanCheckbox
+											value="#{empresaBean.empresa.estoqueNegativoFab}"
+											id="booleanFabricaNegativo" immediate="true" />
+									</div>
+									<div class="form-group col-md-2">
+										<p:outputLabel value="#{label['label.param.outOfStockALL']}"
+											for="booleanEstoqueGeralNegativo" />
+										<p:selectBooleanCheckbox
+											value="#{empresaBean.empresa.estoqueNegativo}"
+											id="booleanEstoqueGeralNegativo" immediate="true" />
+									</div>
+									<div class="form-group col-md-1">
+										<p:outputLabel
+											value="#{label['label.empresa.geraCustoMedio']}"
+											for="booleanCustoMediio" />
+										<p:selectBooleanCheckbox
+											value="#{empresaBean.empresa.gerarCustoMedio}"
+											id="booleanCustoMediio" immediate="true" />
+									</div>
+									<div class="form-group col-md-2">
+										<p:outputLabel
+											value="#{label['label.empresa.integraReceber']}"
+											for="booleanContasReceber" />
+										<p:selectBooleanCheckbox
+											value="#{empresaBean.empresa.integraReceber}"
+											id="booleanContasReceber" immediate="true" />
+									</div>
+									<div class="form-group col-md-2">
+										<p:outputLabel
+											value="#{label['label.empresa.previsaoEntrega']}"
+											for="booleanPrevisaoEntrega" />
+										<p:selectBooleanCheckbox
+											value="#{empresaBean.empresa.previsaEntrega}"
+											id="booleanPrevisaoEntrega" immediate="true" />
+									</div>
+								</div>
+							</div>
+							<div class="box box-info col-md-6">
+								<div class="row">
+									<h4 class="box-title">
+										<p:outputLabel
+											value="#{label['label.param.configTranserencia']}"></p:outputLabel>
+									</h4>
+									<div class="form-group col-md-2">
+										<p:outputLabel
+											value="#{label['label.param.tranferNotConfirm']}"
+											for="booleanTranferAutomatico" />
+										<p:selectBooleanCheckbox
+											value="#{empresaBean.empresa.tranferAutomatico}"
+											id="booleanTranferAutomatico" immediate="true" />
+									</div>
+									<div class="form-group col-md-1">
+										<p:outputLabel
+											value="#{label['label.param.tranferPriceAndStock']}"
+											for="booleanTranferPreco" />
+										<p:selectBooleanCheckbox
+											value="#{empresaBean.empresa.tranferPreco}"
+											id="booleanTranferPreco" immediate="true" />
+									</div>
+								</div>
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="#{label['label.empresa.import']}" id="paramEmp">
+						<!-- Import -->
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-4">
+									<p:outputLabel for="nomeArq"
+										value="Informe o nome do arquivo para importar o cadastro de Clientes" />
+									<p:inputText id="nomeArq" value="#{empresaBean.nomeArquivo}"
+										immediate="true" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:commandButton update="importCliente" process="paramEmp"
+										value="Importar"
+										actionListener="#{empresaBean.importaDados()}"
+										onstart="PF('formBlock').block()"
+										oncomplete="PF('formBlock').unblock()"
+										styleClass="btn btn-flat btn-success" icon="fa fa-hdd-o" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-12">
+									<p:dataTable id="importCliente" var="lista"
+										widgetVar="listaImportCliente"
+										value="#{empresaBean.listaClienteImp}"
+										paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+										paginator="true" rows="10" lazy="false" rowKey="#{lista.doc}"
+										sortBy="#{lista.nome}" rowsPerPageTemplate="10,20,30">
+
+										<p:column headerText="DOC" rendered="true" style="width:15%">
+											<h:outputLabel value="#{lista.doc}" />
+										</p:column>
+
+										<p:column sortBy="#{lista.nome}" style="width:20%"
+											headerText="Razão Social">
+											<h:outputText value="#{lista.nome}" />
+										</p:column>
+
+										<p:column sortBy="#{lista.emailnfe}"
+											headerText="Email">
+											<h:outputText value="#{lista.emailnfe}" />
+										</p:column>
+										<p:column 
+											headerText="ddd 01">
+											<h:outputText value="#{lista.ddd}" />
+										</p:column>
+										<p:column 
+											headerText="Fone 01">
+											<h:outputText value="#{lista.fone1}" />
+										</p:column>
+										<p:column 
+											headerText="Fone 02">
+											<h:outputText value="#{lista.fone2}" />
+										</p:column>
+										<p:column 
+											headerText="Tipo Cad.">
+											<h:outputText value="#{lista.juridico}" />
+										</p:column>
+									</p:dataTable>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:commandButton update="importCliente" process="paramEmp"
+										value="gravandoImportado"
+										actionListener="#{empresaBean.armazenaDados()}"
+										onstart="PF('formBlock').block()"
+										oncomplete="PF('formBlock').unblock()"
+										styleClass="btn btn-flat btn-success" icon="fa fa-hdd-o" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:commandButton update="importCliente" process="paramEmp"
+										value="filtrandoCep"
+										actionListener="#{empresaBean.filtraCep()}"
+										onstart="PF('formBlock').block()"
+										oncomplete="PF('formBlock').unblock()"
+										styleClass="btn btn-flat btn-success" icon="fa fa-hdd-o" />
+								</div>
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="#{label['label.empresa.config1']}" id="configACBR">
+						<!-- ACBR -->
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-4">
+									<p:outputLabel for="conectAcbr"
+										value="#{label['label.ipAcbr']}" />
+									<p:inputText id="conectAcbr"
+										value="#{empresaBean.empresa.ipAcbr}" />
+								</div>
+								<div class="form-group col-md-4">
+									<p:outputLabel for="portaAcbr"
+										value="#{label['label.portAcbr']}" />
+									<p:inputText id="portaAcbr"
+										value="#{empresaBean.empresa.portaAcbr}" />
+								</div>
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="#{label['label.empresa.config2']}" id="configNfe">
+						<!-- NFE / SAT -->
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel for="export"
+										value="#{label['label.param.expor']}" />
+									<p:selectBooleanButton id="export"
+										value="#{empresaBean.empresa.exporta}"
+										onLabel="#{label['label.yes']}"
+										offLabel="#{label['label.no']}"
+										styleClass="btn btn-flat btn-primary form-control"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}">
+										<p:ajax event="change" process="configNfe" />
+									</p:selectBooleanButton>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel for="baixaEstoqueEmitiNFe"
+										value="#{label['label.param.baixaEstoqueGeralNFe']}" />
+									<p:selectBooleanButton id="baixaEstoqueEmitiNFe"
+										value="#{empresaBean.empresa.baixaEstoqueGeral}"
+										onLabel="#{label['label.yes']}"
+										offLabel="#{label['label.no']}"
+										styleClass="btn btn-flat btn-primary form-control"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}">
+										<p:ajax event="change" process="configNfe" />
+									</p:selectBooleanButton>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel for="aliqAproveita"
+										value="#{label['label.param.apro']}"
+										rendered="#{empresaBean.empresa.enquadramento eq 'SimplesNacional'}" />
+									<p:inputNumber id="aliqAproveita"
+										value="#{empresaBean.aliqAprovIcms}"
+										rendered="#{empresaBean.empresa.enquadramento eq 'SimplesNacional'}" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel for="reduzBase"
+										value="#{label['label.param.reduIcms']}"
+										rendered="#{empresaBean.empresa.enquadramento eq 'Normal'}" />
+									<p:inputNumber id="reduzBase"
+										value="#{empresaBean.reducaoBaseIcms}"
+										rendered="#{empresaBean.empresa.enquadramento eq 'Normal'}" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel for="serieNFE"
+										value="#{label['label.nfe.serie']}" />
+									<p:inputNumber id="serieNFE"
+										value="#{empresaBean.empresa.serie}" decimalPlaces="0"
+										maxlength="3" />
+								</div>
+
+								<div class="form-group col-md-2">
+									<p:outputLabel for="numNfe"
+										value="#{label['label.nfe.sequencia']}" />
+									<p:inputNumber id="numNfe"
+										value="#{empresaBean.empresa.numeroNFe}" decimalPlaces="0" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel for="verSat" value="#{label['label.versaoSat']}" />
+									<p:selectOneMenu id="verSat"
+										value="#{empresaBean.empresa.versaoSat}"
+										converter="omnifaces.GenericEnumConverter" immediate="true">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['empresa.form.select-one']}" />
+										<f:selectItems var="op" itemValue="#{op}"
+											value="#{empresaBean.versaoSatType}" />
+									</p:selectOneMenu>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-12">
+									<p:outputLabel for="satAssina" value="Assinatura Sat" />
+									<p:inputText id="satAssina" style="width:100%"
+										value="#{empresaBean.empresa.assinaturaSat}" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.tributos.list']}: "
+										for="tributoMatriz" />
+									<p:selectOneMenu label="Tributos" id="tributoMatriz"
+										required="false" value="#{empresaBean.empresa.tributo}"
+										disabled="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}"
+										converter="omnifaces.SelectItemsConverter" style="width:100%"
+										immediate="true">
+										<f:selectItem itemValue="1" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{empresaBean.listaTributosAtivos}"
+											var="lista" itemLabel="#{lista.descricao}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.tributos.list.st']}: "
+										for="tributoMatrizST" />
+									<p:selectOneMenu label="Tributos" id="tributoMatrizST"
+										required="false" value="#{empresaBean.empresa.tributoST}"
+										disabled="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}"
+										converter="omnifaces.SelectItemsConverter" style="width:100%"
+										immediate="true">
+										<f:selectItem itemValue="1" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{empresaBean.listaTributosAtivos}"
+											var="lista" itemLabel="#{lista.descricao}" />
+									</p:selectOneMenu>
+								</div>
+							</div>
+						</div>
+					</p:tab>
+
+				</p:tabView>
+			</div>
+
+			<div class="box-footer align-right">
+				<p:commandButton update="empresaForm" process="empresaForm"
+					value="#{menu['save']}" action="#{empresaBean.doSalvar()}"
+					onstart="PF('formBlock').block()"
+					styleClass="btn btn-flat btn-success"
+					oncomplete="PF('formBlock').unblock()"
+					rendered="#{empresaBean.viewState eq 'ADDING'}" icon="fa fa-hdd-o" />
+
+				<p:commandButton process="empresaForm" value="#{menu['update']}"
+					action="#{empresaBean.doSalvar()}"
+					onstart="PF('formBlock').block()"
+					update="empresaForm pageDescription"
+					styleClass="btn btn-flat btn-warning"
+					oncomplete="PF('formBlock').unblock()"
+					rendered="#{empresaBean.viewState eq 'EDITING'}" />
+
+				<p:commandButton process="empresaForm" value="#{menu['delete']}"
+					action="#{empresaBean.doExcluir()}" immediate="true"
+					styleClass="btn btn-flat btn-danger"
+					rendered="#{empresaBean.viewState eq 'EDITING'}">
+					<p:confirm header="Atenção" message="Excluir? "
+						icon="ui-icon-alert" />
+				</p:commandButton>
+
+				<p:confirmDialog global="true">
+					<p:commandButton value="#{menu.yes}"
+						styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
+					<p:commandButton value="#{menu.no}"
+						styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+				</p:confirmDialog>
+
+			</div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+			<ui:include src="/main/tools/cadastro/dialogContato.xhtml" />
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+		<h:form id="testeEnvio" prependId="false">
+			<div class="box">
+				<div class="box-body ">
+					<div class="align-left col-md-10">
+						<p:outputLabel value="Consulta por CEP?" />
+						<p:selectBooleanButton id="value2"
+							value="#{empresaBean.consultaPorCepVisivel}"
+							onLabel="#{label['label.yes']}" offLabel="#{label['label.no']}"
+							onIcon="ui-icon-check" offIcon="ui-icon-close"
+							styleClass="btn btn-flat">
+						</p:selectBooleanButton>
+						<p:commandButton action="#{enderecoBean.telaPesquisaEndereco()}"
+							value="#{label['label.search.cep']}"
+							styleClass="btn btn-flat btn-info" style="align-left"
+							icon="fa fa-search">
+						</p:commandButton>
+						<p:commandButton value="Receita"
+							action="#{empresaBean.telaReceitaFederal()}"
+							process="empresaForm" update="testeEnvio"
+							onstart="PF('dialogReceitaFederal').block()"
+							oncomplete="PF('dialogReceitaFederal').unblock()"
+							styleClass="btn btn-flat btn-default">
+						</p:commandButton>
+					</div>
+					<div class="align-right col-md-2">
+						<p:spacer width="10" />
+						<p:commandButton immediate="true" value="#{menu['back']}"
+							action="#{empresaBean.toListEmpresa()}"
+							styleClass="btn btn-flat btn-default"
+							icon="fa fa-arrow-circle-o-left" />
+					</div>
+
+				</div>
+			</div>
+			<ui:include src="/main/cadastro/Empresa/dialogReceitaFederal.xhtml" />
+			<ui:include src="/main/cadastro/Empresa/dialogPesquisaEndereco.xhtml" />
+			<ui:include
+				src="/main/cadastro/Empresa/dialogResultadoReceitaFederal.xhtml" />
+		</h:form>
+	</ui:define>
+	<ui:define name="popups">
+	</ui:define>
+</ui:composition>

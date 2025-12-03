@@ -1,0 +1,343 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="Caixa" />
+	<ui:param name="activeSubmenu" value="CaixaRelGerencia" />
+
+	<f:metadata>
+		<f:viewAction
+			action="#{caixaBean.initializeExtratoCaixa(param.idCaixa)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['caixaRecebimento.rel.Fechamento.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{caixaBean.viewState eq 'DETAILING'}"
+			value="#{messages['caixaRecebimento.rel.fechamento.pag-description']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{caixaBean.viewState eq 'DETAILING'}"
+			value="#{messages['caixaRecebimento.rel.fechamento.pag-description']}">
+			<f:param value="#{caixaBean.caixa.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['caixa.report']}</a></li>
+		<li><a href="formExtratoFechamentoCaixa.xhtml">#{breadcrumb['caixaRecebimento.rel.adm.fechamento']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{message['caixaRecebimento.rel.list.box']}" />
+					</h2>
+				</div>
+				<div class="navbar-form">
+					<p:toolbar>
+						<f:facet name="left">
+							<p:spacer width="10" />
+						</f:facet>
+						<f:facet name="right">
+							<p:commandButton immediate="true" value="#{menu['back']}"
+								action="#{userBean.toDashboard}"
+								styleClass="btn btn-flat btn-default" />
+
+						</f:facet>
+					</p:toolbar>
+				</div>
+				<div class="box box-info">
+					<div class="box-body with-border">
+						<div class="form-group col-md-5">
+							<div class="row">
+								<p:outputLabel
+									value="#{label['label.caixaRecebimento.rel.SaldoCaixa']}" />
+							</div>
+							<div class="row">
+								<p:dataTable id="dtSaldoCaixa" var="lista"
+									widgetVar="listaSaldoCaixa" value="#{caixaBean.listaSaldo}"
+									paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+ 								{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+									paginator="true" rows="20" rowKey="#{lista.id}" lazy="false"
+									sortField="#{lista.forma.toString()}" rowsPerPageTemplate="20">
+
+									<p:column headerText="#{label['label.nfe.Pagamento']}"
+										rendered="true" style="width:12%">
+										<h:outputLabel value="#{lista.forma.toString()}" />
+									</p:column>
+									<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+										rendered="true" style="width:15%">
+										<h:outputLabel value="#{lista.valor}">
+											<f:convertNumber type="currency" currencySymbol="R$"
+												maxFractionDigits="2" currencyCode="BRL" />
+										</h:outputLabel>
+									</p:column>
+									<p:columnGroup type="footer">
+										<p:row>
+											<p:column colspan="1"
+												style="text-align:right;font-size:18px;font-weight:bold;"
+												footerText="#{label['label.nfe.item.valorTotal']}:" />
+											<p:column>
+												<f:facet name="footer">
+													<h:outputText value="#{caixaBean.totalSaldo}"
+														style="font-size:18px;color:blue;font-weight:bold;">
+														<f:convertNumber type="currency" currencySymbol="R$"
+															maxFractionDigits="2" currencyCode="BRL" />
+													</h:outputText>
+												</f:facet>
+											</p:column>
+										</p:row>
+									</p:columnGroup>
+								</p:dataTable>
+							</div>
+							<div class="row">
+								<br />
+								<p:outputLabel
+									value="#{label['label.caixaRecebimento.rel.movimento']}" />
+								<p:dataTable id="dtMovimentos" var="listaR"
+									widgetVar="listaMovimentos"
+									value="#{caixaBean.listaMovimentacaoSangria}"
+									paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+ 								{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+									paginator="true" rows="10" rowKey="#{listaR.id}" lazy="false"
+									sortField="#{listaR.motivo.motivo}">
+
+									<!-- 									<p:ajax event="rowSelect" listener="#{caixaBean.onRowSelectMotivo}" update="dialogMotivo motivoDetail" oncomplete="PF('motivoDialog').show()" /> -->
+
+									<p:column headerText="#{label['label.venda.list.id']}"
+										rendered="true" style="width:12%">
+										<h:outputLabel value="#{listaR.id}" />
+									</p:column>
+									<p:column headerText="#{label['label.movimentacao.motivo']}"
+										rendered="true">
+										<h:outputLabel value="#{listaR.motivo.motivo}" />
+									</p:column>
+
+									<p:column
+										headerText="#{label['label.financial.tipoPagamento']}"
+										rendered="true" style="width:15%">
+										<h:outputLabel
+											value="#{listaR.pagamento.tipoPagamento.toString()}"
+											id="labelAbertura">
+										</h:outputLabel>
+									</p:column>
+									<p:column
+										headerText="#{label['label.movimento.tipoMovimento']}"
+										rendered="true" style="width:12%">
+										<h:outputLabel
+											value="#{listaR.motivo.tipoMovimento.toString()}" />
+									</p:column>
+									<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+										rendered="true" style="width:15%">
+										<h:outputLabel value="#{listaR.recebimento.valorRecebido}">
+											<f:convertNumber type="currency" currencySymbol="R$"
+												maxFractionDigits="2" currencyCode="BRL" />
+										</h:outputLabel>
+									</p:column>
+									<p:column headerText="#{label['label.list.Action']}"
+										style="width:12%"
+										rendered="#{caixaBean.viewState eq 'DETAILING'}">
+										<p:commandButton process="dtMovimentos"
+											icon="fa fa-binoculars" title="#{menu['view']}"
+											styleClass="btn btn-flat btn-info"
+											rendered="#{caixaBean.viewState eq 'DETAILING'}"
+											actionListener="#{caixaBean.selectMotivo(listaR)}"
+											oncomplete="PF('motivoDialog').show()"
+											update="dialogMotivo motivoDetail" />
+									</p:column>
+								</p:dataTable>
+							</div>
+						</div>
+						<div class="form-group col-md-1"></div>
+						<div class="form-group col-md-5">
+							<div class="row">
+								<p:outputLabel
+									value="#{label['label.caixaRecebimento.rel.infoUsuario']}" />
+							</div>
+							<div class="row">
+								<p:dataTable id="dtSaldoFechamento" var="lista"
+									widgetVar="listaSaldoCaixa"
+									value="#{caixaBean.listaValoresFechamentoCaixa}"
+									paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+ 								{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+									paginator="true" rows="20" rowKey="#{lista.id}" lazy="false"
+									sortField="#{lista.tipoPagamento.toString()}"
+									rowsPerPageTemplate="20">
+
+									<p:column headerText="#{label['label.nfe.Pagamento']}"
+										rendered="true" style="width:12%">
+										<h:outputLabel value="#{lista.tipoPagamento.toString()}" />
+									</p:column>
+									<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+										rendered="true" style="width:15%">
+										<h:outputLabel value="#{lista.valorRecebido}">
+											<f:convertNumber type="currency" currencySymbol="R$"
+												maxFractionDigits="2" currencyCode="BRL" />
+										</h:outputLabel>
+									</p:column>
+									<p:columnGroup type="footer">
+										<p:row>
+											<p:column colspan="1"
+												style="text-align:right;font-size:18px;font-weight:bold;"
+												footerText="#{label['label.nfe.item.valorTotal']}:" />
+											<p:column>
+												<f:facet name="footer">
+													<h:outputText value="#{caixaBean.totalFechamento}"
+														style="font-size:18px;color:blue;font-weight:bold;">
+														<f:convertNumber type="currency" currencySymbol="R$"
+															maxFractionDigits="2" currencyCode="BRL" />
+													</h:outputText>
+												</f:facet>
+											</p:column>
+										</p:row>
+									</p:columnGroup>
+								</p:dataTable>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="box box-info">
+					<div class="box-body with-border">
+						<div class="form-group col-md-5">
+							<div class="row">
+								<p:outputLabel
+									value="#{label['label.caixaRecebimento.rel.Abertura']}" />
+							</div>
+							<div class="row">
+								<p:dataTable id="dtAbertura" var="lista"
+									widgetVar="listaAbertura"
+									value="#{caixaBean.listaValoresAberturaCaixa}"
+									paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+ 								{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+									paginator="true" rows="20" rowKey="#{lista.id}" lazy="false"
+									sortField="#{lista.tipoPagamento.toString()}"
+									rowsPerPageTemplate="20">
+
+									<p:column headerText="#{label['label.nfe.Pagamento']}"
+										rendered="true" style="width:12%">
+										<h:outputLabel value="#{lista.tipoPagamento.toString()}" />
+									</p:column>
+									<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+										rendered="true" style="width:15%">
+										<h:outputLabel value="#{lista.valorRecebido}">
+											<f:convertNumber type="currency" currencySymbol="R$"
+												maxFractionDigits="2" currencyCode="BRL" />
+										</h:outputLabel>
+									</p:column>
+
+								</p:dataTable>
+							</div>
+						</div>
+						<div class="form-group col-md-1"></div>
+						<h:form id="formListaRecebidos" prependId="false">
+							<div class="form-group col-md-5">
+								<div class="row">
+									<p:commandButton
+										value="#{label['label.caixaRecebimento.rel.exibeLista']}"
+										process="formListaRecebidos"
+										actionListener="#{caixaBean.geraListaPedidosCaixa()}"
+										onstart="PF('formBlock').block()"
+										oncomplete="PF('formBlock').unblock()"
+										update="labelListaPedidos dtRecebimentos" id="buttonPesquisa"
+										style="width:80%;margin:5px"
+										styleClass="btn btn-flat btn-info" icon="fa fa-search" />
+								</div>
+								<div class="row">
+									<p:outputLabel
+										value="#{label['label.caixaRecebimento.rel.recebimentos']}"
+										id="labelListaPedidos" for="dtRecebimentos" />
+								</div>
+								<div class="row">
+									<p:dataTable id="dtRecebimentos" var="listaR"
+										widgetVar="listaRecebimentos"
+										value="#{caixaBean.listaPedidosSelecionados}"
+										paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+ 								{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+										paginator="true" rows="10" rowKey="#{lista.id}" lazy="false"
+										sortField="#{listaR.pedidoStatus}">
+
+
+										<p:column headerText="#{label['label.venda.list.id']}"
+											rendered="true" style="width:12%">
+											<h:outputLabel value="#{listaR.id}" />
+										</p:column>
+										<p:column headerText="#{label['label.venda.list.controle']}"
+											rendered="true" style="width:12%">
+											<h:outputLabel value="#{listaR.controle.controle}" />
+										</p:column>
+
+										<p:column headerText="#{label['label.caixa.agPedido']}"
+											rendered="true" style="width:12%">
+											<h:outputLabel value="#{listaR.agrupado.id}" />
+										</p:column>
+										<p:column headerText="#{label['label.dataEmissao']}"
+											rendered="true" sortBy="#{listaR.dataEmissao}"
+											style="width:15%">
+											<h:outputLabel value="#{listaR.dataEmissao}"
+												id="labelAbertura">
+												<f:converter converterId="localDateConverter"
+													for="labelAbertura" />
+											</h:outputLabel>
+										</p:column>
+										<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+											rendered="true" style="width:15%">
+											<h:outputLabel value="#{listaR.valorTotalPedido}">
+												<f:convertNumber type="currency" currencySymbol="R$"
+													maxFractionDigits="2" currencyCode="BRL" />
+											</h:outputLabel>
+										</p:column>
+										<p:column headerText="#{label['label.status.pedido']}"
+											rendered="true" style="width:12%">
+											<h:outputLabel value="#{listaR.pedidoStatus}" />
+										</p:column>
+									</p:dataTable>
+								</div>
+							</div>
+						</h:form>
+					</div>
+				</div>
+			</div>
+			<p:dialog header="#{label['label.caixaRecebimenbo.rel.motivo']}"
+				widgetVar="motivoDialog" modal="true" showEffect="fade"
+				hideEffect="fade" resizable="false" id="dialogMotivo">
+				<p:outputPanel id="motivoDetail" style="text-align:center;">
+					<p:panelGrid columns="2"
+						rendered="#{not empty caixaBean.movimento}">
+
+
+						<h:outputLabel value="Motivo:" rendered="true" />
+						<h:outputText value="#{caixaBean.movimento.motivo.motivo}" />
+
+
+						<h:outputLabel value="obs:" />
+						<h:outputText value="#{caixaBean.movimento.descMovimento}" />
+					</p:panelGrid>
+				</p:outputPanel>
+			</p:dialog>
+		</h:form>
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+</ui:composition>

@@ -1,0 +1,113 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="NFE" />
+	<ui:param name="activeSubmenu" value="A3" />
+
+	<!--     <f:metadata> -->
+	<!--         <f:viewAction action="#{assinaA3.initializeForm(param.userId)}"/> -->
+	<!--     </f:metadata> -->
+
+	<ui:define name="pageTitle">
+        #{messages['acbr.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{assinaA3Bean.viewState eq 'ADDING'}"
+			value="#{messages['acbr.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{userBean.viewState eq 'EDITING'}"
+			value="#{messages['acbr.page-description-editing']}">
+			<f:param value="#{assinaA3Bean.cnpjCliente}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['tools']}</a></li>
+		<li><a href="formAssinador.xhtml">#{breadcrumb['nfe.util']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="userForm" prependId="false">
+
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel
+							value="Modulo de suporte para o sistema de emissão de NFE" />
+					</h2>
+				</div>
+
+				<div class="box-body row">
+					<div class="form-group col-md-6">
+						<p:outputLabel value="Assinatura: " for="disp" />
+						<p:inputTextarea id="disp" value="#{nfeBean.respostaAcbr}"
+							autoResize="false" rows="10" cols="50" styleClass="form-control"
+							disabled="true" />
+					</div>
+					<div class="col-md-4">
+
+						<p:commandButton value="Consulta Nfe ja definida"
+							actionListener="#{nfeBean.testaAcbr('2')}" update="disp"
+							styleClass="btn btn-flat btn-default"
+							icon="fa fa-arrow-circle-o-left">
+
+						</p:commandButton>
+
+						<p:commandButton value="Consulta Status Serviço"
+							actionListener="#{nfeBean.statusServicoNfe()}"
+							styleClass="btn btn-flat btn-default" update="disp"
+							icon="fa fa-arrow-circle-o-left">
+						</p:commandButton>
+
+						<p:commandButton value="gera arquivo INI"
+							actionListener="#{nfeBean.geraNfe()}"
+							styleClass="btn btn-flat btn-default" update="disp"
+							icon="fa fa-arrow-circle-o-left">
+						</p:commandButton>
+					</div>
+				</div>
+
+				<div class="box-footer align-right">
+					<p:commandButton update="userForm" process="userForm"
+						value="#{menu['save']}" action="#{userBean.doSave()}"
+						onstart="PF('formBlock').block()"
+						styleClass="btn btn-flat btn-success"
+						oncomplete="PF('formBlock').unblock()"
+						rendered="#{userBean.viewState eq 'ADDING'}" />
+					<p:commandButton process="userForm" value="#{menu['update']}"
+						action="#{userBean.doUpdate()}" onstart="PF('formBlock').block()"
+						update="userForm pageDescription"
+						styleClass="btn btn-flat btn-success"
+						oncomplete="PF('formBlock').unblock()"
+						rendered="#{userBean.viewState eq 'EDITING'}" />
+					<p:spacer width="10" />
+					<p:commandButton immediate="true" value="#{menu['back']}"
+						action="#{userBean.toDashboard}"
+						styleClass="btn btn-flat btn-default" />
+				</div>
+			</div>
+		</h:form>
+
+		<pe:blockUI target="userForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+</ui:composition>

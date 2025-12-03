@@ -1,0 +1,181 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="Caixa" />
+	<ui:param name="activeSubmenu" value="Abertura" />
+
+	<f:metadata>
+		<f:viewAction action="#{caixaBean.initializeFormAbertura()}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['caixaAbertura.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{caixaBean.viewState eq 'ADDING'}"
+			value="#{messages['caixaAbertura.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{caixaBean.viewState eq 'EDITING'}"
+			value="#{messages['caixaAbertura.page-description-editing']}">
+			<f:param value="#{caixaBean.pedido.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['caixa']}</a></li>
+		<li><a href="formCaixaAbertura.xhtml">#{breadcrumb['caixa.open']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['caixa.saldoInicial']}"></p:outputLabel>
+					</h2>
+				</div>
+			</div>
+			<div class="navbar-form">
+				<p:toolbar>
+					<f:facet name="left">
+
+						<p:commandButton process="empresaForm" value="#{menu['save']}"
+							action="#{caixaBean.doSaveAbertura()}" id="buttonSave"
+							onstart="PF('formBlock').block()"
+							styleClass="btn btn-flat btn-success"
+							disabled="#{userSessionBean.hasRole(authorization.CAIXA_INSERT) eq 'false' }"
+							update="empresaForm" oncomplete="PF('formBlock').unblock()"
+							rendered="#{caixaBean.viewState eq 'ADDING'}" icon="fa fa-hdd-o" />
+					</f:facet>
+					<f:facet name="right">
+
+						<span class="ui-separator"> <span
+							class="ui-icon ui-icon-grip-dotted-vertical" />
+						</span>
+						<p:commandButton immediate="true" value="#{menu['back']}"
+							action="#{userBean.toDashboard()}"
+							styleClass="btn btn-flat btn-default" />
+					</f:facet>
+				</p:toolbar>
+			</div>
+			<div class="box box-success">
+				<div class="box-body with-border">
+					<div class="col-md-6">
+						<h:form id="formCabecalho" prependId="false">
+							<div class="boxEspecial box-primary">
+								<div class="box-body width-border">
+									<!-- Grupo de informações padrões ao pedido -->
+									<div class="row">
+										<div class="form-group col-md-4">
+											<p:outputLabel value="#{label['label.nfe.Pagamento']}: "
+												for="selectPagamento"
+												rendered="#{caixaBean.viewState eq 'ADDING'}" />
+											<p:selectOneMenu value="#{caixaBean.tipoSimples}"
+												rendered="#{caixaBean.viewState eq 'ADDING'}"
+												id="selectPagamento" filter="true"
+												filterMatchMode="contains" required="true"
+												converter="omnifaces.GenericEnumConverter"
+												style="width:100%">
+												<f:selectItem itemValue="#{null}" noSelectionOption="false"
+													itemLabel="#{messages['filial.form.select-one']}" />
+												<f:selectItems
+													value="#{caixaBean.listaTipoPagamentoSimples}" var="forma"
+													itemLabel="#{forma.toString()}" />
+											</p:selectOneMenu>
+										</div>
+										<div class="form-group col-md-2">
+											<p:outputLabel value="#{label['label.nfe.totalNfe']}:"
+												for="inputTotal" style="width:100%"
+												rendered="#{caixaBean.viewState eq 'ADDING'}" />
+											<p:inputNumber value="#{caixaBean.valorAbertura}"
+												rendered="#{caixaBean.viewState eq 'ADDING'}"
+												id="inputTotal" onkeypress="setaFoco(this)"
+												maxValue="99999999.99" minValue="0.0" immediate="true"
+												decimalSeparator="," thousandSeparator="." symbol="R$ "
+												size="10">
+											</p:inputNumber>
+										</div>
+										<div class="form-group col-md-2">
+											<br />
+											<p:commandButton actionListener="#{caixaBean.insereVal()}"
+												rendered="#{caixaBean.viewState eq 'ADDING'}"
+												process="formCabecalho" update="inputTotal listaRecebiveis"
+												id="insereItem" style="margin:10px"
+												styleClass="btn btn-flat btn-warning" icon="fa fa-plus" />
+										</div>
+									</div>
+									<div class="row">
+										<div class="form-group col-md-12">
+											<p:dataTable id="listaRecebiveis" var="lista"
+												rendered="#{caixaBean.viewState eq 'ADDING'}"
+												styleClass="table" widgetVar="listaRecebiveisWidge"
+												value="#{caixaBean.geraListaTipoPagamento}"
+												paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+												{PreviousPageLink} {PageLinks} {NextPageLink} 
+												{LastPageLink} {RowsPerPageDropdown}"
+												paginator="true" rows="20" lazy="false"
+												rowKey="#{lista.key}" rowsPerPageTemplate="20,30">
+
+												<p:column headerText="#{label['label.nfe.Pagamento']}"
+													rendered="true" style="width:50%">
+													<h:outputText value="#{lista.key.toString()}" />
+												</p:column>
+
+												<p:column headerText="#{label['label.list.preco1']}"
+													rendered="true" style="width:40%">
+													<h:outputLabel value="#{lista.value}">
+														<f:convertNumber type="currency" currencySymbol="R$"
+															maxFractionDigits="2" currencyCode="BRL" />
+													</h:outputLabel>
+												</p:column>
+
+												<p:column headerText="#{label['label.list.Action']}"
+													rendered="#{caixaBean.viewState eq 'ADDING'}">
+													<p:commandButton process="listaRecebiveis"
+														icon="fa fa-remove" title="#{menu['delete']}"
+														styleClass="btn btn-flat btn-danger"
+														rendered="#{caixaBean.viewState eq 'ADDING'}"
+														actionListener="#{caixaBean.zeraValor(lista.key)}"
+														update="listaRecebiveis" />
+												</p:column>
+
+											</p:dataTable>
+										</div>
+									</div>
+								</div>
+							</div>
+						</h:form>
+					</div>
+				</div>
+			</div>
+		</h:form>
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+
+	<ui:define name="sub-content">
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="formPopup" prependId="false">
+		</h:form>
+
+	</ui:define>
+</ui:composition>

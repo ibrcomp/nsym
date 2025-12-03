@@ -1,0 +1,147 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="nfeReferenciadaId"
+	width="70%" modal="true" resizable="false" closeOnEscape="true"
+	widgetVar="dialogNfeReferenciada"
+	header="#{messages['nfe.page-title']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-2">
+				<p:outputLabel value="#{messages['nfe.page-referenciada']}" />
+			</h2>
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messageDialog" closable="true" />
+				</div>
+			</div>
+		</div>
+		<div class="box-body">
+			<div class="row">
+				<div class="navbar-form">
+					<p:toolbar>
+						<f:facet name="left">
+							<p:commandButton update="empresaForm"
+								process="formPopupReferenciada" value="#{menu['add']}"
+								action="#{nfeBean.saveReferenciada()}"
+								styleClass="btn btn-flat btn-primary"
+								icon="ui-icon-circle-plus "
+								disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+								oncomplete="PF('dialogNfeReferenciada').hide()" rendered="true" />
+						</f:facet>
+					</p:toolbar>
+				</div>
+
+			</div>
+			<div class="row">
+				<div class="form-group col-sm-8">
+					<p:outputLabel value="#{label['label.nfe.chaveReferenciada']}"
+						for="chaveRef" />
+					<p:inputTextarea value="#{nfeBean.nfeRefTemp.chaveReferenciada}"
+						id="chaveRef" immediate="true" styleClass="form-control"
+						maxlength="44" rows="1" cols="50" counter="caracterCount"
+						counterTemplate="#{label['label.nfe.countChave']}"
+						autoResize="false" />
+					<h:outputText id="caracterCount" class="p-d-block" />
+				</div>
+			</div>
+			<div class="row">
+				<div class="form-group col-sm-2">
+					<p:outputLabel value="#{label['label.dataEmissao']}"
+						for="idDataEmissaoNf" />
+					<p:calendar value="#{nfeBean.nfeRefTemp.aaMM}" id="idDataEmissaoNf"
+						disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+						pattern="dd/MM/yyyy" converter="localDateConverter" />
+				</div>
+				<div class="form-group col-sm-2">
+					<p:outputLabel value="#{label['label.nfe.serie']}" for="serFiscal" />
+					<p:inputText value="#{nfeBean.nfeRefTemp.serie}" id="serFiscal"
+						disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}" />
+				</div>
+				<div class="form-group col-sm-2">
+					<p:outputLabel value="#{label['label.nfe.numero']}"
+						for="numNfeReferenciada" />
+					<p:inputText value="#{nfeBean.nfeRefTemp.NNF}"
+						id="numNfeReferenciada"
+						disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}" />
+				</div>
+			</div>
+			<div class="row">
+				<div class="form-group col-sm-2">
+					<br />
+					<p:commandButton
+						actionListener="#{nfeBean.insereListaReferenciada()}"
+						process="formPopupReferenciada"
+						update="chaveRef idDataEmissaoNf serFiscal numNfeReferenciada listaNfeRef"
+						oncomplete="$(function(){PrimeFaces.focus('idRefItem');});"
+						id="insereNfeReferenciada" style="width:100%;margin:5px"
+						styleClass="btn btn-flat btn-principal" icon="fa fa-plus" />
+				</div>
+				<div class="form-group col-sm-10">
+					<p:dataTable id="listaNfeRef" var="lista" styleClass="todo-list"
+						widgetVar="listaNfeRefdg" value="#{nfeBean.listaTempReferenciada}"
+						paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+						paginator="true" rows="20" lazy="true"
+						sortBy="#{lista.chaveReferenciada}" rowsPerPageTemplate="20,30">
+
+						<!-- 						<p:ajax event="rowSelect" listener="#{nfeBean.onRowSelectNfeReferenciada}" -->
+						<!-- 							update="listaNfeRef" process="formPopupReferenciada" /> -->
+
+						<p:columnGroup type="footer">
+							<p:row>
+								<p:commandButton process="formPopupReferenciada"
+									actionListener="#{nfeBean.removeNfeReferenciada()}"
+									update="listaNfeRef" icon="ui-icon-trash " value="Excluir" />
+							</p:row>
+						</p:columnGroup>
+						<p:column headerText="#{label['label.list.nfeRef.chave']}"
+							rendered="true">
+							<h:outputText value="#{lista.chaveReferenciada}" />
+						</p:column>
+						<p:column headerText="#{label['label.list.nfeRef.nNfe']}"
+							rendered="true">
+							<h:outputText value="#{lista.NNF}" />
+						</p:column>
+						<p:column headerText="#{label['label.list.nfeRef.date']}"
+							rendered="true">
+							<p:calendar value="#{lista.aaMM}" pattern="yy/MM"
+								converter="localDateConverter" />
+						</p:column>
+						<p:column headerText="#{label['label.list.Action']}">
+							<p:commandButton process="formPopupReferenciada"
+								icon="fa fa-remove" title="#{menu['delete']}"
+								styleClass="btn btn-flat btn-danger"
+								actionListener="#{nfeBean.excluiChaveReferenciada(lista)}"
+								update="listaNfeRef" />
+						</p:column>
+					</p:dataTable>
+				</div>
+			</div>
+			<!-- 			<div class="row"> -->
+			<!-- 				<div class="form-group col-sd-8"> -->
+			<!-- 					<p:outputLabel value="Resposta Sefaz" for="respSefazCCe" /> -->
+			<!-- 					<p:inputTextarea rows="2" cols="100" maxlength="150" -->
+			<!-- 						immediate="true" disabled="true" styleClass="form-control" -->
+			<!-- 						counterTemplate="{0} caracteres restantes" -->
+			<!-- 						value="#{nfeBean.respostaAcbrLocal}" id="respSefazCCe" -->
+			<!-- 						autoResize="false" /> -->
+			<!-- 				</div> -->
+			<!-- 			</div> -->
+		</div>
+		<div class="box-footer align-right">
+
+			<!-- 			<p:commandButton process="formPopups" value="Enviar CCe" -->
+			<!-- 				actionListener="#{nfeBean.enviaCCe()}" update="respSefazCCe nfe" -->
+			<!-- 				onstart="PF('formBlock').block()" -->
+			<!-- 				styleClass="btn btn-flat btn-warning" -->
+			<!-- 				oncomplete="PF('formBlock').unblock()" -->
+			<!-- 				disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}" /> -->
+
+		</div>
+
+	</div>
+</p:dialog>
+

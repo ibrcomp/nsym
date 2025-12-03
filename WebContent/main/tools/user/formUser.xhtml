@@ -1,0 +1,155 @@
+
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="users" />
+
+	<f:metadata>
+		<f:viewAction action="#{userBean.initializeForm(param.userId)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['user.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{userBean.viewState eq 'ADDING'}"
+			value="#{messages['user.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{userBean.viewState eq 'EDITING'}"
+			value="#{messages['user.page-description-editing']}">
+			<f:param value="#{userBean.user.name}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['tools']}</a></li>
+		<li><a href="listUsers.xhtml">#{breadcrumb['tools.user']}</a></li>
+		<li jsf:rendered="#{userBean.viewState eq 'ADDING'}" class="active"><a
+			href="#">#{breadcrumb['including']}</a></li>
+		<li jsf:rendered="#{userBean.viewState eq 'EDITING'}" class="active"><a
+			href="#">#{breadcrumb['editing']}</a></li>
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="userForm" prependId="false">
+
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h3 class="box-title">
+						<p:selectBooleanCheckbox value="#{userBean.user.blocked}"
+							itemLabel="#{messages['user.form.blocked']}" />
+					</h3>
+				</div>
+
+				<div class="box-body row">
+					<div class="form-group col-md-6">
+						<p:outputLabel for="inGroup"
+							value="#{messages['user.form.group']}" />
+						<p:selectOneMenu id="inGroup" style="width: 25%"
+							value="#{userBean.user.groupMembership.group}"
+							converter="omnifaces.SelectItemsConverter">
+							<f:selectItem itemValue="#{null}" noSelectionOption="true"
+								itemLabel="#{messages['user.form.select-one']}" />
+							<f:selectItems var="group" itemValue="#{group}"
+								itemLabel="#{group.name}" value="#{userBean.groups}" />
+						</p:selectOneMenu>
+					</div>
+					<div class="form-group col-md-3">
+						<p:outputLabel for="empresa" value="#{label['label.empresa']}" />
+						<p:selectOneMenu id="empresa" style="width:80%"
+							value="#{userBean.empresa}"
+							converter="omnifaces.SelectItemsConverter" immediate="true">
+							<f:selectItem itemValue="#{null}" noSelectionOption="true"
+								itemLabel="#{messages['empresa.form.select-one']}" />
+							<f:selectItems var="emp" itemValue="#{emp}"
+								itemLabel="#{emp.razaoSocial}" value="#{empresaBean.empresas}" />
+						</p:selectOneMenu>
+					</div>
+					<div class="form-group col-md-3">
+						<p:outputLabel for="filial" value="#{label['label.filial']}" />
+						<p:selectOneMenu id="filial" style="width:80%"
+							value="#{userBean.filial}"
+							converter="omnifaces.SelectItemsConverter" immediate="true">
+							<f:selectItem itemValue="#{null}" noSelectionOption="true"
+								itemLabel="#{messages['empresa.form.select-one']}" />
+							<f:selectItems var="fil" itemValue="#{fil}"
+								itemLabel="#{fil.razaoSocial}" value="#{filialBean.filiais}" />
+						</p:selectOneMenu>
+					</div>
+					<div class="form-group col-md-6">
+						<p:outputLabel for="inNamde" value="#{messages['user.form.name']}" />
+						<p:inputText id="inNamde" maxlength="90" styleClass="form-control"
+							value="#{userBean.user.name}" />
+					</div>
+					<div class="form-group col-md-6">
+						<p:outputLabel for="inEmail"
+							value="#{messages['user.form.email']}" />
+						<p:inputText id="inEmail" maxlength="90" styleClass="form-control"
+							value="#{userBean.user.email}" />
+					</div>
+					<div class="form-group col-md-4">
+						<p:outputLabel for="inUsername"
+							value="#{messages['user.form.username']}" />
+						<p:inputText id="inUsername" maxlength="45"
+							styleClass="form-control" value="#{userBean.user.username}"
+							readonly="#{userBean.user.id ne null}" />
+					</div>
+					<div class="form-group col-md-4">
+						<p:outputLabel for="inPassword"
+							value="#{messages['user.form.password']}" />
+						<p:password id="inPassword" match="inConfirmPassword"
+							styleClass="form-control" value="#{userBean.user.password}"
+							required="#{userBean.user.id eq null}"
+							validatorMessage="#{validation['user.password-not-match']}" />
+					</div>
+					<div class="form-group col-md-4">
+						<p:outputLabel for="inConfirmPassword"
+							value="#{messages['user.form.confirm-password']}" />
+						<p:password id="inConfirmPassword" styleClass="form-control"
+							value="#{userBean.user.passwordConfirmation}" />
+					</div>
+				</div>
+
+				<div class="box-footer align-right">
+					<p:commandButton update="userForm" process="userForm"
+						value="#{menu['save']}" action="#{userBean.doSave()}"
+						onstart="PF('formBlock').block()"
+						styleClass="btn btn-flat btn-success"
+						oncomplete="PF('formBlock').unblock()"
+						rendered="#{userBean.viewState eq 'ADDING'}" />
+					<p:commandButton process="userForm" value="#{menu['update']}"
+						action="#{userBean.doUpdate()}" onstart="PF('formBlock').block()"
+						update="userForm pageDescription"
+						styleClass="btn btn-flat btn-success"
+						oncomplete="PF('formBlock').unblock()"
+						rendered="#{userBean.viewState eq 'EDITING'}" />
+					<p:spacer width="10" />
+					<p:commandButton immediate="true" value="#{menu['back']}"
+						action="#{userBean.doCancel()}"
+						styleClass="btn btn-flat btn-default" />
+				</div>
+			</div>
+		</h:form>
+
+		<pe:blockUI target="userForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="webbudget"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+</ui:composition>

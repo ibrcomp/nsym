@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.20.0.final using JasperReports Library version 6.20.0-2bc7ab61c56f459e8176eb05c7705e145cd400ad  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="RelMaisVendidos" pageWidth="595" pageHeight="842" columnWidth="535" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="3d4feaf2-3dda-4fa8-97fe-220a6b6c859f">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="WebContent\WEB-INF\Relatorios\Vendas\DataAdapter.jrdax"/>
+	<parameter name="empresaID" class="java.lang.Long"/>
+	<parameter name="dataIni" class="java.lang.String"/>
+	<parameter name="dataFim" class="java.lang.String"/>
+	<parameter name="filialID" class="java.lang.Long"/>
+	<queryString language="SQL">
+		<![CDATA[select colaborador.nome as Colaborador,
+ sum(pedido.valorTotalPedido) as Total, 
+ emp.RazaoSocial as Empresa,
+  fil.RazaoSocial as Filial,
+  (select sum(p1.valorTotalPedido) from pedido p1 where p1.id_empresa = $P{empresaID}  and p1.id_filial = $P{filialID}  and p1.pedidoStatus = "REC" and  p1.dataEmissao between  $P{dataIni}  and $P{dataFim} ) as "Total Período" from pedido 
+  inner join colaborador on colaborador.id = pedido.Colaborador_id
+   inner join Empresa emp on emp.id = pedido.id_empresa 
+   left join Filial fil on fil.id = pedido.id_filial 
+   where (pedido.dataEmissao between  $P{dataIni}  and $P{dataFim} )  and pedido.id_empresa = $P{empresaID}  and pedido.id_Filial = $P{filialID}    and pedido.pedidoStatus = "REC" 
+   group by colaborador.nome]]>
+	</queryString>
+	<field name="Colaborador" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="nome"/>
+		<property name="com.jaspersoft.studio.field.label" value="Colaborador"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="colaborador"/>
+	</field>
+	<field name="Total" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="Total"/>
+		<property name="com.jaspersoft.studio.field.label" value="Total"/>
+	</field>
+	<field name="Empresa" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="razaoSocial"/>
+		<property name="com.jaspersoft.studio.field.label" value="Empresa"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="empresa"/>
+	</field>
+	<field name="Filial" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="razaoSocial"/>
+		<property name="com.jaspersoft.studio.field.label" value="Filial"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="filial"/>
+	</field>
+	<field name="Total Período" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="Total Período"/>
+		<property name="com.jaspersoft.studio.field.label" value="Total Período"/>
+	</field>
+	<background>
+		<band/>
+	</background>
+	<title>
+		<band height="72">
+			<frame>
+				<reportElement mode="Opaque" x="-20" y="-20" width="595" height="90" backcolor="#006699" uuid="3d674bed-19f0-4cfc-86c7-0367ebcb4de9"/>
+				<textField>
+					<reportElement x="330" y="9" width="260" height="21" forecolor="#FFFFFF" uuid="10bfc570-b7c7-4789-bd1d-82d25ffb11b1"/>
+					<textElement>
+						<font size="12" isItalic="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{Empresa}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="279" y="9" width="51" height="21" forecolor="#FFFFFF" uuid="0bac1268-8e28-4a85-9af0-ad3dba76b112"/>
+					<textElement>
+						<font size="12"/>
+					</textElement>
+					<text><![CDATA[Matriz:]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="281" y="60" width="70" height="21" forecolor="#FFFFFF" uuid="7e23b072-acf0-4495-815b-6e7b7c324f3e"/>
+					<text><![CDATA[Perído Inicial:]]></text>
+				</staticText>
+				<textField pattern="dd/MM/yyyy">
+					<reportElement x="351" y="60" width="80" height="21" forecolor="#FFFFFF" uuid="6d438944-fd0f-4181-b2fa-6921b77818a8"/>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$P{dataIni}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="439" y="60" width="70" height="21" forecolor="#FFFFFF" uuid="c6e1bcae-911a-45bb-9217-789a23d6a33c"/>
+					<text><![CDATA[Perído Final:]]></text>
+				</staticText>
+				<textField pattern="dd/MM/yyyy">
+					<reportElement x="509" y="60" width="80" height="21" forecolor="#FFFFFF" uuid="5b1447f7-a4d9-485a-92b0-52bddf5e4acb"/>
+					<textElement>
+						<font isBold="true" isItalic="false" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$P{dataFim}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="6" y="4" width="235" height="31" forecolor="#FCFCFC" uuid="85154938-aec7-4f66-bf51-09786689f109"/>
+					<textElement rotation="None">
+						<font size="19" isBold="true" isItalic="true" isUnderline="false"/>
+					</textElement>
+					<text><![CDATA[Vendas por Colaborador]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="10" y="65" width="70" height="21" forecolor="#FFFFFF" uuid="b73b431a-f3cb-43f3-a26c-da8d18647861"/>
+					<text><![CDATA[Total Período:]]></text>
+				</staticText>
+				<textField pattern="¤#,##0.00;¤-#,##0.00">
+					<reportElement x="80" y="60" width="90" height="21" forecolor="#EBB00E" uuid="8abfcd40-a851-4366-b5e7-c94c8b29131a"/>
+					<textElement textAlignment="Center" markup="none">
+						<font size="14" isBold="true" isItalic="true" isUnderline="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{Total Período}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="279" y="32" width="51" height="21" forecolor="#FFFFFF" uuid="e650e5e0-81f0-454e-a6a6-56d62048f92c"/>
+					<textElement>
+						<font size="12"/>
+					</textElement>
+					<text><![CDATA[Filial:]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="330" y="32" width="261" height="21" forecolor="#FFFFFF" uuid="113285f2-c36b-46b0-bc1a-fe1006578692"/>
+					<textElement>
+						<font size="12" isItalic="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{Filial}]]></textFieldExpression>
+				</textField>
+			</frame>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="13"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="23">
+			<line>
+				<reportElement x="-20" y="20" width="595" height="1" forecolor="#666666" uuid="0f6671b7-0e12-460e-9d1b-7d4ae887ab6c"/>
+			</line>
+			<staticText>
+				<reportElement key="" x="4" y="2" width="200" height="16" uuid="73966b39-a99d-480f-8c4f-b8c526478de2">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nome]]></text>
+			</staticText>
+			<staticText>
+				<reportElement key="" x="222" y="2" width="88" height="16" uuid="64a6d0df-7168-4e48-b59e-cb652edff6c3">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total Vendido]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="22">
+			<line>
+				<reportElement positionType="FixRelativeToBottom" x="0" y="19" width="555" height="1" uuid="6f9aa914-a271-4080-aa2a-17f22ac79895"/>
+			</line>
+			<textField>
+				<reportElement x="5" y="2" width="200" height="15" uuid="67fc636f-24b5-41e0-b9b5-8d4293441b11">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{Colaborador}]]></textFieldExpression>
+			</textField>
+			<textField pattern="¤#,##0.00;¤-#,##0.00">
+				<reportElement x="221" y="2" width="89" height="15" uuid="34231126-b06f-4eb0-b856-aa2b21e49e90">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{Total}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band/>
+	</columnFooter>
+	<pageFooter>
+		<band height="17">
+			<textField>
+				<reportElement mode="Opaque" x="0" y="4" width="515" height="13" backcolor="#E6E6E6" uuid="f8dd6c06-ca24-4604-9b56-b57d5f17c95b"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Página "+$V{PAGE_NUMBER}+" de"]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement mode="Opaque" x="515" y="4" width="40" height="13" backcolor="#E6E6E6" uuid="8e15fef6-6470-41df-b231-67f89d650a0a"/>
+				<textFieldExpression><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="EEEEE dd MMMMM yyyy">
+				<reportElement x="0" y="4" width="100" height="13" uuid="0a23cf0f-0e28-4c10-8fc1-53046b3ccab7"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band/>
+	</summary>
+</jasperReport>

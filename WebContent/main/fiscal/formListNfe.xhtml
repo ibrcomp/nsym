@@ -1,0 +1,317 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="NFE" />
+	<ui:param name="activeSubmenu" value="Nfe" />
+
+	<f:metadata>
+		<f:viewAction action="#{nfeBean.initializeListing()}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['nfe.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{nfeBean.viewState eq 'ADDING'}"
+			value="#{messages['nfe.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{nfeBean.viewState eq 'EDITING'}"
+			value="#{messages['nfe.page-description-editing']}">
+			<f:param value="#{nfeBean.nfe.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li><a href="formListNfe.xhtml">#{breadcrumb['entries.nfe']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{label['label.nfe.list']}" />
+					</h2>
+				</div>
+
+				<div class="box-body">
+					<div class="row">
+						<div class="navbar-form">
+							<p:toolbar id="navegador">
+								<f:facet name="left">
+									<p:commandButton update="empresaForm" process="empresaForm"
+										value="#{menu['new']}" action="#{nfeBean.newNfe}"
+										onstart="PF('formBlock').block()"
+										styleClass="btn btn-flat btn-primary" icon="ui-icon-document"
+										disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+										oncomplete="PF('formBlock').unblock()" rendered="true" />
+
+									<p:commandButton process="empresaForm" value="#{menu['view']}"
+										action="#{nfeBean.changeToEdit(nfeBean.nfe.id)}"
+										onstart="PF('formBlock').block()"
+										update="empresaForm pageDescription"
+										styleClass="btn btn-flat btn-success"
+										oncomplete="PF('formBlock').unblock()"
+										disabled="#{userSessionBean.hasRole(authorization.NFE_VIEW) eq 'false' or nfeBean.viewState != 'EDITING' }" />
+
+									<span class="ui-separator"> <span
+										class="ui-icon ui-icon-grip-dotted-vertical" />
+									</span>
+									<p:commandButton process="empresaForm" value="#{menu['vendas.list']}" 
+										action="#{nfeBean.telaListaDePedidos()}" 
+										onstart="PF('formBlock').block()"
+										update="empresaForm pageDescription" 
+										styleClass="btn btn-flat btn-primary"
+										oncomplete="PF('dialogPedidosBlock').unblock()"
+										disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'  }" />
+										
+									<span class="ui-separator"> <span
+										class="ui-icon ui-icon-grip-dotted-vertical" />
+									</span>
+
+									<p:commandButton process="empresaForm"
+										value="#{menu['fiscal.nfe.inu']}"
+										action="#{nfeBean.telaInutiliza()}"
+										onstart="PF('formBlock').block()"
+										update="empresaForm pageDescription"
+										styleClass="btn btn-flat btn-WARNING"
+										oncomplete="PF('formBlock').unblock()"
+										disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}" />
+
+									<span class="ui-separator"> <span
+										class="ui-icon ui-icon-grip-dotted-vertical" />
+									</span>
+
+									<!-- 									<p:commandButton process="empresaForm" value="Gera Nfe" -->
+									<!-- 										action="#{nfeBean.geraNfe()}" -->
+									<!-- 										onstart="PF('formBlock').block()" -->
+									<!-- 										update="empresaForm pageDescription" -->
+									<!-- 										styleClass="btn btn-flat btn-WARNING" -->
+									<!-- 										oncomplete="PF('formBlock').unblock()" -->
+									<!-- 										disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}" /> -->
+
+								</f:facet>
+								<f:facet name="right">
+									<p:commandButton title="Imprimir" icon="fa fa-print"
+										process="empresaForm"
+										rendered="#{nfeBean.viewState eq 'EDITING'}"
+										action="#{nfeBean.imprimiNfe()}" />
+									<p:commandButton title="E-mail" icon="fa fa-at"
+										process="empresaForm"
+										rendered="#{nfeBean.viewState eq 'EDITING'}"
+										action="#{nfeBean.telaEmailAvulso()}" />
+									<span class="ui-separator"> <span
+										class="ui-icon ui-icon-grip-dotted-vertical" />
+									</span>
+									<p:commandButton value="Transmite nfe" process="empresaForm"
+										action="#{nfeBean.emiteXML()}"
+										onstart="PF('formBlock').block()"
+										styleClass="btn btn-flat btn-info"
+										oncomplete="PF('formBlock').unblock()" update="empresaForm"
+										rendered="#{nfeBean.viewState eq 'EDITING'}"
+										icon="fa fa-arrow-circle-o-left">
+									</p:commandButton>
+									<p:spacer width="5" />
+									<p:commandButton process="empresaForm" value="Cancelar NFE"
+										action="#{nfeBean.telaCancelaNfe()}"
+										onstart="PF('formBlock').block()"
+										styleClass="btn btn-flat btn-warning"
+										oncomplete="PF('formBlock').unblock()"
+										update="respSefazList nfe"
+										disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+										rendered="#{nfeBean.viewState eq 'EDITING'}" />
+									<p:spacer width="5" />
+									<p:commandButton process="empresaForm" value="CCe"
+										action="#{nfeBean.telaCCeNfe()}"
+										onstart="PF('formBlock').block()"
+										styleClass="btn btn-flat btn-warning"
+										oncomplete="PF('formBlock').unblock()"
+										update="respSefazList nfe"
+										disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+										rendered="#{nfeBean.viewState eq 'EDITING'}" />
+									<p:spacer width="5" />
+									<p:commandButton process="empresaForm"
+										value="#{menu['delete']}" action="#{nfeBean.doExcluir()}"
+										immediate="true" update="empresaForm"
+										styleClass="btn btn-flat btn-danger"
+										disabled="#{userSessionBean.hasRole(authorization.NFE_DELETE) eq 'false'}"
+										rendered="#{nfeBean.viewState eq 'EDITING'}">
+										<p:confirm header="Atenção" message="Excluir? "
+											icon="ui-icon-alert" />
+									</p:commandButton>
+
+									<p:confirmDialog global="true">
+										<p:commandButton value="#{menu.yes}"
+											styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
+										<p:commandButton value="#{menu.no}"
+											styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+									</p:confirmDialog>
+									<span class="ui-separator"> <span
+										class="ui-icon ui-icon-grip-dotted-vertical" />
+									</span>
+									<p:commandButton immediate="true" value="#{menu['back']}"
+										action="#{userBean.toDashboard}"
+										styleClass="btn btn-flat btn-default" />
+								</f:facet>
+							</p:toolbar>
+						</div>
+					</div>
+					<div class="row">
+						<div class="form-group col-md-12">
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.start']}" for="idEmissao1" />
+								<br />
+								<p:calendar value="#{nfeBean.dataIni}" 
+									id="idEmissao1" pattern="dd/MM/yyyy HH:mm" 
+									converter="localDateTimeConverter" />
+									
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.finish']}" for="idDataEnt1" />
+								<br />
+								<p:calendar value="#{nfeBean.dataFim}" id="idDataEnt1"
+									pattern="dd/MM/yyyy HH:mm"  converter="localDateTimeConverter" />
+							</div>
+							<div class="form-group col-md-2">
+								<br />
+								<p:commandButton value="#{label['label.search']}"
+									process="empresaForm"
+									actionListener="#{nfeBean.initializeListing()}"
+									onstart="PF('formBlock').block()"
+									oncomplete="PF('formBlock').unblock()" update="empresaForm"
+									id="buttonPesquisaNfe" style="width:80%;margin:5px"
+									styleClass="btn btn-flat btn-info" icon="fa fa-search" />
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="form-group col-md-12">
+							<p:dataTable id="nfe" var="lista" widgetVar="listaNfe"
+								value="#{nfeBean.nfeModel}"
+								paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+								paginator="true" rows="10" selection="#{nfeBean.nfe}"
+								selectionMode="single" lazy="true" rowKey="#{lista.id}"
+								sortBy="#{lista.dataEmissao}" sortOrder="descending"
+								styleClass="table"
+								rowStyleClass="#{lista.statusEmissao == 'EN' ? 'en' : lista.statusEmissao == 'SA' ? 'sa': lista.statusEmissao == 'EE' ? 'ee' : lista.statusEmissao == 'CA' ? 'ca': lista.statusEmissao == 'IN' ? 'in' : null}">
+
+								<p:ajax event="rowSelect" listener="#{nfeBean.onRowSelect}"
+									update="navegador" process="empresaForm" />
+
+								<p:column headerText="Número NFE" rendered="true"
+									sortBy="#{lista.numeroNota}" style="width:5%">
+									<h:outputLabel value="#{lista.numeroNota}" />
+								</p:column>
+
+								<p:column headerText="Emissão" rendered="true"
+									sortBy="#{lista.dataEmissao}" style="width:10%">
+									<h:outputLabel value="#{lista.dataEmissao}" >
+										<f:converter converterId="localDateTimeConverter"/>
+									</h:outputLabel>
+								</p:column>
+
+								<p:column sortBy="#{lista.nome}" headerText="Razão Social"
+									filterBy="#{lista.nome}" filterMatchMode="contains">
+									<h:outputText value="#{lista.nome}" />
+								</p:column>
+
+								<p:column sortBy="#{lista.chaveAcesso}"
+									headerText="Chave De Acesso" style="width:30%">
+									<h:outputText value="#{lista.chaveAcesso}" />
+								</p:column>
+
+								<p:column sortBy="#{lista.statusEmissao}" headerText="Status"
+									style="width:15%">
+									<h:outputText value="#{lista.statusEmissao.toString()}" />
+								</p:column>
+								<p:column headerText="#{label['label.list.Action']}"
+								style="width:10%">
+								<p:commandButton process="empresaForm" title="#{menu['financial']}"
+									styleClass="btn btn-flat btn-primary"
+									disabled="#{lista.statusEmissao ne 'EN' or lista.origemPedido ne 'false' or lista.financeiroGerado ne 'false'}"
+									actionListener="#{nfeBean.geraFinanceiroNFE(lista)}" 
+									icon="fa fa-hand-holding-usd"
+									update="messages">
+<!-- 									<p:graphicImage name="/nsym/img/nfe.png" width="25" -->
+<!-- 										style="right:0;" /> -->
+								</p:commandButton>
+							</p:column>
+
+							</p:dataTable>
+<!-- 							<p:outputLabel value="Exportar:" /> -->
+<!-- 							<h:commandLink> -->
+<!-- 								<p:graphicImage name="/nsym/img/excel.png" width="28" -->
+<!-- 									style="right:0;" /> -->
+<!-- 								<p:dataExporter type="xls" target="nfe" fileName="listaDeNfe" /> -->
+<!-- 							</h:commandLink> -->
+
+						</div>
+					</div>
+				</div>
+
+				<div class="box-footer">
+					<div class="row">
+						<div class="align-left col-md-12">
+							<div class="form-group col-md-12">
+								<p:outputLabel value="Resposta Sefaz" for="respSefazList" />
+								<p:inputTextarea rows="6" cols="100" immediate="true"
+									disabled="true" styleClass="form-control"
+									counterTemplate="{0} caracteres restantes"
+									value="#{nfeBean.respostaAcbrLocal}" id="respSefazList"
+									autoResize="false" />
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</h:form>
+
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+		
+		<pe:blockUI target="listaDePedidosDialog" widgetVar="dialogPedidosBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="formPopupsCancel" prependId="false">
+			<ui:include src="/main/fiscal/dialogCancelaNfe.xhtml" />
+		</h:form>
+		<h:form id="formPopups" prependId="false">
+			<ui:include src="/main/fiscal/tools/dialogCCeNfe.xhtml" /> 			
+			<ui:include src="/main/fiscal/dialogListaPedidos.xhtml" />
+		</h:form>
+		<h:form id="formSetCliente" prependId="false">
+			<ui:include src="/main/fiscal/dialogEncontraDestinatario.xhtml" />
+		</h:form>
+		<h:form id="formPopupEmail" prependId="false">
+			<ui:include src="/main/fiscal/tools/dialogEmailNfe.xhtml" />
+		</h:form>
+		<h:form id="formPopupInu" prependId="false">
+			<ui:include src="/main/fiscal/tools/dialogInutiliza.xhtml" />
+		</h:form>
+	</ui:define>
+</ui:composition>

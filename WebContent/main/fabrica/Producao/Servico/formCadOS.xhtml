@@ -1,0 +1,248 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:of="http://omnifaces.org/functions"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"> 
+
+
+	<ui:param name="activeMenu" value="FABRICA" />
+	<ui:param name="activeSubmenu" value="OS" />
+	<f:metadata>
+		<f:viewAction action="#{oSBean.initializeCadOs(param.osID)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+       #{breadcrumb['entries.fabrica.os']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{oSBean.viewState eq 'ADDING'}"
+			value="#{messages['fabrica.os.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{oSBean.viewState eq 'EDITING'}"
+			value="#{messages['fabrica.os.page-description-editing']}">
+			<f:param value="#{oSBean.os.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries.fabrica']}</a></li>
+		<li><a href="formCadOS.xhtml">#{breadcrumb['entries.fabrica.os']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['entries.fabrica.os']}"></p:outputLabel>
+					</h2>
+				</div>
+				<div class="box-body ">
+					<p:focus for="selectOP" context="empresaForm" />
+					<p:defaultCommand target="buttonSave" />
+					<div class="form-group col-md-12">
+						<div class="row">
+							<p:toolbar id="navegador">
+								<f:facet name="left">
+									<p:commandButton update="empresaForm" process="empresaForm"
+										id="buttonSave" value="#{menu['save']}"
+										action="#{oSBean.doSalvarOS()}"
+										onstart="PF('formBlock').block()"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUCAO_INSERT) eq 'false'}"
+										styleClass="btn btn-flat btn-success"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{oSBean.viewState eq 'ADDING'}" icon="fa fa-hdd-o" />
+
+									<p:commandButton process="empresaForm"
+										value="#{menu['update']}" action="#{oSBean.doSalvarOS()}"
+										onstart="PF('formBlock').block()"
+										update="empresaForm pageDescription"
+										styleClass="btn btn-flat btn-warning"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUCAO_EDIT) eq 'false'}"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{oSBean.viewState eq 'EDITING'}" />
+
+								</f:facet>
+								<f:facet name="right">
+									<p:commandButton immediate="true" value="#{menu['back']}"
+										action="#{oSBean.toListOS()}"
+										styleClass="btn btn-flat btn-default" />
+								</f:facet>
+							</p:toolbar>
+						</div>
+					</div>
+					<div class="col-md-12">
+						<div class="row">
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.os.OP']}: " for="selectOP" />
+								<p:selectOneMenu value="#{oSBean.producao}" filter="true"
+									filterMatchMode="contains" id="selectOP" required="true"
+									disabled="#{userSessionBean.hasRole(authorization.FABRICA_INSERT) eq 'false'}"
+									converter="omnifaces.SelectItemsConverter" style="width:100%">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{oSBean.listaOP}"
+										itemLabel="#{item.id} - #{item.descricao}" var="item" />
+									<p:ajax update="prodDesc quantDisp" event="change" 
+									listener="#{oSBean.preencheProducao()}" />
+								</p:selectOneMenu>
+							</div>
+
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.os.prestador']}: "
+									for="selectPrestador" />
+								<p:selectOneMenu value="#{oSBean.prestador}" filter="true"
+									filterMatchMode="contains" id="selectPrestador" required="true"
+									disabled="#{userSessionBean.hasRole(authorization.FABRICA_INSERT) eq 'false'}"
+									converter="omnifaces.SelectItemsConverter" style="width:100%">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{oSBean.listaPrestador}"
+										itemLabel="#{item.razaoSocial}" var="item" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.os.quantEnviada']}: "
+									for="quantEnv" />
+								<p:inputNumber value="#{oSBean.os.quantidadeEnviada}"
+									id="quantEnv" decimalPlaces="3" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.os.dataPrevisao']}"
+									for="dataPrevRetorno" />
+								<br />
+								<p:calendar value="#{oSBean.os.previsaoRetorno}"
+									id="dataPrevRetorno" pattern="dd/MM/yyyy"
+									converter="localDateConverter" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.os.dataRetorno']}"
+									for="dataRetorno"
+									rendered="#{oSBean.viewState eq 'EDITING' or osBean.retorno eq 'true'}" />
+								<br />
+								<p:calendar value="#{oSBean.os.dataRetorno}" id="datavRetorno"
+									pattern="dd/MM/yyyy" converter="localDateConverter"
+									rendered="#{oSBean.viewState eq 'EDITING' or osBean.retorno eq 'true'}" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.os.quantRetornado']}: "
+									for="quantRet"
+									rendered="#{oSBean.viewState eq 'EDITING' or osBean.retorno eq 'true'}" />
+								<p:inputNumber value="#{oSBean.os.quantidadeRetorno}"
+									rendered="#{oSBean.viewState eq 'EDITING' or osBean.retorno eq 'true'}"
+									id="quantRet" decimalPlaces="3" />
+							</div>
+						</div>
+					</div>
+					<div class="col-md-12">
+						<div class="col-md-6">
+							<h:form id="produtcaoGroup" prependId="false">
+								<div class="box box-success box-body">
+									<div class="row">
+										<!-- 									Lista com o produto que será confeccionado -->
+										<div class="form-group col-md-12">
+											<p:outputLabel value="#{label['label.os.produtoDesc']}" for="prodDesc" />
+											<br />
+											<p:outputLabel value="#{oSBean.producao.ref} - #{oSBean.producao.descricao}" id="prodDesc"  style="color:red;"/>
+										</div>
+									</div>
+									<div class="row">
+										<div class="form-group col-md-4">
+											<p:outputLabel value="#{label['label.os.quantDisponivel']}" for="quantDisp"/>
+											<br />
+											<p:outputLabel value="#{oSBean.producao.quantDispProduzir}" id="quantDisp" style="color:blue;"/>
+										</div>
+									</div>
+								</div>
+							</h:form>
+						</div>
+						<div class="col-md-6">
+							<h:form id="servicoGroup" prependId="false">
+								<div class="box box-success box-body">
+									<div class="row">
+										<div class="form-group col-md-4">
+											<p:outputLabel value="#{label['label.os.refServico']}" for="idRefItem">
+												<p:commandButton
+													actionListener="#{oSBean.telaListaServico()}"
+													styleClass="btn btn-flat btn-info"
+													disabled="#{userSessionBean.hasRole(authorization.FABRICA_INSERT) eq 'false'}"
+													icon="fa fa-search" style="width:20px;height:20px"
+													process="servicoGroup" />
+											</p:outputLabel>
+											<p:inputText value="#{oSBean.refService}" id="idRefItem"
+											styleClass="form-control" />
+										</div>
+<!-- 										<div class="form-group col-md-2"> -->
+<!-- 											<p:outputLabel value="#{label['label.nfe.item.quantidade']}:" -->
+<!-- 												for="idItemQuant" style="width:100%" /> -->
+<!-- 											<p:inputNumber value="#{oSBean.quantidade}" id="idItemQuant" -->
+<!-- 												onkeypress="setaFoco(this)" maxValue="9999999.99" -->
+<!-- 												minValue="0.0" immediate="true" decimalSeparator="," -->
+<!-- 												thousandSeparator="." style="width:5%" size="5"> -->
+<!-- 											</p:inputNumber> -->
+<!-- 										</div> -->
+										<div class="form-group col-md-2">
+
+											<p:outputLabel value="#{label['label.insert']} "
+												for="insereItem" style="width:100%" />
+											<p:commandButton actionListener="#{oSBean.localizaServico()}"
+												process="servicoGroup"
+												oncomplete="$(function(){PrimeFaces.focus('idRefItem');});"
+												update="idRefItem preco1 labelDescService labelValorService labelQuantEnviada"
+												id="insereItem" style="width:70%;margin:5px"
+												styleClass="btn btn-flat btn-warning" icon="fa fa-plus" />
+										</div>
+										<div class="form-group col-md-2">
+											<br />
+											<p:outputLabel value="Preço: " for="preco1"
+												style="width:100%"
+												rendered="#{osBean.usuarioAutenticado.config.alteraPrecoServico eq 'true'}" />
+											<p:inputNumber value="#{oSBean.servico.valorSugerido}" size="10"
+												disabled="#{oSBean.configUser.alteraPrecoServico eq 'false'}"
+												decimalPlaces="2" id="preco1" thousandSeparator="."
+												rendered="#{osBean.usuarioAutenticado.config.alteraPrecoServico eq 'true'}"
+												decimalSeparator="," symbol="R$" />
+										</div>
+									</div>
+									<div class="form-group col-md-4">
+										<p:outputLabel value="#{oSBean.os.servico.descricao}" id="labelDescService" />
+										<p:outputLabel value="#{oSBean.os.servico.valorSugerido}" id="labelValorService">
+											<f:convertNumber type="currency" currencyCode="BRL" />
+										</p:outputLabel>
+										<p:outputLabel value="#{oSBean.os.quantidadeEnviada}" id="labelQuantEnviada" >
+											<f:convertNumber type="number" currencyCode="BRL" />
+										</p:outputLabel>
+									</div>
+								</div>
+							</h:form>
+						</div>
+					</div>
+				</div>
+			</div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="resources/nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="formPopup" prependId="false">
+			<ui:include src="/main/fabrica/Producao/Servico/tools/dialogPesquisaServico.xhtml" />
+		</h:form>
+	</ui:define>
+</ui:composition>

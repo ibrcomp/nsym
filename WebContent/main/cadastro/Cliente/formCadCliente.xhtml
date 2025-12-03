@@ -1,0 +1,653 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="Cliente" />
+
+	<f:metadata>
+		<f:viewAction action="#{clienteBean.initializeForm(param.clienteID)}" />
+		<f:viewAction
+			action="#{contatoBean.initializeFormT(param.clienteID,param.tipoCadastro)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['cliente.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{clienteBean.viewState eq 'ADDING'}"
+			value="#{messages['cliente.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{clienteBean.viewState eq 'EDITING'}"
+			value="#{messages['cliente.page-description-editing']}">
+			<f:param value="#{clienteBean.cliente.razaoSocial}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li><a href="formListCliente.xhtml">#{breadcrumb['entries.client']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row" id="men">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="Cadastro"></p:outputLabel>
+					</h2>
+				</div>
+				<div class="row">
+					<div class="navbar-form">
+						<p:toolbar>
+							<f:facet name="left">
+								<p:commandButton update="empresaForm" process="empresaForm"
+									value="#{menu['new']}" action="#{clienteBean.newCliente()}"
+									onstart="PF('formBlock').block()"
+									styleClass="btn btn-flat btn-success"
+									oncomplete="PF('formBlock').unblock()"
+									disabled="#{userSessionBean.hasRole(authorization.CLIENT_INSERT) eq 'false'}"
+									rendered="#{clienteBean.viewState eq 'EDITING' }"
+									icon="fa fa-folder-plus" />
+
+							</f:facet>
+							<f:facet name="right">
+								<p:commandButton value="#{menu['save']}"
+									action="#{clienteBean.doSalvar()}"
+									onstart="PF('formBlock').block()"
+									oncomplete="PF('formBlock').unblock()"
+									update="empresaForm pageDescription"
+									styleClass="btn btn-flat btn-success"
+									disabled="#{userSessionBean.hasRole(authorization.CLIENT_INSERT) eq 'false'}"
+									rendered="#{clienteBean.viewState eq 'ADDING'}"
+									icon="fa fa-hdd-o" />
+
+								<p:commandButton process="empresaForm" value="#{menu['update']}"
+									action="#{clienteBean.doSalvar()}"
+									onstart="PF('formBlock').block()"
+									update="empresaForm pageDescription"
+									styleClass="btn btn-flat btn-warning"
+									oncomplete="PF('formBlock').unblock()"
+									disabled="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}"
+									rendered="#{clienteBean.viewState eq 'EDITING'}" />
+
+								<p:commandButton process="empresaForm" value="#{menu['delete']}"
+									action="#{clienteBean.doExcluir()}" immediate="true"
+									styleClass="btn btn-flat btn-danger"
+									disabled="#{userSessionBean.hasRole(authorization.CLIENT_DELETE) eq 'false'}"
+									rendered="#{clienteBean.viewState eq 'EDITING' }">
+									<p:confirm header="Atenção" message="Excluir? "
+										icon="ui-icon-alert" />
+								</p:commandButton>
+
+								<p:confirmDialog global="true">
+									<p:commandButton value="#{menu.yes}"
+										styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
+									<p:commandButton value="#{menu.no}"
+										styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+								</p:confirmDialog>
+
+								<span class="ui-separator"> <span
+									class="ui-icon ui-icon-grip-dotted-vertical" />
+								</span>
+								<p:commandButton immediate="true" value="#{menu['back']}"
+									action="#{userBean.toDashboard}"
+									styleClass="btn btn-flat btn-default"
+									icon="fa fa-arrow-circle-o-left" />
+							</f:facet>
+						</p:toolbar>
+					</div>
+				</div>
+				<p:tabView prependId="false">
+					<p:tab title="Cadastro" id="cadastroForm">
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel for="tipoCliente"
+										value="#{messages['cadastro.type']}: " rendered="true" />
+									<p:selectOneMenu id="tipoCliente"
+										value="#{clienteBean.validaCampo}"
+										converter="omnifaces.GenericEnumConverter" style="width:100%"
+										rendered="true" required="true" requiredMessage="#{validation['cadastro.tipoCadastro']}"
+										disabled="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['cliente.form.select-one']}" />
+										<f:selectItems value="#{clienteBean.listTipoCliente}" />
+
+										<p:ajax event="change" update="@form :testeEnvio" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.cliente.idestrangeiro']}"
+										for="idEstrangeiro"
+										rendered="#{clienteBean.validaCampo eq 'Est'}" />
+									<p:inputText value="#{clienteBean.cliente.idEstrangeiro}"
+										id="idEstrangeiro"
+										rendered="#{clienteBean.validaCampo eq 'Est'}"
+										readonly="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}" />
+									<p:outputLabel value="#{label['label.cliente.pais']}"
+										for="idPais" rendered="#{clienteBean.validaCampo eq 'Est'}" />
+									<p:selectOneMenu id="idPais" filter="true"
+										value="#{clienteBean.cliente.pais}"
+										rendered="#{clienteBean.validaCampo eq 'Est'}"
+										disabled="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}"
+										converter="omnifaces.SelectItemsConverter" style="width:100%">
+										<f:selectItem itemValue="#{null}" noSelectionOption="false"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{clienteBean.listaPaises}" var="lista"
+											itemLabel="#{lista.nome}" />
+									</p:selectOneMenu>
+									<p:outputLabel value="#{label['label.cpf']}" for="cpf"
+										rendered="#{clienteBean.validaCampo eq 'CfC'}" />
+									<p:inputMask mask="999.999.999-99"
+										value="#{clienteBean.cliente.cpf}" maxlength="12" id="cpf"
+										rendered="#{clienteBean.validaCampo eq 'CfC'}"
+										readonly="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}"
+										styleClass="form-control" />
+									<p:outputLabel for="tipoRegime"
+										value="#{messages['cliente.form.regime']}: "
+										rendered="#{clienteBean.validaCampo eq 'Rev'}" />
+									<p:selectOneMenu id="tipoRegime"
+										value="#{clienteBean.cliente.enquadramento}"
+										converter="omnifaces.GenericEnumConverter" style="width:100%"
+										rendered="#{clienteBean.validaCampo eq 'Rev'}"
+										disabled="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}"
+										immediate="true">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['cliente.form.select-one']}" />
+										<f:selectItems value="#{clienteBean.enquadramentoType}" />
+									</p:selectOneMenu>
+								</div>
+
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.cnpj']}: " for="cnpj"
+										rendered="#{clienteBean.validaCampo eq 'Rev' or clienteBean.validaCampo eq 'Cfi'}" />
+									<p:inputMask value="#{clienteBean.cliente.cnpj}" id="cnpj"
+										required="true"
+										requiredMessage="#{validation['cliente.cnpj']}"
+										mask="99.999.999/9999-99" maxlength="18"
+										styleClass="form-control"
+										readonly="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}"
+										rendered="#{clienteBean.validaCampo eq 'Rev' or clienteBean.validaCampo eq 'Cfi'}">
+										<p:keyFilter mask="int" />
+									</p:inputMask>
+								</div>
+
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.ie']}: " for="insc"
+										rendered="#{clienteBean.validaCampo eq 'Rev'}" />
+									<p:inputText value="#{clienteBean.cliente.inscEstadual}"
+										id="insc" required="false"
+										requiredMessage="Preencha o campo a Inscrição Estadual da Cliente"
+										maxlength="19" styleClass="form-control"
+										rendered="#{clienteBean.validaCampo eq 'Rev'}"
+										readonly="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}">
+										<p:tooltip id="toolInsc" for="insc" showEvent="focus"
+											hideEvent="blur" position="top"
+											value="#{messages['ie.enter']}" />
+										<!-- rendered="#{enderecoBean.estado.length() gt '0'}" -->
+									</p:inputText>
+									<p:message for="insc" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-11">
+									<p:outputLabel value="#{label['label.razao']}: " for="razao"
+										rendered="#{clienteBean.validaCampo eq 'Rev' or clienteBean.validaCampo eq 'Cfi' or clienteBean.validaCampo eq ''}" />
+									<p:outputLabel value="#{label['label.nome']}: " for="razao"
+										rendered="#{clienteBean.validaCampo eq 'CfC' or clienteBean.validaCampo eq 'Est'}" />
+									<p:inputText value="#{clienteBean.cliente.razaoSocial}"
+										id="razao" required="true"
+										requiredMessage="#{validation['filial.razaoSocial']}"
+										maxlength="100" label="razao" styleClass="form-control"
+										readonly="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}" />
+
+									<p:outputLabel value="#{label['label.fantasia']}"
+										for="fantasia"
+										rendered="#{clienteBean.validaCampo eq 'Rev' or clienteBean.validaCampo eq 'Cfi'}" />
+									<p:inputText value="#{clienteBean.cliente.nomeFantasia}"
+										rendered="#{clienteBean.validaCampo eq 'Rev' or clienteBean.validaCampo eq 'Cfi'}"
+										id="fantasia" styleClass="form-control"
+										readonly="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}" />
+								</div>
+								<div class="form-group col-md-6">
+									<p:outputLabel value="#{label['label.email.nfe']}: "
+										for="emailNfe" />
+									<p:inputText value="#{clienteBean.emailStr}" id="emailNfe"
+										styleClass="form-control"
+										readonly="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}" />
+
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.suframa']}: "
+										for="suframa" />
+									<p:inputText value="#{clienteBean.cliente.suframa}"
+										id="suframa" styleClass="form-control"
+										readonly="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}" />
+								</div>
+								<!-- 							desenvolver tabela representate e vincular a este campo -->
+								<!-- 							<div class="form-group col-md-4"> -->
+								<!-- 								<p:outputLabel value="" for="representante" /> -->
+								<!-- 								<p:selectOneMenu id="representate" -->
+								<!-- 									value="" -->
+								<!-- 									converter="omnifaces.GenericEnumConverter" style="width:100%" > -->
+								<!-- 									<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+								<!-- 										itemLabel="#{messages['cliente.form.select-one']}" /> -->
+								<!-- 									<f:selectItems value="" /> -->
+								<!-- 								</p:selectOneMenu> -->
+								<!-- 							</div> -->
+								<div class="form-group col-md-8">
+									<p:outputLabel value="#{label['label.logradouro']}"
+										for="logradouro" />
+									<p:inputText value="#{clienteBean.endereco.logra}"
+										id="logradouro" styleClass="form-control"
+										readonly="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}"
+										immediate="true" />
+								</div>
+
+								<div class="form-group col-md-1">
+									<p:outputLabel value="#{label['label.numero']}" for="numero" />
+									<p:inputText value="#{clienteBean.endComplemento.numero}"
+										id="numero" styleClass="form-control" immediate="true"
+										readonly="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}" />
+								</div>
+
+								<div class="form-group col-md-3">
+									<p:outputLabel value="#{label['label.bairro']}" for="bairro" />
+									<p:inputText value="#{clienteBean.endereco.bairro}" id="bairro"
+										required="true" requiredMessage="#{validation['bairro']}"
+										styleClass="form-control" />
+									<!-- 									readonly="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}" -->
+
+								</div>
+
+								<div class="form-group col-md-3">
+									<p:outputLabel value="#{label['label.municipio']}"
+										for="localidade" />
+									<p:inputText value="#{clienteBean.endereco.localidade}" 
+										styleClass="form-control" id="localidade" readonly="true" />
+								</div>
+
+								<div class="form-group col-md-3">
+									<p:outputLabel value="#{label['label.estado']}" for="ibge" />
+									<p:inputText value="#{clienteBean.endereco.uf}" id="ibge"
+										readonly="true" styleClass="form-control">
+									</p:inputText>
+								</div>
+
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.cep']}" for="cep" />
+									<p:inputMask mask="99999-999"
+										value="#{clienteBean.endereco.cep}" id="cep" readonly="true" 
+										required="true" requiredMessage="#{validation['endereco.null']}"
+										styleClass="form-control" immediate="true" />
+								</div>
+
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.complemento']}"
+										for="complemento" />
+									<p:inputText id="complemento"
+										value="#{clienteBean.endComplemento.complemento}"
+										readonly="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}"
+										styleClass="form-control" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel for="colaborador"
+										value="#{label['label.colaborador']}" />
+									<p:selectOneMenu id="colaborador" style="width:80%"
+										value="#{clienteBean.cliente.colaborador}"
+										disabled="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}"
+										converter="omnifaces.SelectItemsConverter">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['empresa.form.select-one']}" />
+										<f:selectItems var="col" itemValue="#{col}"
+											itemLabel="#{col.nome}"
+											value="#{colaboradorBean.listaColaboradoresPorFilial}" />
+									</p:selectOneMenu>
+								</div>
+
+								<div class="form-group col-md-10">
+									<p:outputLabel value="#{label['label.obs']}" for="obs" />
+									<p:inputTextarea value="#{clienteBean.endComplemento.obs}"
+										readonly="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}"
+										id="obs" maxlength="300" style="width:60%"
+										styleClass="form-control" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.ncm.permiteReducao']}: "
+										for="permReducao" />
+									<p:selectBooleanButton id="permReducao"
+										value="#{clienteBean.cliente.permiteReducao}"
+										onLabel="#{label['label.yes']}"
+										offLabel="#{label['label.no']}"
+										styleClass="btn btn-flat btn-primary form-control"
+										disabled="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}">
+										<p:ajax update="permReducao" event="change" />
+									</p:selectBooleanButton>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.param.reduIcms']}"
+										for="perRed" />
+									<p:inputNumber value="#{clienteBean.cliente.perRedBaseCalculo}"
+										id="perRed" />
+								</div>
+							</div>
+						</div>
+					</p:tab>
+
+					<p:tab title="Contato" id="formContato"
+						rendered="#{clienteBean.visivelPorIdCliente}">
+						<div class="box-body row">
+							<div class="form-group col-md-6">
+								<p:dataTable id="listaContato" var="contato"
+									value="#{contatoBean.contatoModel}" selectionMode="single"
+									paginator="true" rows="10" lazy="true"
+									paginatorTemplate="{CurrentPageReport}
+									 {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+									rowKey="#{contato.id}" styleClass="from-control">
+									<p:ajax event="rowSelect" listener="#{contatoBean.onRowSelect}"
+										update="messages empresaForm @form" process="empresaForm" />
+									<p:ajax event="rowUnselect"
+										listener="#{contatoBean.onRowUnselect()}" />
+									<f:facet name="header">
+		            						#{label['label.contact.list']}
+		     						   </f:facet>
+									<p:column headerText="Contato">
+										<h:outputText value="#{contato.nome}" />
+									</p:column>
+									<p:column headerText="Telefone" id="listaTel" style="width:25%">
+										<ui:repeat value="#{contato.fone}" var="fone"
+											varStatus="foneStatus">
+
+											<li><p:outputLabel value="#{fone.fone}"
+													lang="Clique aqui para inserir" /> <p:commandButton
+													update="messages empresaForm @form" process="empresaForm"
+													renderDisabledClick="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false' or userSessionBean.hasRole(authorization.CLIENT_INSERT) eq 'false'}"
+													icon="fa fa-pencil" style="width:20px; margin-left: 15px;">
+													<f:actionListener
+														binding="#{contatoBean.editaFoneContato(fone)}" />
+												</p:commandButton></li>
+
+										</ui:repeat>
+									</p:column>
+									<p:column headerText="Email" style="width:50%;">
+										<ui:repeat value="#{contato.email}" var="email">
+											<li><p:outputLabel value="#{email.email}" /> <p:commandButton
+													update="messages empresaForm @form" process="empresaForm"
+													renderDisabledClick="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false' or userSessionBean.hasRole(authorization.CLIENT_INSERT) eq 'false'}"
+													icon="fa fa-pencil" style="width:20px; margin-left: 15px;">
+													<f:actionListener
+														binding="#{contatoBean.editaEmailContato(email)}" />
+												</p:commandButton></li>
+										</ui:repeat>
+									</p:column>
+									<f:facet name="footer">
+										<p:commandButton process="empresaForm"
+											update="listaContato @form" icon="ui-icon-search"
+											value="#{label['label.new']}"
+											actionListener="#{clienteBean.telaTelefone()}"
+											disabled="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false' or userSessionBean.hasRole(authorization.CLIENT_INSERT) eq 'false'}"
+											rendered="#{clienteBean.visivelPorIdCliente}"
+											immediate="true" />
+									</f:facet>
+								</p:dataTable>
+
+							</div>
+							<div class="form-group col-sm-3">
+								<p:outputLabel value="#{label['label.telefone.DDI']}" for="ddi"
+									rendered="#{contatoBean.contatoDisponivel}" />
+								<p:inputMask value="#{contatoBean.fone.ddi}" id="ddi" mask="99"
+									styleClass="form-control"
+									rendered="#{contatoBean.contatoDisponivel}" immediate="true" />
+							</div>
+							<div class="form-group col-md-3">
+								<p:outputLabel for="ddd" value="#{label['label.telefone.ddd']}"
+									rendered="#{contatoBean.contatoDisponivel}" />
+								<p:inputMask value="#{contatoBean.fone.ddd}" id="ddd" mask="99"
+									styleClass="form-control" immediate="true"
+									rendered="#{contatoBean.contatoDisponivel}" />
+							</div>
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.Telefone']}" for="tel"
+									rendered="#{contatoBean.contatoDisponivel}" />
+								<p:inputText value="#{contatoBean.fone.fone}" id="tel"
+									styleClass="form-control"
+									rendered="#{contatoBean.contatoDisponivel}" maxlength="9">
+									<p:keyFilter mask="num" />
+								</p:inputText>
+								<p:outputLabel value="#{label['label.whatsApp']}" for="whats"
+									rendered="#{contatoBean.contatoDisponivel}" />
+								<p:selectBooleanCheckbox value="#{contatoBean.fone.whatsapp}"
+									id="whats" rendered="#{contatoBean.contatoDisponivel}" />
+							</div>
+							<div class="form-group col-md-3">
+								<p:outputLabel for="operadora"
+									value="#{label['label.telefone.operadora']}"
+									rendered="#{contatoBean.contatoDisponivel}" />
+								<p:selectOneMenu id="operadora"
+									value="#{contatoBean.fone.operadora}"
+									converter="omnifaces.GenericEnumConverter"
+									rendered="#{contatoBean.contatoDisponivel}" immediate="true"
+									styleClass="form-control">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['cliente.form.select-one']}" />
+									<f:selectItems var="op" itemValue="#{op}"
+										value="#{contatoBean.operadoraType}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.email']}" for="email"
+									rendered="#{contatoBean.alteraEmail}" />
+								<p:inputText value="#{contatoBean.email.email}" id="email"
+									rendered="#{contatoBean.alteraEmail eq 'true'}"
+									styleClass="form-control" />
+
+							</div>
+							<div class="form-group col-md-2">
+								<br />
+								<p:commandButton value="#{menu['add']}"
+									actionListener="#{contatoBean.doSalva()}"
+									onstart="PF('formBlock').block()"
+									styleClass="form-control btn btn-flat btn-success"
+									oncomplete="PF('formBlock').unblock()"
+									rendered="#{contatoBean.contatoDisponivel eq 'true' or contatoBean.alteraEmail eq 'true'}"
+									disabled="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false' or userSessionBean.hasRole(authorization.CLIENT_INSERT) eq 'false'}"
+									icon="fa fa-hdd-o"
+									update="empresaForm formContato listaContato"
+									process="empresaForm" id="botaoAdiciona" />
+							</div>
+							<div class="form-group col-md-2">
+								<br />
+								<p:commandButton value="#{menu.cancel}"
+									actionListener="#{contatoBean.doCancela()}"
+									onstart="PF('formBlock').block()"
+									styleClass="btn btn-flat btn-cancel"
+									oncomplete="PF('formBlock').unblock()"
+									rendered="#{contatoBean.contatoDisponivel}" icon="fa fa-undo"
+									update="empresaForm formContato listaContato @form"
+									process="empresaForm" id="botaoCancela" />
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="#{label['label.purchasesMade']}" id="formCompras"
+						rendered="#{clienteBean.visivelPorIdCliente}">
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-12">
+									<div class="form-group col-md-2">
+										<p:outputLabel value="#{label['label.start']}" for="idEmissao" />
+										<br />
+										<p:calendar value="#{clienteBean.dataInicial}" id="idEmissao"
+											pattern="dd/MM/yyyy" converter="localDateConverter" />
+									</div>
+									<div class="form-group col-md-2">
+										<p:outputLabel value="#{label['label.finish']}"
+											for="idDataEnt" />
+										<br />
+										<p:calendar value="#{clienteBean.dataFinal}" id="idDataEnt"
+											pattern="dd/MM/yyyy" converter="localDateConverter" />
+									</div>
+									<div class="form-group col-md-2">
+										<br />
+										<p:commandButton value="#{label['label.search']}"
+											process="empresaForm"
+											actionListener="#{clienteBean.procuraPedidos()}"
+											onstart="PF('formBlock').block()"
+											oncomplete="PF('formBlock').unblock()" update="empresaForm"
+											id="buttonPesquisa" style="width:80%;margin:5px"
+											styleClass="btn btn-flat btn-info" icon="fa fa-search" />
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-12">
+									<p:dataTable id="pedidos" var="lista" widgetVar="listaPedido"
+										value="#{clienteBean.listaPedidosPorPeriodo}"
+										paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+										paginator="true" rows="20" selection="#{clienteBean.pedido}"
+										selectionMode="single" lazy="false" rowKey="#{lista.id}"
+										rowsPerPageTemplate="10,20,30"
+										sortField="#{lista.id}" sortOrder="descending"
+										rowStyleClass="#{lista.pedidoStatus.sigla == 'ARC' ? 'sa' : lista.pedidoStatus.sigla == 'CAN' ? 'ca': lista.pedidoStatus.sigla == 'AGC' ? 'ee' : lista.pedidoStatus.sigla == 'REC' ? 'en' : null}">
+
+										<p:ajax event="rowSelect" listener="#{clienteBean.onRowSelectPedido}" 
+											update="formCompras" process="formCompras" />
+
+										<p:column headerText="#{label['label.venda.list.controle']}"
+											rendered="true" style="width:5%">
+											<h:outputLabel value="#{lista.controle.controle}" />
+										</p:column>
+										
+										<p:column headerText="#{label['label.venda.list.id']}"  filterMatchMode="contains"
+											filterBy="#{lista.controle.id}" rendered="true" style="width:10%">
+										<h:outputLabel value="#{lista.controle.id}" />
+									</p:column>
+
+										<p:column headerText="#{label['label.dataEmissao']}"
+											rendered="true" sortBy="#{lista.inclusion}" style="width:10%">
+											<h:outputLabel value="#{lista.inclusionAsLocalDate}" />
+										</p:column>
+
+										<p:column headerText="#{label['label.nome']}">
+											<h:outputText value="#{lista.destino.nome()}" />
+										</p:column>
+
+										<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+											style="width:15%">
+											<h:outputLabel value="#{lista.valorTotalPedido}">
+												<f:convertNumber type="currency" currencySymbol="R$"
+													maxFractionDigits="2" currencyCode="BRL" />
+											</h:outputLabel>
+										</p:column>
+										<p:column sortBy="#{lista.pedidoTipo}"
+											headerText="#{label['label.pedidoTipo']}" style="width:10%">
+											<h:outputText value="#{lista.pedidoTipo.toString()}" />
+										</p:column>
+										<p:column sortBy="#{lista.pedidoStatus}"
+											headerText="#{label['label.status.pedido']}"
+											style="width:10%">
+											<h:outputText value="#{lista.pedidoStatus.toString()}" />
+										</p:column>
+
+										<p:column sortBy="#{lista.fiscalStatus}" exportable="false"
+											headerText="#{label['label.status.fiscal']}"
+											style="width:10%">
+											<h:outputText value="#{lista.fiscalStatus.toString()}" />
+										</p:column>
+										<p:column headerText="#{label['label.list.Action']}"
+											style="width:5%">
+											<p:commandButton process="pedidos"
+												ajax="false"
+												icon="fa fa-file-pdf" title="#{menu['pdfA4']}"
+												styleClass="btn btn-flat btn-info"
+												onstart="PF('listaPedidos').block()"
+												oncomplete="PF('listaPedidos').unblock()" update="pedidos"
+												onclick="target = '_blank'"
+												actionListener="#{pedidoBean.geraPDF4Cliente(lista)}" />
+										</p:column>
+									</p:dataTable>
+								</div>
+							</div>
+						</div>
+					</p:tab>
+				</p:tabView>
+			</div>
+
+			<!-- 			<div class="box-footer"> -->
+			<!-- 			</div> -->
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+			<pe:blockUI target="pedidos" widgetVar="listaPedidos">
+				<p:graphicImage width="32" height="32" library="nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+			<ui:include src="/main/cadastro/Cliente/dialogContatoCliente.xhtml" />
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+		<h:form id="testeEnvio" prependId="false">
+			<div class="box">
+				<div class="box-body ">
+					<div class="align-left col-md-10">
+						<p:outputLabel value="Consulta por CEP?" />
+						<p:selectBooleanButton id="value2"
+							value="#{clienteBean.consultaPorCepVisivel}"
+							disabled="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false' or userSessionBean.hasRole(authorization.CLIENT_INSERT) eq 'false' }"
+							onLabel="#{label['label.yes']}" offLabel="#{label['label.no']}"
+							onIcon="ui-icon-check" offIcon="ui-icon-close"
+							styleClass="btn btn-flat">
+						</p:selectBooleanButton>
+						<p:commandButton action="#{enderecoBean.telaPesquisaEndereco()}"
+							value="#{label['label.search.cep']}"
+							disabled="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false' or userSessionBean.hasRole(authorization.CLIENT_INSERT) eq 'false'}"
+							styleClass="btn btn-flat btn-info" style="align-left"
+							icon="fa fa-search">
+						</p:commandButton>
+						<p:commandButton value="Receita"
+							action="#{clienteBean.telaReceitaFederal()}" process="testeEnvio"
+							update="testeEnvio" onstart="PF('dialogReceitaFederal').block()"
+							oncomplete="PF('dialogReceitaFederal').unblock()"
+							styleClass="btn btn-flat btn-default"
+							disabled="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false' or userSessionBean.hasRole(authorization.CLIENT_INSERT) eq 'false'}"
+							id="botaoReceita">
+							<!-- 							rendered="#{clienteBean.validaCampo eq 'Rev' or clienteBean.validaCampo eq 'Cfi' }" -->
+						</p:commandButton>
+					</div>
+
+					<div class="align-right col-md-2">
+						<p:spacer width="10" />
+						<p:commandButton immediate="true" value="#{menu['back']}"
+							action="#{clienteBean.toListCliente()}"
+							styleClass="btn btn-flat btn-default"
+							icon="fa fa-arrow-circle-o-left" />
+					</div>
+
+				</div>
+			</div>
+			<ui:include
+				src="/main/cadastro/Cliente/dialogPesquisaEnderecoCliente.xhtml" />
+			<ui:include src="/main/cadastro/Cliente/dialogReceitaFederal.xhtml" />
+			<ui:include
+				src="/main/cadastro/Cliente/dialogResultadoReceitaFederal.xhtml" />
+		</h:form>
+	</ui:define>
+	<ui:define name="popups">
+	</ui:define>
+</ui:composition>

@@ -1,0 +1,203 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="Caixa" />
+	<ui:param name="activeSubmenu" value="CaixaRelGerencia" />
+
+	<f:metadata>
+		<f:viewAction action="#{caixaBean.initializeRelFechamento()}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['caixaRecebimento.rel.list.caixa']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{caixaBean.viewState eq 'LISTING'}"
+			value="#{messages['caixaRecebimento.rel.fechamento.caixa.page-description']}" />
+		<!-- 		<o:outputFormat id="pageDescription" -->
+		<!-- 			rendered="#{caixaBean.viewState eq 'EDITING'}" -->
+		<!-- 			value="#{messages['caixaRecebimento.rel.list.caixa.page-description']}"> -->
+		<!-- 			<f:param value="#{motivoMovimentoCaixaBean.motivo.id}" /> -->
+		<!-- 		</o:outputFormat> -->
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['caixa.report']}</a></li>
+		<li><a href="formListaFechamentoCaixa.xhtml">#{breadcrumb['caixaRecebimento.rel.adm.list.fechamento']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel
+							value="#{message['caixaRecebimento.rel.list.period']}" />
+					</h2>
+				</div>
+				<div class="navbar-form">
+					<p:toolbar id="navegador">
+						<f:facet name="left">
+							<p:commandButton value="#{menu['view']}" id="btnView"
+								process="empresaForm" onstart="PF('formBlock').block()"
+								action="#{caixaBean.toExtratoCaixa(caixaBean.caixaConferencia.id)}"
+								update="empresaForm" styleClass="btn btn-flat btn-success"
+								disabled="#{userSessionBean.hasRole(authorization.CAIXA_INSERT) eq 'false'}"
+								rendered="#{caixaBean.viewState eq 'DETAILING'}" />
+							<!-- 							<p:commandButton process="empresaForm" value="#{menu['view']}" -->
+							<!-- 								action="#{motivoMovimentoCaixaBean.changeToEdit(motivoMovimentoCaixaBean.motivo.id)}" -->
+							<!-- 								onstart="PF('formBlock').block()" -->
+							<!-- 								update="empresaForm pageDescription" -->
+							<!-- 								styleClass="btn btn-flat btn-warning" -->
+							<!-- 								oncomplete="PF('formBlock').unblock()" -->
+							<!-- 								disabled="#{userSessionBean.hasRole(authorization.CAIXA_VIEW) eq 'false'}" -->
+							<!-- 								rendered="#{motivoMovimentoCaixaBean.viewState eq 'EDITING'}" /> -->
+							<p:spacer width="10" />
+						</f:facet>
+						<f:facet name="right">
+							<p:commandButton immediate="true" value="#{menu['back']}"
+								action="#{userBean.toDashboard}"
+								styleClass="btn btn-flat btn-default" />
+
+						</f:facet>
+					</p:toolbar>
+				</div>
+				<div class="box-body row">
+					<div class="form-group col-md-12">
+						<div class="row">
+							<div class="form-group col-md-2">
+								<p:outputLabel
+									value="#{label['label.dataFechamento']} #{label['label.start']}"
+									for="idEmissao"
+									rendered="#{caixaBean.viewState eq 'LISTING' or caixaBean.viewState eq 'DETAILING'}" />
+								<p:calendar value="#{caixaBean.dataInicial}" id="idEmissao"
+									rendered="#{caixaBean.viewState eq 'LISTING' or caixaBean.viewState eq 'DETAILING' }"
+									pattern="dd/MM/yyyy" converter="localDateConverter" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel
+									value="#{label['label.dataFechamento']} #{label['label.finish']}"
+									for="idDataEnt"
+									rendered="#{caixaBean.viewState eq 'LISTING' or caixaBean.viewState eq 'DETAILING'}" />
+								<p:calendar value="#{caixaBean.dataFinal}" id="idDataEnt"
+									rendered="#{caixaBean.viewState eq 'LISTING' or caixaBean.viewState eq 'DETAILING'}"
+									pattern="dd/MM/yyyy" converter="localDateConverter" />
+							</div>
+							<div class="form-group col-md-2">
+								<br />
+								<p:commandButton value="#{label['label.search']}"
+									rendered="#{caixaBean.viewState eq 'LISTING' or caixaBean.viewState eq 'DETAILING'}"
+									process="empresaForm"
+									actionListener="#{caixaBean.getLazyCaixas()}"
+									onstart="PF('formBlock').block()"
+									oncomplete="PF('formBlock').unblock()"
+									update="caixaConferencia" id="buttonListaCaixas"
+									style="width:80%;margin:5px" styleClass="btn btn-flat btn-info"
+									icon="fa fa-search" />
+							</div>
+						</div>
+						<div class="row">
+							<p:dataTable id="caixaConferencia" var="lista"
+								widgetVar="listaCaixa" value="#{caixaBean.caixaModel}"
+								paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+								paginator="true" rows="10"
+								selection="#{caixaBean.caixaConferencia}" selectionMode="single"
+								lazy="true" rowKey="#{lista.id}"
+								sortBy="#{lista.dataFechamento}" sortOrder="descending"
+								styleClass="table"
+								rowStyleClass="#{lista.conferencia == 'Ok' ? 'en' : lista.conferencia == 'Error' ? 'ca': null}">
+
+								<p:ajax event="rowSelect"
+									listener="#{caixaBean.onRowSelectCaixa}" update="navegador"
+									process="empresaForm" />
+
+								<p:column headerText="#{label['label.codigo']}" rendered="true"
+									style="width:15%">
+									<h:outputLabel value="#{lista.id}" />
+								</p:column>
+								<p:column headerText="#{label['label.dataAbertura']}"
+									rendered="true" sortBy="#{lista.dataAbertura}"
+									style="width:10%">
+									<h:outputLabel value="#{lista.dataAbertura}" id="labelAbertura">
+										<f:converter converterId="localDateConverter"
+											for="labelAbertura" />
+									</h:outputLabel>
+								</p:column>
+								<p:column headerText="#{label['label.horaAbertura']}"
+									rendered="true" sortBy="#{lista.horaAbertura}"
+									style="width:10%">
+									<h:outputLabel value="#{lista.horaAbertura}" id="labelHoraAbertura">
+										<f:converter converterId="localTimeConverter"
+											for="labelHoraAbertura" />
+									</h:outputLabel>
+								</p:column>
+								<p:column headerText="#{label['label.dataFechamento']}"
+									rendered="true" sortBy="#{lista.dataFechamento}"
+									style="width:10%">
+									<h:outputLabel value="#{lista.dataFechamento}"
+										id="labelFechamento">
+										<f:converter converterId="localDateConverter"
+											for="labelDateFechamento" />
+									</h:outputLabel>
+								</p:column>
+								<p:column headerText="#{label['label.horaFechamento']}"
+									rendered="true" sortBy="#{lista.horaFechamento}"
+									style="width:10%">
+									<h:outputLabel value="#{lista.horaFechamento}"
+										id="labelHoraFechamento">
+										<f:converter converterId="localTimeConverter"
+											for="labelHoraFechamento" />
+									</h:outputLabel>
+								</p:column>
+
+								<p:column sortBy="#{lista.conferencia}"
+									headerText="#{label['label.descricao']}">
+									<h:outputText value="#{lista.conferencia}" />
+								</p:column>
+
+								<!-- 							<p:column headerText="#{label['label.list.Action']}" -->
+								<!-- 								rendered="#{caixaBean.viewState eq 'LISTING'}"> -->
+								<!-- 								<p:commandButton process="dtPagamentos" icon="fa fa-binoculars" -->
+								<!-- 									title="#{menu['view']}" styleClass="btn btn-flat btn-danger" -->
+								<!-- 									rendered="#{caixaBean.viewState eq 'LISTING'}" -->
+								<!-- 									actionListener="#{caixaBean.viewCaixa(lista.ID)}" /> -->
+								<!-- 								<p:commandButton process="dtPagamentos" icon="fa fa-print" -->
+								<!-- 									title="#{menu['print']}" styleClass="btn btn-flat btn-info" -->
+								<!-- 									rendered="#{caixaBean.viewState eq 'LISTING'}" -->
+								<!-- 									actionListener="#{caixaBean.geraImpressao()}"/> -->
+								<!-- 							</p:column> -->
+
+							</p:dataTable>
+						</div>
+					</div>
+
+				</div>
+
+			</div>
+		</h:form>
+
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+</ui:composition>

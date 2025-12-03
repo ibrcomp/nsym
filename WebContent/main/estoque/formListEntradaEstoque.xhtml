@@ -1,0 +1,193 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="Estoque" />
+	<ui:param name="activeSubMenu" value="Recebimento" />
+
+	<f:metadata>
+		<f:viewAction action="#{estoqueGeralBean.initializeListing()}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['entradaEstoque.list.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{estoqueGeralBean.viewState eq 'LISTING'}"
+			value="#{messages['entradaEstoque.page-description-listing']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{recebimentoBean.viewState eq 'EDITING'}"
+			value="#{messages['entradaEstoque.page-description-editing']}">
+			<f:param value="#{estoqueGeralBean.entrada.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['estoqueGeral.entries']}</a></li>
+		<li><a href="formListEntradaEstoque.xhtml">#{breadcrumb['estoqueGeral.list']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{label['label.estoque.list']}" />
+					</h2>
+				</div>
+
+				<div class="box-body">
+					<div class="row">
+						<div class="navbar-form">
+							<p:toolbar id="navegador">
+								<f:facet name="left">
+									<p:commandButton update="empresaForm" process="empresaForm"
+										value="#{menu.new}"
+										action="#{estoqueGeralBean.toEntradaEstoque()}"
+										onstart="PF('formBlock').block()"
+										styleClass="btn btn-flat btn-primary" icon="ui-icon-document"
+										disabled="#{userSessionBean.hasRole(authorization.ESTOQUE_INSERT) eq 'false'}"
+										oncomplete="PF('formBlock').unblock()" rendered="true" />
+
+									<span class="ui-separator"> <span
+										class="ui-icon ui-icon-grip-dotted-vertical" />
+									</span>
+
+									<p:commandButton update="empresaForm" process="empresaForm"
+										value="#{menu.view}"
+										action="#{estoqueGeralBean.toEditEntradaEstoque(estoqueGeralBean.entrada.id)}"
+										onstart="PF('formBlock').block()"
+										styleClass="btn btn-flat btn-warning" icon="ui-icon-document"
+										disabled="#{userSessionBean.hasRole(authorization.ESTOQUE_INSERT) eq 'false' or estoqueGeralBean.viewState != 'EDITING'}"
+										oncomplete="PF('formBlock').unblock()" rendered="true" />
+
+									<p:commandButton update="empresaForm" process="empresaForm"
+										value="#{menu['estoque.update']}"
+										action="#{estoqueGeralBean.atualiza()}"
+										onstart="PF('formBlock').block()"
+										styleClass="btn btn-flat btn-info" icon="fa-box-archive"
+										disabled="#{userSessionBean.hasRole(authorization.ESTOQUE_INSERT) eq 'false' or estoqueGeralBean.viewState != 'EDITING' or estoqueGeralBean.entrada.atualizado eq 'true'}"
+										oncomplete="PF('formBlock').unblock()" rendered="true" />
+
+									<span class="ui-separator"> <span
+										class="ui-icon ui-icon-grip-dotted-vertical" />
+									</span>
+								</f:facet>
+								<f:facet name="right">
+									<p:spacer width="5" />
+									<span class="ui-separator"> <span
+										class="ui-icon ui-icon-grip-dotted-vertical" />
+									</span>
+									<p:commandButton immediate="true" value="#{menu['back']}"
+										action="#{userBean.toDashboard}"
+										styleClass="btn btn-flat btn-default" />
+								</f:facet>
+							</p:toolbar>
+						</div>
+					</div>
+					<div class="row">
+						<div class="form-group col-md-12">
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.start']}" for="idEmissao" />
+								<p:calendar value="#{estoqueGeralBean.dataInicial}"
+									id="idEmissao" pattern="dd/MM/yyyy"
+									converter="localDateConverter" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.finish']}" for="idDataEnt" />
+								<p:calendar value="#{estoqueGeralBean.dataFinal}" id="idDataEnt"
+									pattern="dd/MM/yyyy" converter="localDateConverter" />
+							</div>
+							<div class="form-group col-md-2">
+								<br />
+								<p:commandButton value="#{label['label.search']}"
+									process="empresaForm"
+									actionListener="#{estoqueGeralBean.initializeListing()}"
+									onstart="PF('formBlock').block()"
+									oncomplete="PF('formBlock').unblock()" update="empresaForm"
+									id="buttonPesquisa" style="width:80%;margin:5px"
+									styleClass="btn btn-flat btn-info" icon="fa fa-search" />
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="form-group col-md-12">
+							<p:dataTable id="dtEstoque" var="lista" widgetVar="listaEstoque"
+								value="#{estoqueGeralBean.entradaModel}"
+								paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+								paginator="true" rows="10"
+								selection="#{estoqueGeralBean.entrada}" selectionMode="single"
+								lazy="true" rowKey="#{lista.id}" sortBy="#{lista.descricao}"
+								sortOrder="descending" styleClass="table"
+								rowStyleClass="#{lista.atualizado == true ? 'en' :'sa'}">
+
+								<p:ajax event="rowSelect"
+									listener="#{estoqueGeralBean.onRowSelect}"
+									process="empresaForm" update="navegador" />
+
+								<p:column headerText="#{label['label.list.id']}" rendered="true"
+									sortBy="#{lista.id}" style="width:10%">
+									<h:outputLabel value="#{lista.id}" />
+								</p:column>
+
+								<p:column headerText="#{label['label.descricao']}"
+									rendered="true" sortBy="#{lista.descricao}" style="width:50%">
+									<h:outputLabel value="#{lista.descricao}" />
+								</p:column>
+
+								<p:column headerText="#{label['label.dataCriacao']}"
+									rendered="true" sortBy="#{lista.dataCriacao}" style="width:12%">
+									<h:outputLabel value="#{lista.dataCriacao}" id="labelCriacao">
+										<f:converter converterId="localDateConverter"
+											for="labelCriacao" />
+									</h:outputLabel>
+								</p:column>
+
+								<p:column sortBy="#{lista.atualizado}"
+									headerText="#{label['label.estoque.status']}">
+									<h:outputText value="#{lista.atualizado}" />
+								</p:column>
+
+							</p:dataTable>
+							<p:outputLabel value="Exportar:" />
+							<h:commandLink>
+								<p:graphicImage name="/nsym/img/download-pdf.png" width="28"
+									style="right:0;" />
+								<p:dataExporter type="pdf" target="dtEstoque"
+									fileName="ListaInventario" />
+							</h:commandLink>
+
+						</div>
+					</div>
+				</div>
+
+				<div class="box-footer"></div>
+			</div>
+		</h:form>
+
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+	<ui:define name="popups">
+	</ui:define>
+</ui:composition>

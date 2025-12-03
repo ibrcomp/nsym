@@ -1,0 +1,430 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:o="http://omnifaces.org/ui"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                template="/template/mainTemplate.xhtml">
+
+    <!-- Ajuste conforme seu template -->
+    <ui:param name="activeMenu" value="Fiscal" />
+    <ui:param name="activeSubMenu" value="Reforma 2026" />
+
+    <f:metadata>
+        <f:viewAction action="#{paramReforma2026Bean.initializeListing()}" />
+    </f:metadata>
+
+    <ui:define name="pageTitle">
+        Parametrização Reforma 2026
+    </ui:define>
+
+    <ui:define name="pageDescription">
+        <h:outputText value="Manutenção das regras de CBS / IBS / IS para a Reforma Tributária." />
+    </ui:define>
+
+    <ui:define name="breadcrumb">
+        <li><a href="#">Fiscal</a></li>
+        <li><a href="formListParamReforma2026.xhtml">Reforma 2026</a></li>
+    </ui:define>
+
+    <ui:define name="content">
+
+        <h:form id="paramReformaForm" prependId="false">
+
+            <p:messages id="messages" closable="true" />
+            <p:growl id="growl" showDetail="true" />
+
+            <div class="box">
+                <div class="box-header with-border">
+                    <h2 class="box-title">
+                        Parametrização Reforma 2026
+                    </h2>
+                </div>
+
+                <div class="box-body">
+
+                    <!-- FILTROS -->
+                    <div class="row">
+                        <div class="form-group col-md-2">
+                            <p:outputLabel value="NCM (prefixo)" for="filtroNcm" />
+                            <p:inputText id="filtroNcm"
+                                         value="#{paramReforma2026Bean.filtroNcm}"
+                                         styleClass="form-control" />
+                        </div>
+
+                        <div class="form-group col-md-2">
+                            <p:outputLabel value="CFOP" for="filtroCfop" />
+                            <p:inputText id="filtroCfop"
+                                         value="#{paramReforma2026Bean.filtroCfop}"
+                                         styleClass="form-control" />
+                        </div>
+
+                        <div class="form-group col-md-1">
+                            <p:outputLabel value="UF Origem" for="filtroUfOrig" />
+                            <p:inputText id="filtroUfOrig"
+                                         maxlength="2"
+                                         value="#{paramReforma2026Bean.filtroUfOrig}"
+                                         styleClass="form-control text-uppercase" />
+                        </div>
+
+                        <div class="form-group col-md-1">
+                            <p:outputLabel value="UF Destino" for="filtroUfDest" />
+                            <p:inputText id="filtroUfDest"
+                                         maxlength="2"
+                                         value="#{paramReforma2026Bean.filtroUfDest}"
+                                         styleClass="form-control text-uppercase" />
+                        </div>
+
+                        <div class="form-group col-md-2">
+                            <p:outputLabel value="Ativo?" for="filtroAtivo" />
+                            <p:selectOneMenu id="filtroAtivo"
+                                             value="#{paramReforma2026Bean.filtroAtivo}"
+                                             styleClass="form-control">
+                                <f:selectItem itemLabel="Todos" itemValue="#{null}" />
+                                <f:selectItem itemLabel="Sim" itemValue="#{true}" />
+                                <f:selectItem itemLabel="Não" itemValue="#{false}" />
+                            </p:selectOneMenu>
+                        </div>
+
+                        <div class="form-group col-md-2">
+                            <br />
+                            <p:commandButton value="Pesquisar"
+                                             icon="ui-icon-search"
+                                             styleClass="btn btn-flat btn-primary"
+                                             action="#{paramReforma2026Bean.pesquisar}"
+                                             update="paramReformaForm" />
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <!-- TABELA -->
+                    <p:dataTable id="tabela"
+                                 value="#{paramReforma2026Bean.lista}"
+                                 var="p"
+                                 paginator="true"
+                                 rows="20"
+                                 styleClass="table table-striped"
+                                 rowKey="#{p.id}"
+                                 selectionMode="single"
+                                 emptyMessage="Nenhuma regra encontrada.">
+
+                        <f:facet name="header">
+                            <p:commandButton value="Novo"
+                                             icon="ui-icon-plus"
+                                             styleClass="btn btn-flat btn-success"
+                                             process="@this"
+                                             update=":paramReformaForm:dialogEdicao"
+                                             actionListener="#{paramReforma2026Bean.novo}"
+                                             oncomplete="PF('dlgEdicao').show()"
+                                             rendered="#{userSessionBean.hasRole('ROLE_PARAM_REFORMA2026_CADASTRAR')}" />
+                        </f:facet>
+
+                        <p:column headerText="ID" style="width:60px">
+                            <h:outputText value="#{p.id}" />
+                        </p:column>
+
+                        <p:column headerText="NCM" style="width:140px">
+                            <h:outputText value="#{p.ncmPrefix}" />
+                            <h:outputText value=" " />
+                            <h:outputText value="#{p.ncmIni}" />
+                            <h:outputText value=" - " />
+                            <h:outputText value="#{p.ncmFim}" />
+                        </p:column>
+
+                        <p:column headerText="CFOP" style="width:100px">
+                            <h:outputText value="#{p.cfop}" />
+                        </p:column>
+
+                        <p:column headerText="UF Origem" style="width:80px">
+                            <h:outputText value="#{p.ufOrig}" />
+                        </p:column>
+
+                        <p:column headerText="UF Dest" style="width:80px">
+                            <h:outputText value="#{p.ufDest}" />
+                        </p:column>
+
+                        <p:column headerText="CBS %" style="width:80px">
+                            <h:outputText value="#{p.PCbs}" />
+                        </p:column>
+
+                        <p:column headerText="IBS %" style="width:80px">
+                            <h:outputText value="#{p.PIbs}" />
+                        </p:column>
+
+                        <p:column headerText="IS %" style="width:80px">
+                            <h:outputText value="#{p.PIs}" />
+                        </p:column>
+
+                        <p:column headerText="Ativo" style="width:70px">
+                            <h:outputText value="#{p.ativo ? 'Sim' : 'Não'}" />
+                        </p:column>
+
+                        <p:column headerText="Ações" style="width:150px;text-align:center">
+                            <p:commandButton icon="ui-icon-search"
+                                             title="Editar"
+                                             styleClass="btn btn-flat btn-info"
+                                             process="@this"
+                                             update=":paramReformaForm:dialogEdicao"
+                                             actionListener="#{paramReforma2026Bean.editar(p)}"
+                                             oncomplete="PF('dlgEdicao').show()"
+                                             rendered="#{userSessionBean.hasRole('ROLE_PARAM_REFORMA2026_EDITAR')}" />
+
+                            <p:commandButton icon="ui-icon-trash"
+                                             title="Excluir"
+                                             styleClass="btn btn-flat btn-danger"
+                                             process="@this"
+                                             update="paramReformaForm"
+                                             actionListener="#{paramReforma2026Bean.excluir(p)}"
+                                             onclick="return confirm('Confirma exclusão?');"
+                                             rendered="#{userSessionBean.hasRole('ROLE_PARAM_REFORMA2026_EXCLUIR')}" />
+                        </p:column>
+
+                    </p:dataTable>
+
+                </div>
+            </div>
+
+            <!-- DIÁLOGO DE EDIÇÃO -->
+            <p:dialog id="dialogEdicao"
+                      header="Regra Reforma 2026"
+                      widgetVar="dlgEdicao"
+                      modal="true"
+                      resizable="false"
+                      width="980">
+
+                <h:panelGroup id="panelEdicao">
+
+                    <!-- LINHA 1: NCM / CFOP / UF -->
+                    <div class="row">
+                        <div class="form-group col-md-2">
+                            <p:outputLabel for="ncmPrefix" value="NCM Prefixo" />
+                            <p:inputText id="ncmPrefix"
+                                         value="#{paramReforma2026Bean.entidade.ncmPrefix}"
+                                         styleClass="form-control" />
+                        </div>
+
+                        <div class="form-group col-md-2">
+                            <p:outputLabel for="ncmIni" value="NCM Início" />
+                            <p:inputText id="ncmIni"
+                                         value="#{paramReforma2026Bean.entidade.ncmIni}"
+                                         styleClass="form-control" />
+                        </div>
+
+                        <div class="form-group col-md-2">
+                            <p:outputLabel for="ncmFim" value="NCM Fim" />
+                            <p:inputText id="ncmFim"
+                                         value="#{paramReforma2026Bean.entidade.ncmFim}"
+                                         styleClass="form-control" />
+                        </div>
+
+                        <div class="form-group col-md-3">
+                            <p:outputLabel for="ncmList" value="Lista NCM (CSV)" />
+                            <p:inputText id="ncmList"
+                                         value="#{paramReforma2026Bean.entidade.ncmList}"
+                                         styleClass="form-control" />
+                        </div>
+
+                        <div class="form-group col-md-3">
+                            <p:outputLabel for="cfop" value="CFOP" />
+                            <p:inputText id="cfop"
+                                         value="#{paramReforma2026Bean.entidade.cfop}"
+                                         styleClass="form-control" />
+                        </div>
+                    </div>
+
+                    <!-- LINHA 2: CFOP LIST/REGEX + CEST/EX TIPI -->
+                    <div class="row">
+                        <div class="form-group col-md-4">
+                            <p:outputLabel for="cfopList" value="Lista CFOP (CSV)" />
+                            <p:inputText id="cfopList"
+                                         value="#{paramReforma2026Bean.entidade.cfopList}"
+                                         styleClass="form-control" />
+                        </div>
+
+                        <div class="form-group col-md-4">
+                            <p:outputLabel for="cfopRegex" value="CFOP Regex" />
+                            <p:inputText id="cfopRegex"
+                                         value="#{paramReforma2026Bean.entidade.cfopRegex}"
+                                         styleClass="form-control" />
+                        </div>
+
+                        <div class="form-group col-md-2">
+                            <p:outputLabel for="cest" value="CEST" />
+                            <p:inputText id="cest"
+                                         value="#{paramReforma2026Bean.entidade.cest}"
+                                         styleClass="form-control" />
+                        </div>
+
+                        <div class="form-group col-md-2">
+                            <p:outputLabel for="exTipi" value="EX TIPI" />
+                            <p:inputText id="exTipi"
+                                         value="#{paramReforma2026Bean.entidade.exTipi}"
+                                         styleClass="form-control" />
+                        </div>
+                    </div>
+
+                    <!-- LINHA 3: CST / CSOSN / UF / IBGE -->
+                    <div class="row">
+                        <div class="form-group col-md-2">
+                            <p:outputLabel for="cst" value="CST" />
+                            <p:inputText id="cst"
+                                         value="#{paramReforma2026Bean.entidade.cst}"
+                                         styleClass="form-control" />
+                        </div>
+
+                        <div class="form-group col-md-2">
+                            <p:outputLabel for="csosn" value="CSOSN" />
+                            <p:inputText id="csosn"
+                                         value="#{paramReforma2026Bean.entidade.csosn}"
+                                         styleClass="form-control" />
+                        </div>
+
+                        <div class="form-group col-md-2">
+                            <p:outputLabel for="ufOrig" value="UF Origem" />
+                            <p:inputText id="ufOrig"
+                                         maxlength="2"
+                                         value="#{paramReforma2026Bean.entidade.ufOrig}"
+                                         styleClass="form-control text-uppercase" />
+                        </div>
+
+                        <div class="form-group col-md-2">
+                            <p:outputLabel for="ufDest" value="UF Destino" />
+                            <p:inputText id="ufDest"
+                                         maxlength="2"
+                                         value="#{paramReforma2026Bean.entidade.ufDest}"
+                                         styleClass="form-control text-uppercase" />
+                        </div>
+
+                        <div class="form-group col-md-4">
+                            <p:outputLabel for="ibgeMunDest" value="IBGE Município Destino" />
+                            <p:inputText id="ibgeMunDest"
+                                         value="#{paramReforma2026Bean.entidade.ibgeMunDest}"
+                                         styleClass="form-control" />
+                        </div>
+                    </div>
+
+                    <!-- LINHA 4: CNAE / Tipo Cliente / Consumidor Final -->
+                    <div class="row">
+						<div class="form-group col-md-3">
+							<p:outputLabel for="cnae" value="CNAE Emitente" />
+							<p:inputText id="cnae"
+								value="#{paramReforma2026Bean.entidade.cnae}"
+								styleClass="form-control" />
+						</div>
+
+						<div class="form-group col-md-3">
+							<p:outputLabel for="tipoCliente" value="Tipo Cliente" />
+							<p:selectOneMenu id="tipoCliente"
+								value="#{paramReforma2026Bean.entidade.tipoCliente}"
+								styleClass="form-control" converter="omnifaces.EnumConverter">
+								<f:selectItem itemLabel="-- todos --" itemValue="#{null}"
+									noSelectionOption="true" />
+								<f:selectItems value="#{paramReforma2026Bean.tiposCliente}"
+									var="tc" itemValue="#{tc}" itemLabel="#{tc.toString()}" />
+							</p:selectOneMenu>
+						</div>
+
+						<div class="form-group col-md-3">
+                            <p:outputLabel for="consFinal" value="Consumidor Final?" />
+                            <p:selectBooleanCheckbox id="consFinal"
+                                                     value="#{paramReforma2026Bean.entidade.consumidorFinal}" />
+                        </div>
+
+                        <div class="form-group col-md-3">
+                            <p:outputLabel for="ativo" value="Ativo" />
+                            <p:selectBooleanCheckbox id="ativo"
+                                                     value="#{paramReforma2026Bean.entidade.ativo}" />
+                        </div>
+                    </div>
+
+                    <!-- LINHA 5: SKU include/exclude -->
+                    <div class="row">
+                        <div class="form-group col-md-6">
+                            <p:outputLabel for="skuIncluir" value="SKU Incluir (CSV)" />
+                            <p:inputText id="skuIncluir"
+                                         value="#{paramReforma2026Bean.entidade.skuIncluirList}"
+                                         styleClass="form-control" />
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <p:outputLabel for="skuExcluir" value="SKU Excluir (CSV)" />
+                            <p:inputText id="skuExcluir"
+                                         value="#{paramReforma2026Bean.entidade.skuExcluirList}"
+                                         styleClass="form-control" />
+                        </div>
+                    </div>
+
+                    <!-- LINHA 6: Alíquotas + Vigência -->
+                    <div class="row">
+                        <div class="form-group col-md-2">
+                            <p:outputLabel for="pCbs" value="CBS %" />
+                            <p:inputNumber id="pCbs"
+                                           value="#{paramReforma2026Bean.entidade.PCbs}"
+                                           decimalPlaces="2"
+                                           styleClass="form-control" />
+                        </div>
+
+                        <div class="form-group col-md-2">
+                            <p:outputLabel for="pIbs" value="IBS %" />
+                            <p:inputNumber id="pIbs"
+                                           value="#{paramReforma2026Bean.entidade.PIbs}"
+                                           decimalPlaces="2"
+                                           styleClass="form-control" />
+                        </div>
+
+                        <div class="form-group col-md-2">
+                            <p:outputLabel for="pIs" value="IS %" />
+                            <p:inputNumber id="pIs"
+                                           value="#{paramReforma2026Bean.entidade.PIs}"
+                                           decimalPlaces="2"
+                                           styleClass="form-control" />
+                        </div>
+
+                        <div class="form-group col-md-3">
+                            <p:outputLabel for="vigIni" value="Vigência Início" />
+                            <p:calendar id="vigIni"
+                                        value="#{paramReforma2026Bean.entidade.vigenciaIni}"
+                                        pattern="dd/MM/yyyy"
+                                        converter="localDateConverter"
+                                        showButtonPanel="true" />
+                        </div>
+
+                        <div class="form-group col-md-3">
+                            <p:outputLabel for="vigFim" value="Vigência Fim" />
+                            <p:calendar id="vigFim"
+                                        value="#{paramReforma2026Bean.entidade.vigenciaFim}"
+                                        pattern="dd/MM/yyyy"
+                                        converter="localDateConverter"
+                                        showButtonPanel="true" />
+                        </div>
+                    </div>
+
+                    <!-- BOTÕES -->
+                    <div class="row">
+                        <div class="col-md-12" style="text-align:right">
+                            <p:commandButton value="Salvar"
+                                             icon="ui-icon-disk"
+                                             styleClass="btn btn-flat btn-primary"
+                                             actionListener="#{paramReforma2026Bean.salvar}"
+                                             update=":paramReformaForm"
+                                             oncomplete="PF('dlgEdicao').hide()"
+                                             rendered="#{userSessionBean.hasRole('ROLE_PARAM_REFORMA2026_SALVAR')}" />
+
+                            <p:commandButton value="Cancelar"
+                                             icon="ui-icon-close"
+                                             styleClass="btn btn-flat btn-default"
+                                             immediate="true"
+                                             actionListener="#{paramReforma2026Bean.cancelarEdicao}"
+                                             update=":paramReformaForm"
+                                             oncomplete="PF('dlgEdicao').hide()" />
+                        </div>
+                    </div>
+
+                </h:panelGroup>
+            </p:dialog>
+
+        </h:form>
+
+    </ui:define>
+</ui:composition>

@@ -1,0 +1,336 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="FINANCEIRO" />
+	<ui:param name="activeSubmenu" value="ContaCorrente" />
+
+	<f:metadata>
+		<f:viewAction action="#{contaCorrenteBean.initializeForm(param.contaID)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['contaCorrente.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{contaCorrenteBean.viewState eq 'ADDING'}"
+			value="#{messages['contaCorrente.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{contaCorrenteBean.viewState eq 'EDITING'}"
+			value="#{messages['contaCorrente.page-description-editing']}">
+			<f:param value="#{contaCorrenteBean.conta.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li><a href="formListContaCorrente.xhtml">#{breadcrumb['entries.contaCorrente']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['entries']}"></p:outputLabel>
+					</h2>
+				</div>
+				<p:tabView prependId="false">
+					<p:tab title="Cadastro" id="cadastroForm">
+						<div class="box-body row">
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.agencia']}: "
+									for="inputAgencia" />
+								<p:inputText value="#{contaCorrenteBean.conta.agencia}"
+									id="inputAgencia" required="true" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+									requiredMessage="#{validation['contaCorrente.agencia']}"
+									maxlength="10" styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.agenciaDigito']}: "
+									for="inputDigAgencia" />
+								<p:inputText value="#{contaCorrenteBean.conta.digitoAgencia}"
+									id="inputDigAgencia" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+									maxlength="2" styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.contaCorrente']}: "
+									for="inputConta" />
+								<p:inputText value="#{contaCorrenteBean.conta.contaCorrente}"
+									id="inputConta" required="true" 
+									readonly="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+									requiredMessage="#{validation['contaCorrente.conta']}"
+									maxlength="20" styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.contaCorrenteDigito']}: "
+									for="inputDigConta" />
+								<p:inputText value="#{contaCorrenteBean.conta.digitoContaCorrente}"
+									id="inputDigConta" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+									maxlength="2" styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.banco']}"
+										for="selectBanco"/>
+									<p:selectOneMenu value="#{contaCorrenteBean.banco}" id="selectBanco" 
+										filter="true" filterMatchMode="contains" 
+										disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+										required="false" converter="omnifaces.SelectItemsConverter"
+										style="width:100%">
+										
+										<f:selectItems value="#{contaCorrenteBean.listaBancos}"
+											var="forma" itemLabel="#{forma.nomeBanco}" />
+									</p:selectOneMenu>
+								</div>
+						</div>
+					</p:tab>
+					<p:tab title="WebService" id="formWS">
+						<div class="box-body row">
+							<div class="form-group col-md-4">
+								<p:outputLabel value="#{label['label.wsBanco.clienteID']}: "
+									for="inputClienteID" />
+								<p:inputText value="#{contaCorrenteBean.wsBanco.clienteID}"
+									id="inputClienteID" required="false" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+									styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-4">
+								<p:outputLabel value="#{label['label.wsBanco.clienteSecret']}: "
+									for="inputClienteSecret" />
+								<p:inputText value="#{contaCorrenteBean.wsBanco.clienteSecret}"
+									id="inputClienteSecret" required="false" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+									styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-4">
+								<p:outputLabel value="#{label['label.wsBanco.keyUser']}: "
+									for="inputkeyUser" />
+								<p:inputText value="#{contaCorrenteBean.wsBanco.keyUser}" autocomplete="false"
+									id="inputkeyUser" required="false" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+									styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-4">
+								<p:outputLabel value="#{label['label.wsBanco.scope']}: "
+									for="inputScope" />
+								<p:inputText value="#{contaCorrenteBean.wsBanco.scope}"
+									id="inputScope" required="false" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+									styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-4">
+								<p:outputLabel value="#{label['label.wsBanco.arquivoKey']}: "
+									for="inputArquivoKey" />
+								<p:inputText value="#{contaCorrenteBean.wsBanco.arquivoKey}"
+									id="inputArquivoKey" required="false" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+									styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-4">
+								<p:outputLabel value="#{label['label.wsBanco.arquivoCRT']}: "
+									for="inputArquivoCRT" />
+								<p:inputText value="#{contaCorrenteBean.wsBanco.arquivoCrt}"
+									id="inputArquivoCRT" required="false" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+									styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-4">
+								<p:outputLabel value="#{label['label.wsBanco.indicadoPix']}"
+									for="booleanPix" />
+									<br />
+								<p:selectBooleanCheckbox
+									value="#{contaCorrenteBean.wsBanco.indicadorPIX}"
+									readonly="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+									id="booleanPix" />
+							</div>
+							<div class="form-group col-md-4">
+								<p:outputLabel value="#{label['label.wsBanco.ambiente']}"
+									for="booleanAmbiente" />
+								<br />
+								<p:selectBooleanCheckbox
+									value="#{contaCorrenteBean.wsBanco.ambiente}"
+									readonly="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+									id="booleanAmbiente" />
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="#{label['label.financeiro.infoBoleto']}" id="tabInfBoleto">
+						<div class="box-body row">
+							<div class="form-group col-md-2">
+								<p:outputLabel for="selectSacado"
+									value="#{label['label.financeiro.sacado']} " rendered="true" />
+								<p:selectOneMenu id="selectSacado"
+									value="#{contaCorrenteBean.infBoleto.sacado}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									rendered="true" required="false"
+									requiredMessage="#{validation['sacado.null']}"
+									disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['cliente.form.select-one']}" />
+									<f:selectItems value="#{contaCorrenteBean.listaSacado()}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="aceite " for="inpAceite" />
+								<p:inputText value="#{contaCorrenteBean.infBoleto.aceite}"
+									id="inpAceite" required="false" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+									styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-4">
+								<p:outputLabel value="tipo ocorrencia " for="inpOcorrencia" />
+								<p:inputText value="#{contaCorrenteBean.infBoleto.tipoOcorrencia}"
+									id="inpOcorrencia" required="false" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+									styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel for="selectProtesto"
+									value="#{label['label.financeiro.protesto']} " rendered="true" />
+								<p:selectOneMenu id="selectProtesto"
+									value="#{contaCorrenteBean.infBoleto.protesto}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									rendered="true" required="false"
+									requiredMessage="#{validation['sacado.null']}"
+									disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['cliente.form.select-one']}" />
+									<f:selectItems value="#{contaCorrenteBean.listaProtesto()}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel for="selectImpressao"
+									value="#{label['label.financeiro.tipoImpressao']} " rendered="true" />
+								<p:selectOneMenu id="selectImpressao"
+									value="#{contaCorrenteBean.infBoleto.tipoImpressao}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									rendered="true" required="false"
+									requiredMessage="#{validation['sacado.null']}"
+									disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['cliente.form.select-one']}" />
+									<f:selectItems value="#{contaCorrenteBean.listaImpressao()}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel for="selectDesconto"
+									value="#{label['label.financeiro.tipoDesconto']} " rendered="true" />
+								<p:selectOneMenu id="selectDesconto"
+									value="#{contaCorrenteBean.infBoleto.tipoDesconto}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									rendered="true" required="false"
+									requiredMessage="#{validation['sacado.null']}"
+									disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['cliente.form.select-one']}" />
+									<f:selectItems value="#{contaCorrenteBean.listaDesconto()}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel for="selectMora"
+									value="#{label['label.financeiro.codigoMora']} " rendered="true" />
+								<p:selectOneMenu id="selectMora"
+									value="#{contaCorrenteBean.infBoleto.codigoMora}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									rendered="true" required="false"
+									requiredMessage="#{validation['sacado.null']}"
+									disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['cliente.form.select-one']}" />
+									<f:selectItems value="#{contaCorrenteBean.listaCodigoMora()}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel for="selectEnvio"
+									value="#{label['label.financeiro.carteiraEnvio']} " rendered="true" />
+								<p:selectOneMenu id="selectEnvio"
+									value="#{contaCorrenteBean.infBoleto.carteiraEnvio}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									rendered="true" required="false"
+									requiredMessage="#{validation['sacado.null']}"
+									disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['cliente.form.select-one']}" />
+									<f:selectItems value="#{contaCorrenteBean.listaCarteiraEnvio()}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel for="selectNegativacao"
+									value="#{label['label.financeiro.codigoNegativacao']} " rendered="true" /> 
+								<p:selectOneMenu id="selectNegativacao"
+									value="#{contaCorrenteBean.infBoleto.codigoNegativacao}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									rendered="true" required="false"
+									requiredMessage="#{validation['sacado.null']}"
+									disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['cliente.form.select-one']}" />
+									<f:selectItems value="#{contaCorrenteBean.listaCodigoNegativacao()}" />
+								</p:selectOneMenu>
+							</div>
+						</div>
+					</p:tab>
+				</p:tabView>
+			</div>
+
+			<div class="box-footer align-right">
+				<p:commandButton update="empresaForm" process="empresaForm"
+					value="#{menu['save']}" action="#{contaCorrenteBean.doSalvar()}"
+					onstart="PF('formBlock').block()"
+					styleClass="btn btn-flat btn-success"
+					disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+					oncomplete="PF('formBlock').unblock()"
+					rendered="#{contaCorrenteBean.viewState eq 'ADDING'}" icon="fa fa-hdd-o" />
+
+				<p:commandButton process="empresaForm" value="#{menu['update']}"
+					action="#{contaCorrenteBean.doSalvar()}" onstart="PF('formBlock').block()"
+					update="empresaForm pageDescription"
+					styleClass="btn btn-flat btn-warning"
+					disabled="#{userSessionBean.hasRole(authorization.FINANCEIRO_INSERT) eq 'false'}"
+					oncomplete="PF('formBlock').unblock()"
+					rendered="#{contaCorrenteBean.viewState eq 'EDITING'}" />
+
+
+			</div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="resources/nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+		<h:form id="testeEnvio" prependId="false">
+			<div class="box">
+				<div class="box-body ">
+					<div class="align-right col-md-12">
+						<p:spacer width="10" />
+						<p:commandButton immediate="true" value="#{menu['back']}"
+							action="#{contaCorrenteBean.toListContaCorrente}"
+							styleClass="btn btn-flat btn-default"
+							icon="fa fa-arrow-circle-o-left" />
+					</div>
+
+				</div>
+			</div>
+		</h:form>
+	</ui:define>
+	<ui:define name="popups">
+	</ui:define>
+</ui:composition>

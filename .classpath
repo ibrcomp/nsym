@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry including="**/*.java" kind="src" output="target/classes" path="src">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry exported="true" kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="org.eclipse.jst.component.dependency" value="/WEB-INF/lib"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry exported="true" kind="con" path="org.eclipse.jst.server.core.container/org.jboss.ide.eclipse.as.core.server.runtime.runtimeTarget/WildFly 24.0 Runtime">
+		<attributes>
+			<attribute name="owner.project.facets" value="jst.jsf;jst.web;jpt.jpa"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" path="target/generated-sources/annotations">
+		<attributes>
+			<attribute name="ignore_optional_problems" value="true"/>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="m2e-apt" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jaxrpc.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/poi-3.16.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/poi-ooxml-3.16.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/poi-ooxml-schemas-3.16.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/poi-scratchpad-3.16.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/saaj.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/all-themes-1.0.10.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/axis.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/commons-discovery-0.2.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/commons-logging.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/java-nfe-3.10.8.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/lombok.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/poi-excelant-3.16.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/wsdl4j.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/itext-2.1.7.js10.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/hibernate-core-5.6.10.Final.jar" sourcepath="C:/Users/ibrco/.m2/repository/org/hibernate/hibernate-core/5.6.10.Final/hibernate-core-5.6.10.Final-sources.jar"/>
+	<classpathentry exported="true" kind="con" path="net.sf.jasperreports.JR_CONTAINER"/>
+	<classpathentry exported="true" kind="con" path="com.jaspersoft.server.JRS_CONTAINER"/>
+	<classpathentry kind="src" output="target/test-classes" path="target/generated-test-sources/test-annotations">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="ignore_optional_problems" value="true"/>
+			<attribute name="m2e-apt" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="output" path="target/classes"/>
+</classpath>

@@ -1,0 +1,158 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="listaResultadoDialog"
+	width="70%" modal="true" resizable="false" closeOnEscape="true"
+	widgetVar="dialogListaResultado"
+	header="#{messages['pedidoPDV.page-title-search-client']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-2">
+				<p:outputLabel
+					value="#{messages['pedidoPDV.page-search-client-select']}" />
+			</h2>
+		</div>
+		<div class="box-body row">
+			<div class="form-group col-sm-12">
+				<p:dataTable id="pdvCliente" var="lista" widgetVar="listaNfe"
+					value="#{pedidoBean.listaCliente}"
+					paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true" rows="10" selection="#{pedidoBean.cliente}"
+					selectionMode="single" lazy="false" rowKey="#{lista.id}"
+					sortBy="#{lista.razaoSocial}" rowsPerPageTemplate="10,20,30"
+					rendered="#{pedidoBean.pedido.tipoPesquisa eq 'CLI'}">
+
+					<p:ajax event="rowSelect"
+						listener="#{pedidoBean.onRowSelectPesquisa}"
+						oncomplete="PF('dialogListaResultado').hide()"
+						update="formCabCliente" />
+
+					<p:column headerText="#{label['label.cnpj']}" rendered="true">
+						<h:outputLabel value="#{lista.cnpj}" />
+					</p:column>
+
+					<p:column headerText="#{label['label.cpf']}" rendered="true">
+						<h:outputLabel value="#{lista.cpf}" />
+					</p:column>
+
+					<p:column sortBy="#{lista.razaoSocial}"
+						headerText="#{label['label.razao']}" style="width:35%">
+						<h:outputText value="#{lista.razaoSocial}" />
+					</p:column>
+
+					<p:column sortBy="#{lista.nomeFantasia}"
+						headerText="#{label['label.fantasia']}" style="width:35%">
+						<h:outputText value="#{lista.nomeFantasia}" />
+					</p:column>
+
+				</p:dataTable>
+				<p:dataTable id="pdvColaborador" var="lista" widgetVar="listaNfe"
+					value="#{pedidoBean.listaColaborador}"
+					paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true" rows="10" selection="#{pedidoBean.colaborador}"
+					selectionMode="single" lazy="false" rowKey="#{lista.id}"
+					sortBy="#{lista.nome}" rowsPerPageTemplate="10,20,30"
+					rendered="#{pedidoBean.pedido.tipoPesquisa eq 'COL'}">
+
+					<p:ajax event="rowSelect"
+						listener="#{pedidoBean.onRowSelectPesquisa}"
+						oncomplete="PF('dialogListaResultado').hide()"
+						update="formCabecalho" />
+
+
+					<p:column headerText="#{label['label.cpf']}" rendered="true"
+						style="width:35%">
+						<h:outputLabel value="#{lista.cpf}" />
+					</p:column>
+
+					<p:column sortBy="#{lista.nome}"
+						headerText="#{label['label.razao']}">
+						<h:outputText value="#{lista.nome}" />
+					</p:column>
+
+
+				</p:dataTable>
+
+				<p:dataTable id="pdvFornecedor" var="lista" widgetVar="listaNfe"
+					value="#{pedidoBean.listaFornecedor}"
+					paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true" rows="10" selection="#{pedidoBean.fornecedor}"
+					selectionMode="single" lazy="false" rowKey="#{lista.id}"
+					sortBy="#{lista.razaoSocial}" rowsPerPageTemplate="10,20,30"
+					rendered="#{pedidoBean.pedido.tipoPesquisa eq 'FOR'}">
+
+					<p:ajax event="rowSelect"
+						listener="#{pedidoBean.onRowSelectPesquisa}"
+						oncomplete="PF('dialogListaResultado').hide()"
+						update="formCabecalho" />
+
+					<p:column headerText="#{label['label.cnpj']}" rendered="true">
+						<h:outputText value="#{lista.cnpj}" />
+					</p:column>
+
+					<p:column headerText="#{label['label.cpf']}" rendered="true">
+						<h:outputText value="#{lista.cpf}" />
+					</p:column>
+
+					<p:column sortBy="#{lista.razaoSocial}"
+						headerText="#{label['label.razao']}" style="width:35%">
+						<h:outputText value="#{lista.razaoSocial}" />
+					</p:column>
+
+					<p:column sortBy="#{lista.nomeFantasia}"
+						headerText="#{label['label.fantasia']}" style="width:35%">
+						<h:outputText value="#{lista.nomeFantasia}" />
+					</p:column>
+
+				</p:dataTable>
+				<p:dataTable id="pdvFilial" var="lista" widgetVar="listaNfe"
+					value="#{pedidoBean.listaFilial}"
+					paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true" rows="10" selection="#{pedidoBean.filial}"
+					selectionMode="single" lazy="false" rowKey="#{lista.id}"
+					sortBy="#{lista.razaoSocial}" rowsPerPageTemplate="10,20,30"
+					rendered="#{pedidoBean.pedido.tipoPesquisa eq 'FIL'}">
+
+					<p:ajax event="rowSelect"
+						listener="#{pedidoBean.onRowSelectPesquisa}"
+						oncomplete="PF('dialogListaResultado').hide()"
+						update="formCabecalho" />
+
+					<p:column headerText="#{label['label.cnpj']}" rendered="true">
+						<h:outputLabel value="#{lista.cnpj}" />
+					</p:column>
+
+					<p:column sortBy="#{lista.razaoSocial}"
+						headerText="#{label['label.razao']}" style="width:40%">
+						<h:outputText value="#{lista.razaoSocial}" />
+					</p:column>
+
+					<p:column sortBy="#{lista.nomeFantasia}"
+						headerText="#{label['label.fantasia']}" style="width:40%">
+						<h:outputText value="#{lista.nomeFantasia}" />
+					</p:column>
+
+				</p:dataTable>
+			</div>
+		</div>
+		<div class="box-footer align-right">
+
+			<!-- 			<p:commandButton actionListener="#{secaoBean.doSalvar()}" -->
+			<!-- 				process="formPopup" style="align-left" -->
+			<!-- 				oncomplete="PF('dialogSecao').hide()" -->
+			<!-- 				update="formPopup" -->
+			<!-- 				value="#{label['label.save']}" styleClass="btn btn-flat btn-seach" -->
+			<!-- 				icon="fa fa-search-plus" /> -->
+
+		</div>
+	</div>
+
+
+</p:dialog>
+

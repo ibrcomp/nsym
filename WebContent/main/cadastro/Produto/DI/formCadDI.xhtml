@@ -1,0 +1,312 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="Produto" />
+
+	<f:metadata>
+		<f:viewAction action="#{dIBean.initializeForm(param.diID)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['di.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{dIBean.viewState eq 'ADDING'}"
+			value="#{messages['di.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{dIBean.viewState eq 'EDITING'}"
+			value="#{messages['di.page-description-editing']}">
+			<f:param value="#{dIBean.di.nnDi}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li><a href="formListDI.xhtml">#{breadcrumb['entries.di']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row" id="men">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['entries.di']}"></p:outputLabel>
+					</h2>
+				</div>
+				<div class="row">
+					<div class="navbar-form">
+						<p:toolbar>
+							<f:facet name="left">
+								<p:commandButton process="empresaForm" value="#{menu['save']}"
+									action="#{dIBean.doSalvar()}" onstart="PF('formBlock').block()"
+									styleClass="btn btn-flat btn-success"
+									disabled="#{userSessionBean.hasRole(authorization.DI_INSERT) eq 'false'}"
+									update="empresaForm" oncomplete="PF('formBlock').unblock()"
+									rendered="#{dIBean.viewState eq 'ADDING'}" icon="fa fa-hdd-o" />
+
+								<p:commandButton process="empresaForm" value="#{menu['update']}"
+									action="#{dIBean.doSalvar()}" onstart="PF('formBlock').block()"
+									update="empresaForm pageDescription"
+									styleClass="btn btn-flat btn-warning"
+									disabled="#{userSessionBean.hasRole(authorization.DI_INSERT) eq 'false'}"
+									oncomplete="PF('formBlock').unblock()"
+									rendered="#{dIBean.viewState eq 'EDITING'}" />
+								<!-- 								<p:commandButton update="empresaForm" process="empresaForm" -->
+								<!-- 									value="#{menu['new']}" action="#{dIBean.newDI()}" -->
+								<!-- 									onstart="PF('formBlock').block()" -->
+								<!-- 									styleClass="btn btn-flat btn-primary" icon="ui-icon-document" -->
+								<!-- 									disabled="#{userSessionBean.hasRole(authorization.DI_INSERT) eq 'false'}" -->
+								<!-- 									oncomplete="PF('formBlock').unblock()" rendered="true" /> -->
+
+								<!-- 								<p:commandButton process="empresaForm" value="#{menu['view']}" -->
+								<!-- 									action="#{dIBean.changeToEdit(dIBean.di.id)}" -->
+								<!-- 									onstart="PF('formBlock').block()" -->
+								<!-- 									update="empresaForm pageDescription" -->
+								<!-- 									styleClass="btn btn-flat btn-warning" -->
+								<!-- 									oncomplete="PF('formBlock').unblock()" -->
+								<!-- 									disabled="#{userSessionBean.hasRole(authorization.DI_VIEW) eq 'false' or dIBean.viewState != 'EDITING' }" /> -->
+							</f:facet>
+							<f:facet name="right">
+								<p:commandButton immediate="true" value="#{menu['back']}"
+									action="#{dIBean.toListDI()}"
+									styleClass="btn btn-flat btn-default" />
+							</f:facet>
+						</p:toolbar>
+					</div>
+				</div>
+				<p:tabView prependId="false" id="tabViewMenu">
+					<p:tab title="Cadastro DI" id="cadastroForm">
+						<div class="box-body">
+							<p:focus context="cadastroForm" />
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.di.numero']}: " for="nDI" />
+									<p:inputText value="#{dIBean.di.nnDi}" id="nDI" required="true"
+										immediate="true"
+										readonly="#{userSessionBean.hasRole(authorization.DI_INSERT) eq 'false'}"
+										requiredMessage="#{validation['di.ndi']}" maxlength="12"
+										styleClass="form-control" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.dataEmissao']}: "
+										for="dDI" />
+									<p:calendar value="#{dIBean.di.DDi}" id="dDI"
+										pattern="dd/MM/yyyy" converter="localDateConverter"
+										required="true" requiredMessage="#{validation['di.dDI']}" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.di.locDesemb']}: "
+										for="xLocDesemb" />
+									<p:inputText value="#{dIBean.di.XLocDesemb}" id="xLocDesemb"
+										required="true" immediate="true"
+										readonly="#{userSessionBean.hasRole(authorization.DI_INSERT) eq 'false'}"
+										requiredMessage="#{validation['di.xLocDesemb']}"
+										maxlength="60" styleClass="form-control" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.di.ufDesemb']}: "
+										for="ufDesemb" />
+									<p:selectOneMenu id="ufDesemb"
+										disabled="#{userSessionBean.hasRole(authorization.DI_INSERT) eq 'false'}"
+										value="#{dIBean.di.UFDesemb}"
+										converter="omnifaces.GenericEnumConverter">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['cliente.form.select-one']}" />
+										<f:selectItems value="#{dIBean.ufSiglaType}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.di.dDesemb']}: "
+										for="dDesemb" />
+									<p:calendar value="#{dIBean.di.ddDesemb}" id="dDesemb"
+										pattern="dd/MM/yyyy" converter="localDateConverter"
+										required="true" requiredMessage="#{validation['di.dDesemb']}" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.di.tipoTransp']}: "
+										for="tpViaTransp" />
+									<p:selectOneMenu id="tpViaTransp"
+										disabled="#{userSessionBean.hasRole(authorization.DI_INSERT) eq 'false'}"
+										value="#{dIBean.di.tpViaTransp}"
+										converter="omnifaces.GenericEnumConverter" style="width:100%">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['cliente.form.select-one']}" />
+										<f:selectItems value="#{dIBean.tipoViaTransportes}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.di.vAFRMM']}: "
+										for="vAFRMM" />
+									<p:inputNumber value="#{dIBean.di.VAFRMM}" decimalPlaces="2"
+										id="vAFRMM" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.di.tpIntermedio']}: "
+										for="tpintermedio" />
+									<p:selectOneMenu id="tpintermedio"
+										disabled="#{userSessionBean.hasRole(authorization.DI_INSERT) eq 'false'}"
+										value="#{dIBean.di.tpIntermedio}" immediate="false"
+										converter="omnifaces.GenericEnumConverter" style="width:100%">
+										<p:ajax update="@form" />
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['cliente.form.select-one']}" />
+										<f:selectItems value="#{dIBean.TPIntermedio}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-3">
+									<p:outputLabel value="#{label['label.di.cnpj']}: "
+										id="labelCnpjAdq"
+										rendered="#{dIBean.di.tpIntermedio eq 'I2' or dIBean.di.tpIntermedio eq 'I3'}"
+										for="cnpjAdq2" />
+									<p:inputMask mask="99.999.999/9999-99"
+										value="#{dIBean.di.cnpjAdq}" id="cnpjAdq2" required="true"
+										immediate="true"
+										rendered="#{dIBean.di.tpIntermedio eq 'I2' or dIBean.di.tpIntermedio eq 'I3'}"
+										readonly="#{userSessionBean.hasRole(authorization.DI_INSERT) eq 'false'}"
+										requiredMessage="#{validation['di.xLocDesemb']}"
+										maxlength="14" styleClass="form-control" />
+								</div>
+								<div class="form-group col-md-3">
+									<p:outputLabel value="#{label['label.di.ufTerceiro']}: "
+										rendered="#{dIBean.di.tpIntermedio eq 'I2' or dIBean.di.tpIntermedio eq 'I3'}"
+										for="ufTerceiro" />
+									<p:selectOneMenu id="ufTerceiro"
+										disabled="#{userSessionBean.hasRole(authorization.DI_INSERT) eq 'false'}"
+										rendered="#{dIBean.di.tpIntermedio eq 'I2' or dIBean.di.tpIntermedio eq 'I3'}"
+										value="#{dIBean.di.UFTerceiro}"
+										converter="omnifaces.GenericEnumConverter" style="width:100%">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['cliente.form.select-one']}" />
+										<f:selectItems value="#{dIBean.ufSiglaType}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-3">
+<!-- 								informar o id de cadastro do destinatario no nosso sistema -->
+<!-- 									fazer mudança para pegar do cadastro de cliente -->
+									<p:outputLabel value="#{label['label.di.cExportador']}: " 
+										for="cExportador" />
+									<p:inputText value="#{dIBean.di.CExportador}" id="cExportador"
+										required="true" immediate="true"
+										readonly="#{userSessionBean.hasRole(authorization.DI_INSERT) eq 'false'}"
+										requiredMessage="#{validation['di.xLocDesemb']}"
+										maxlength="60" styleClass="form-control" />
+								</div>
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="Adição" id="adicaoForm">
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.di.adicao']}: "
+										for="nAdicao" />
+									<p:inputText value="#{dIBean.adiTemp.NAdicao}" id="nAdicao"
+										required="false" immediate="true"
+										readonly="#{userSessionBean.hasRole(authorization.DI_INSERT) eq 'false'}"
+										requiredMessage="#{validation['di.adi.numero']}" maxlength="3"
+										styleClass="form-control" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.di.codFabricante']}: "
+										for="cFabricante" />
+									<p:inputText value="#{dIBean.adiTemp.CFabricante}"
+										id="cFabricante" required="false" immediate="true"
+										readonly="#{userSessionBean.hasRole(authorization.DI_INSERT) eq 'false'}"
+										requiredMessage="#{validation['di.adi.cFabricante']}"
+										maxlength="60" styleClass="form-control" />
+								</div>
+								<div class="form-group col-md-3">
+									<p:outputLabel value="#{label['label.di.vDescDI']}: "
+										for="vDescDI" />
+									<p:inputNumber value="#{dIBean.adiTemp.VDescDI}"
+										decimalPlaces="2" id="vDescDI" style="width:100%" />
+								</div>
+								<div class="form-group col-xs-3">
+									<p:outputLabel value="#{label['label.di.nDraw']}: " for="nDraw" />
+									<p:inputText value="#{dIBean.adiTemp.NDraw}" id="nDraw"
+										required="false" immediate="true"
+										readonly="#{userSessionBean.hasRole(authorization.DI_INSERT) eq 'false'}"
+										requiredMessage="#{validation['di.adi.cFabricante']}"
+										maxlength="60" styleClass="form-control" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:commandButton
+										update="nAdicao cFabricante vDescDI nDraw adicaoList"
+										process="adicaoForm" value="#{menu['add']}"
+										action="#{dIBean.inserteAdicaoNaLista()}"
+										onstart="PF('formBlock').block()"
+										styleClass="btn btn-flat btn-success"
+										oncomplete="PF('formBlock').unblock()" icon="fa fa-hdd-o" />
+								</div>
+							</div>
+							<div class="row">
+								<p:dataTable id="adicaoList" rows="15" var="adicao"
+									paginator="true" value="#{dIBean.listaAdicao}"
+									paginatorPosition="bottom" paginatorAlwaysVisible="false"
+									emptyMessage="#{messages['list.empty']}">
+
+
+									<p:column headerText="#{label['label.di.adicao']}">
+                        				#{adicao.NAdicao}
+                  					  </p:column>
+									<p:column headerText="#{label['label.di.codFabricante']}">
+                        				#{adicao.CFabricante}
+                  					  </p:column>
+									<p:column headerText="#{label['label.di.vDescDI']}">
+                        				#{adicao.VDescDI}
+                  					  </p:column>
+									<p:column width="25%" styleClass="align-center"
+										headerText="#{label['label.di.nDraw']}">
+                       					 #{adicao.NDraw}
+                  					  </p:column>
+
+									<p:column width="15%" styleClass="align-center"
+										headerText="#{menu['actions']}">
+										<p:commandButton icon="fa fa-remove" title="#{menu['delete']}"
+											styleClass="btn btn-flat btn-default"
+											actionListener="#{dIBean.removeAdicaoDaLista(adicao)}"
+											rendered="#{userSessionBean.hasRole(authorization.DI_DELETE)}"
+											immediate="true" update="adicaoList" process="adicaoForm" />
+									</p:column>
+								</p:dataTable>
+							</div>
+						</div>
+					</p:tab>
+
+				</p:tabView>
+			</div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="resources/nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+	</ui:define>
+	<ui:define name="popups">
+	</ui:define>
+</ui:composition>

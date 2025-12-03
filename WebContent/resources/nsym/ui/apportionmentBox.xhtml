@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (C) 2016 arthur
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:c="http://java.sun.com/jsf/composite">
+
+<c:interface>
+	<c:attribute required="true" name="baseBean" />
+
+	<c:attribute name="valueInput" default="inValue" />
+	<c:attribute name="disabled" type="java.lang.Boolean" />
+
+	<c:attribute required="true" type="java.util.List"
+		name="apportionmentsList" />
+
+	<c:attribute required="true" name="showDialogAction"
+		method-signature="java.lang.String  actionListener()" />
+</c:interface>
+
+<c:implementation>
+	<div jsf:id="container" class="row">
+		<div class="col-sm-12 form-group">
+			<h4 style="display: inline-flex">
+				#{messages['apportionment.form.apportionment']}:</h4>
+			<div class="pull-right">
+				<p:commandButton update="messages" value="#{menu['add']}"
+					disabled="#{cc.attrs.disabled}"
+					styleClass="btn btn-flat btn-warning"
+					process="@this,#{cc.attrs.valueInput}"
+					actionListener="#{cc.attrs.showDialogAction}" />
+			</div>
+		</div>
+		<div class="col-sm-12">
+			<p:dataTable id="apportionmentList" rows="15" paginator="true"
+				var="apportionment" paginatorPosition="bottom"
+				paginatorAlwaysVisible="false"
+				value="#{cc.attrs.apportionmentsList}"
+				emptyMessage="#{messages['list.empty']}">
+
+				<p:column styleClass="align-center"
+					headerText="#{messages['apportionment.list.cost-center']}">
+                        #{apportionment.costCenter.name}
+                    </p:column>
+				<p:column styleClass="align-center"
+					headerText="#{messages['apportionment.list.movement-class']}">
+                        #{apportionment.movementClass.name}
+                    </p:column>
+				<p:column width="20%" styleClass="align-center"
+					headerText="#{messages['apportionment.list.value']}">
+					<h:outputText value="#{apportionment.value}">
+						<f:convertNumber pattern="¤#,##0.00" currencySymbol="R$ " />
+					</h:outputText>
+				</p:column>
+				<p:column width="10%" styleClass="align-center"
+					headerText="#{menu['actions']}">
+					<p:commandButton immediate="true" icon="fa fa-remove"
+						title="#{menu['delete']}" disabled="#{cc.attrs.disabled}"
+						styleClass="btn btn-flat btn-default"
+						actionListener="#{cc.attrs.baseBean.deleteApportionment(apportionment.code)}" />
+				</p:column>
+			</p:dataTable>
+		</div>
+	</div>
+</c:implementation>
+</html>

@@ -1,0 +1,554 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="impostosNfeDialog"
+	width="70%" modal="true" resizable="false" closeOnEscape="true"
+	widgetVar="dialogImpostosNfe"
+	header="#{messages['nfe.page-title.search']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-2">
+				<p:outputLabel value="#{messages['nfe.page-serch-produto']}" />
+			</h2>
+		</div>
+		<div class="box-body ">
+			<div class="row">
+				<div class="navbar-form">
+					<p:toolbar>
+						<f:facet name="left">
+						<p:commandButton process="formPopupCadastraImposto" value="#{menu['save']}"
+									actionListener="#{nfeBean.salvaImpostoAvulso()}" onstart="PF('formBlock').block()"
+									styleClass="btn btn-flat btn-success"
+									disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+									 oncomplete="PF('formBlock').unblock()"
+									 onsuccess="PF('dialogImpostosNfe').hide()"
+									 icon="fa fa-hdd-o" />
+						</f:facet>
+						<f:facet name="right">
+							<p:commandButton value="#{menu['back']}"
+								onclick="PF('dialogImpostosNfe').hide()"
+								styleClass="btn btn-flat btn-primary" />
+						</f:facet>
+					</p:toolbar>
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['entries']}"></p:outputLabel>
+					</h2>
+				</div>
+				<p:tabView prependId="false">
+					<p:tab title="II (Imposto Importação)" id="tabIITemp"
+						rendered="#{tributosBean.tributos.st eq 'false'}">
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Valor Base de Calculo (vBC)" for="vBC" />
+									<p:inputNumber value="#{nfeBean.ii.VBC}" decimalPlaces="2"
+										emptyValue="zero"
+										readonly="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}"
+										id="vBC" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Valor Despesa Aduaneira (vDespAdu)"
+										for="vDespAdu" />
+									<p:inputNumber value="#{nfeBean.ii.VDespAdu}" decimalPlaces="2"
+										emptyValue="zero"
+										readonly="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}"
+										id="vDespAdu" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Valor Imposto Imp. (vII)" for="vII" />
+									<p:inputNumber value="#{nfeBean.ii.VII}" decimalPlaces="2"
+										emptyValue="zero"
+										readonly="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}"
+										id="vII" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Valor IOF (vIOF)" for="vIOF" />
+									<p:inputNumber value="#{nfeBean.ii.VIOF}" decimalPlaces="2"
+										emptyValue="zero"
+										readonly="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}"
+										id="vIOF" />
+								</div>
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="Despesas" id="tabDespTemp">
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Valor Despesas do Item" for="vDespItem" />
+									<p:inputNumber value="#{nfeBean.tempDespesaItem}" decimalPlaces="2"
+										emptyValue="zero"
+										readonly="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}"
+										id="vDespItem" />
+								</div>
+							</div>
+						</div>
+					</p:tab>
+					<!-- 					<p:tab title="#{label['label.icms']}" id="tabIcmsTemp" -->
+					<!-- 						rendered="#{tributosBean.tributos.st eq 'false'}"> -->
+<!-- 						<div class="box-body"> -->
+<!-- 							<div class="row"> -->
+<!-- 								<div class="form-group col-md-2"> -->
+<!-- 									<p:outputLabel value="#{label['label.cfopDentro']}: " -->
+<!-- 										for="cfopDentroTemp"> -->
+<!-- 									</p:outputLabel> -->
+<!-- 									<p:autoComplete id="cfopDentroTemp" dropdown="false" -->
+<!-- 										value="#{nfeBean.tributoTemporario.cfopImportacao}" required="true" -->
+<!-- 										readonly="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 										completeMethod="#{tributosBean.completaCfop}" var="cfop" -->
+<!-- 										itemLabel="#{cfop.cfop}" itemValue="#{cfop}" -->
+<!-- 										minQueryLength="1"> -->
+<!-- 										<o:converter converterId="omnifaces.ListConverter" -->
+<!-- 											list="#{tributosBean.listaCfop()}" /> -->
+<!-- 									</p:autoComplete> -->
+<!-- 								</div> -->
+<!-- 							</div> -->
+<!-- 							<div class="row"> -->
+<!-- 								<div class="form-group col-md-6"> -->
+<!-- 									<p:outputLabel value="#{label['label.cst.vendanormal']}" -->
+<!-- 										rendered="#{tributosBean.regimeUsuario eq 'Normal'}" -->
+<!-- 										for="sitTribNormalTemp" /> -->
+<!-- 									<p:selectOneMenu id="sitTribNormalTemp" filter="true" -->
+<!-- 										value="#{nfeBean.tributoTemporario.icms.cstVendaNormal}" required="true" -->
+<!-- 										disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 										rendered="#{tributosBean.regimeUsuario eq 'Normal'}" -->
+<!-- 										converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 										immediate="true"> -->
+<!-- 										<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 											itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 										<f:selectItems value="#{tributosBean.CST}" /> -->
+<!-- 									</p:selectOneMenu> -->
+<!-- 								</div> -->
+<!-- 								<div class="form-group col-md-6"> -->
+<!-- 									<p:outputLabel value="#{label['label.cst.vendasimples']}" -->
+<!-- 										rendered="#{tributosBean.regimeUsuario eq 'Normal'}" -->
+<!-- 										for="sitTribNormalSimplesTemp" /> -->
+<!-- 									<p:selectOneMenu id="sitTribNormalSimplesTemp" filter="true" -->
+<!-- 										value="#{nfeBean.tributoTemporario.icms.cstVendaNormalSimples}" -->
+<!-- 										required="true" -->
+<!-- 										disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 										converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 										rendered="#{tributosBean.regimeUsuario eq 'Normal'}" -->
+<!-- 										immediate="true"> -->
+<!-- 										<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 											itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 										<f:selectItems value="#{tributosBean.CST}" /> -->
+<!-- 									</p:selectOneMenu> -->
+<!-- 								</div> -->
+<!-- 								<div class="form-group col-md-6"> -->
+<!-- 									<p:outputLabel value="#{label['label.cst.vendasimples']}" -->
+<!-- 										for="sitTribSimplesTemp" -->
+<!-- 										rendered="#{tributosBean.regimeUsuario eq 'SimplesNacional'}" /> -->
+<!-- 									<p:selectOneMenu id="sitTribSimplesTemp" filter="true" -->
+<!-- 										value="#{nfeBean.tributoTemporario.icms.cstVendaSimples}" required="true" -->
+<!-- 										disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 										converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 										rendered="#{tributosBean.regimeUsuario eq 'SimplesNacional'}" -->
+<!-- 										immediate="true"> -->
+<!-- 										<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 											itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 										<f:selectItems value="#{tributosBean.CST}" /> -->
+<!-- 									</p:selectOneMenu> -->
+<!-- 								</div> -->
+<!-- 								<div class="form-group col-md-6"> -->
+<!-- 									<p:outputLabel value="#{label['label.cst.vendanormal']}" -->
+<!-- 										for="sitTribSimplesNormalTemp" -->
+<!-- 										rendered="#{tributosBean.regimeUsuario eq 'SimplesNacional'}" /> -->
+<!-- 									<p:selectOneMenu id="sitTribSimplesNormalTemp" filter="true" -->
+<!-- 										value="#{nfeBean.tributoTemporario.icms.cstVendaSimplesNormal}" -->
+<!-- 										required="true" -->
+<!-- 										disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 										converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 										rendered="#{tributosBean.regimeUsuario eq 'SimplesNacional'}" -->
+<!-- 										immediate="true"> -->
+<!-- 										<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 											itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 										<f:selectItems value="#{tributosBean.CST}" /> -->
+<!-- 									</p:selectOneMenu> -->
+<!-- 								</div> -->
+<!-- 								<div class="form-group col-md-4"> -->
+<!-- 									<p:outputLabel value="#{label['label.origem']}" -->
+<!-- 										for="origemTemp" /> -->
+<!-- 									<p:selectOneMenu id="origemTemp" filter="true" -->
+<!-- 										value="#{nfeBean.tributoTemporario.icms.origem}" required="true" -->
+<!-- 										disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 										converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 										immediate="true"> -->
+<!-- 										<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 											itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 										<f:selectItems value="#{tributosBean.origem}" /> -->
+<!-- 									</p:selectOneMenu> -->
+<!-- 								</div> -->
+<!-- 								<div class="form-group col-md-4"> -->
+<!-- 									<p:outputLabel value="#{label['label.modbaseicms']}" -->
+<!-- 										for="modBaseCalcIcmsTemp" /> -->
+<!-- 									<p:selectOneMenu id="modBaseCalcIcmsTemp" filter="true" -->
+<!-- 										value="#{nfeBean.tributoTemporario.icms.modICMSNormal}" required="true" -->
+<!-- 										disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 										converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 										immediate="true"> -->
+<!-- 										<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 											itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 										<f:selectItems value="#{tributosBean.modIcms}" /> -->
+<!-- 									</p:selectOneMenu> -->
+<!-- 								</div> -->
+<!-- 							</div> -->
+<!-- 						</div> -->
+<!-- 					</p:tab> -->
+<!-- 					<p:tab title="#{label['label.icmsst']}" id="tabIcmsSTTemp" -->
+<!-- 						rendered="#{tributosBean.tributos.st eq 'true'}"> -->
+<!-- 						<div class="box-body "> -->
+<!-- 							<div class="row"> -->
+<!-- 								<div class="form-group col-md-6"> -->
+<!-- 									<p:outputLabel value="#{label['label.cst.vendanormal']}" -->
+<!-- 										rendered="#{tributosBean.regimeUsuario eq 'Normal'}" -->
+<!-- 										for="sitTribNormalStTemp" /> -->
+<!-- 									<p:selectOneMenu id="sitTribNormalStTemp" filter="true" -->
+<!-- 										value="#{nfeBean.tributoTemporario.icmsSt.cstVendaNormal}" required="true" -->
+<!-- 										disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 										rendered="#{tributosBean.regimeUsuario eq 'Normal'}" -->
+<!-- 										converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 										immediate="true"> -->
+<!-- 										<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 											itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 										<f:selectItems value="#{tributosBean.CST}" /> -->
+<!-- 									</p:selectOneMenu> -->
+<!-- 								</div> -->
+<!-- 								<div class="form-group col-md-6"> -->
+<!-- 									<p:outputLabel value="#{label['label.cst.vendasimples']}" -->
+<!-- 										rendered="#{tributosBean.regimeUsuario eq 'Normal'}" -->
+<!-- 										for="sitTribNormalSimplesStTemp" /> -->
+<!-- 									<p:selectOneMenu id="sitTribNormalSimplesStTemp" filter="true" -->
+<!-- 										value="#{nfeBean.tributoTemporario.icmsSt.cstVendaNormalSimples}" -->
+<!-- 										required="true" -->
+<!-- 										disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 										converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 										rendered="#{tributosBean.regimeUsuario eq 'Normal'}" -->
+<!-- 										immediate="true"> -->
+<!-- 										<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 											itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 										<f:selectItems value="#{tributosBean.CST}" /> -->
+<!-- 									</p:selectOneMenu> -->
+<!-- 								</div> -->
+<!-- 								<div class="form-group col-md-6"> -->
+<!-- 									<p:outputLabel value="#{label['label.cst.vendasimples']}" -->
+<!-- 										for="sitTribSimplesStTemp" -->
+<!-- 										rendered="#{tributosBean.regimeUsuario eq 'SimplesNacional'}" /> -->
+<!-- 									<p:selectOneMenu id="sitTribSimplesStTemp" filter="true" -->
+<!-- 										value="#{nfeBean.tributoTemporario.icmsSt.cstVendaSimples}" required="true" -->
+<!-- 										disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 										converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 										rendered="#{tributosBean.regimeUsuario eq 'SimplesNacional'}" -->
+<!-- 										immediate="true"> -->
+<!-- 										<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 											itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 										<f:selectItems value="#{tributosBean.CST}" /> -->
+<!-- 									</p:selectOneMenu> -->
+<!-- 								</div> -->
+<!-- 								<div class="form-group col-md-6"> -->
+<!-- 									<p:outputLabel value="#{label['label.cst.vendanormal']}" -->
+<!-- 										for="sitTribSimplesNormalStTemp" -->
+<!-- 										rendered="#{tributosBean.regimeUsuario eq 'SimplesNacional'}" /> -->
+<!-- 									<p:selectOneMenu id="sitTribSimplesNormalStTemp" filter="true" -->
+<!-- 										value="#{nfeBean.tributoTemporario.icmsSt.cstVendaSimplesNormal}" -->
+<!-- 										required="true" -->
+<!-- 										disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 										converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 										rendered="#{tributosBean.regimeUsuario eq 'SimplesNacional'}" -->
+<!-- 										immediate="true"> -->
+<!-- 										<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 											itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 										<f:selectItems value="#{tributosBean.CST}" /> -->
+<!-- 									</p:selectOneMenu> -->
+<!-- 								</div> -->
+<!-- 							</div> -->
+<!-- 							<div class="row"> -->
+<!-- 								<div class="form-group col-md-4"> -->
+<!-- 									<p:outputLabel value="#{label['label.origem']}" -->
+<!-- 										for="origemStTemp" /> -->
+<!-- 									<p:selectOneMenu id="origemStTemp" filter="true" -->
+<!-- 										value="#{nfeBean.tributoTemporario.icmsSt.origem}" required="true" -->
+<!-- 										disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 										converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 										immediate="true"> -->
+<!-- 										<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 											itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 										<f:selectItems value="#{tributosBean.origem}" /> -->
+<!-- 									</p:selectOneMenu> -->
+<!-- 								</div> -->
+<!-- 								<div class="form-group col-md-4"> -->
+<!-- 									<p:outputLabel value="#{label['label.modbaseicms']}" -->
+<!-- 										for="modBaseCalcIcmsSemStTemp" /> -->
+<!-- 									<p:selectOneMenu id="modBaseCalcIcmsSemStTemp" filter="true" -->
+<!-- 										value="#{nfeBean.tributoTemporario.icmsSt.modICMS}" required="true" -->
+<!-- 										disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 										converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 										immediate="true"> -->
+<!-- 										<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 											itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 										<f:selectItems value="#{tributosBean.modIcms}" /> -->
+<!-- 									</p:selectOneMenu> -->
+<!-- 								</div> -->
+<!-- 								<div class="form-group col-md-4"> -->
+<!-- 									<p:outputLabel value="#{label['label.modbaseicmsst']}" -->
+<!-- 										for="modBaseCalcIcmsStTemp" /> -->
+<!-- 									<p:selectOneMenu id="modBaseCalcIcmsStTemp" filter="true" -->
+<!-- 										value="#{nfeBean.tributoTemporario.icmsSt.modICMSST}" required="true" -->
+<!-- 										disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 										converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 										immediate="true"> -->
+<!-- 										<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 											itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 										<f:selectItems value="#{tributosBean.modIcmsSt}" /> -->
+<!-- 									</p:selectOneMenu> -->
+<!-- 								</div> -->
+<!-- 							</div> -->
+<!-- 						</div> -->
+<!-- 					</p:tab> -->
+<!-- 					<p:tab title="#{label['label.ipi']}" id="tabIpiTemp"> -->
+<!-- 						<div class="box-body row"> -->
+<!-- 							<div class="form-group col-md-6"> -->
+<!-- 								<p:outputLabel value="#{label['label.ipi.des']}" -->
+<!-- 									for="sitTribIpiTemp" /> -->
+<!-- 								<p:selectOneMenu id="sitTribIpiTemp" filter="true" -->
+<!-- 									value="#{nfeBean.tributoTemporario.ipi.cst}" required="true" -->
+<!-- 									disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}" -->
+<!-- 									converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 									immediate="true"> -->
+<!-- 									<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 										itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 									<f:selectItems value="#{tributosBean.CSTIPI}" /> -->
+<!-- 								</p:selectOneMenu> -->
+<!-- 							</div> -->
+<!-- 							<div class="form-group col-md-2"> -->
+<!-- 								<p:outputLabel -->
+<!-- 									value="#{label['label.ipi.codigo.enquadramento']}" -->
+<!-- 									for="codEnquadramentoTemp" /> -->
+<!-- 								<p:inputText value="#{nfeBean.tributoTemporario.ipi.codigoEnquadramento}" -->
+<!-- 									required="true" immediate="true" -->
+<!-- 									readonly="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 									id="codEnquadramentoTemp" /> -->
+<!-- 							</div> -->
+<!-- 							<div class="form-group col-md-2"> -->
+<!-- 								<p:outputLabel -->
+<!-- 									value="#{label['label.ipi.classe.enquadramento']}" -->
+<!-- 									for="claEnquadramentoTemp" /> -->
+<!-- 								<p:inputText value="#{nfeBean.tributoTemporario.ipi.classeEnquadramento}" -->
+<!-- 									readonly="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 									id="claEnquadramentoTemp" immediate="true" /> -->
+<!-- 							</div> -->
+<!-- 							<div class="form-group col-md-2"> -->
+<!-- 								<p:outputLabel value="#{label['label.tipocalculo']}" -->
+<!-- 									for="tipoCalculoIPITemp" /> -->
+<!-- 								<p:selectOneMenu id="tipoCalculoIPITemp" filter="true" -->
+<!-- 									value="#{nfeBean.tributoTemporario.ipi.calculo}" required="true" -->
+<!-- 									disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 									converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 									immediate="true"> -->
+<!-- 									<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 										itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 									<f:selectItems value="#{tributosBean.tipoCalculos}" /> -->
+<!-- 								</p:selectOneMenu> -->
+<!-- 							</div> -->
+<!-- 							<div class="form-group col-md-2"> -->
+<!-- 								<p:outputLabel value="#{label['label.valorcalculo']}" -->
+<!-- 									for="valorCalculoIPITemp" /> -->
+<!-- 								<p:inputText value="#{nfeBean.tributoTemporario.ipi.valor}" -->
+<!-- 									readonly="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 									id="valorCalculoIPITemp" immediate="true" /> -->
+<!-- 							</div> -->
+
+<!-- 						</div> -->
+
+<!-- 					</p:tab> -->
+<!-- 					<p:tab title="#{label['label.pis']}" id="tabPisTemp" -->
+<!-- 						rendered="#{tributosBean.tributos.st eq 'false'}"> -->
+
+<!-- 						<div class="box-body row"> -->
+<!-- 							<div class="form-group col-md-6"> -->
+<!-- 								<p:outputLabel value="#{label['label.pis.des']}" -->
+<!-- 									for="sitTribPisTemp" /> -->
+<!-- 								<p:selectOneMenu id="sitTribPisTemp" filter="true" -->
+<!-- 									value="#{nfeBean.tributoTemporario.pis.cstPis}" required="true" -->
+<!-- 									disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 									converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 									immediate="true"> -->
+<!-- 									<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 										itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 									<f:selectItems value="#{tributosBean.CSTpis}" /> -->
+<!-- 								</p:selectOneMenu> -->
+<!-- 							</div> -->
+<!-- 							<div class="form-group col-md-2"> -->
+<!-- 								<p:outputLabel value="#{label['label.tipocalculo']}" -->
+<!-- 									for="tipoCalculoPisTemp" /> -->
+<!-- 																<p:inputText value="#{tributosBean.pis.calculo}" -->
+<!-- 																	readonly="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 																	id="tipoCalculoPis" /> -->
+<!-- 								<p:selectOneMenu id="tipoCalculoPisTemp" filter="true" -->
+<!-- 									value="#{nfeBean.tributoTemporario.pis.calculo}" required="true" -->
+<!-- 									disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 									converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 									immediate="true"> -->
+<!-- 									<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 										itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 									<f:selectItems value="#{tributosBean.tipoCalculos}" /> -->
+<!-- 								</p:selectOneMenu> -->
+<!-- 							</div> -->
+<!-- 							<div class="form-group col-md-2"> -->
+<!-- 								<p:outputLabel value="#{label['label.valorcalculo']}" -->
+<!-- 									for="valorCalculoPisTemp" /> -->
+<!-- 								<p:inputNumber value="#{nfeBean.tributoTemporario.pis.valor}" -->
+<!-- 									decimalPlaces="2" emptyValue="zero" -->
+<!-- 									readonly="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 									id="valorCalculoPisTemp" /> -->
+<!-- 							</div> -->
+
+<!-- 						</div> -->
+<!-- 					</p:tab> -->
+<!-- 					<p:tab title="#{label['label.pisst']}" id="tabPisSTTemp" -->
+<!-- 						rendered="#{tributosBean.tributos.st eq 'true'}"> -->
+
+<!-- 						<div class="box-body row"> -->
+<!-- 							<div class="form-group col-md-6"> -->
+<!-- 								<p:outputLabel value="#{label['label.pisst.des']}" -->
+<!-- 									for="sitTribPisStTemp" /> -->
+<!-- 								<p:selectOneMenu id="sitTribPisStTemp" filter="true" -->
+<!-- 									value="#{nfeBean.tributoTemporario.pisSt.cstPisSt}" required="true" -->
+<!-- 									disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 									converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 									immediate="true"> -->
+<!-- 									<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 										itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 									<f:selectItems value="#{tributosBean.CSTpis}" /> -->
+<!-- 								</p:selectOneMenu> -->
+<!-- 							</div> -->
+<!-- 							<div class="form-group col-md-2"> -->
+<!-- 								<p:outputLabel value="#{label['label.tipocalculo']}" -->
+<!-- 									for="tipoCalculoPisSTTemp" /> -->
+<!-- 																<p:inputText value="#{tributosBean.pisSt.calculo}" -->
+<!-- 																	readonly="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 																	id="tipoCalculoPisST" /> -->
+<!-- 								<p:selectOneMenu id="tipoCalculoPisSTTemp" filter="true" -->
+<!-- 									value="#{nfeBean.tributoTemporario.pisSt.calculo}" required="true" -->
+<!-- 									disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 									converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 									immediate="true"> -->
+<!-- 									<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 										itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 									<f:selectItems value="#{tributosBean.tipoCalculos}" /> -->
+<!-- 								</p:selectOneMenu> -->
+<!-- 							</div> -->
+<!-- 							<div class="form-group col-md-2"> -->
+<!-- 								<p:outputLabel value="#{label['label.valorcalculo']}" -->
+<!-- 									for="valorCalculoPisSTTemp" /> -->
+<!-- 								<p:inputNumber value="#{nfeBean.tributoTemporario.pisSt.valor}" -->
+<!-- 									decimalPlaces="2" emptyValue="zero" -->
+<!-- 									readonly="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 									id="valorCalculoPisSTTemp" /> -->
+<!-- 							</div> -->
+
+<!-- 						</div> -->
+
+<!-- 					</p:tab> -->
+<!-- 					<p:tab title="#{label['label.cofins']}" id="tabCofinsTemp" -->
+<!-- 						rendered="#{tributosBean.tributos.st eq 'false'}"> -->
+
+<!-- 						<div class="box-body row"> -->
+<!-- 							<div class="form-group col-md-6"> -->
+<!-- 								<p:outputLabel value="#{label['label.cofins.des']}" -->
+<!-- 									for="sitTribCofinsTemp" /> -->
+<!-- 								<p:selectOneMenu id="sitTribCofinsTemp" filter="true" -->
+<!-- 									value="#{nfeBean.tributoTemporario.cofins.cstCofins}" required="true" -->
+<!-- 									disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 									converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 									immediate="true"> -->
+<!-- 									<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 										itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 									<f:selectItems value="#{tributosBean.CSTCOFINS}" /> -->
+<!-- 								</p:selectOneMenu> -->
+<!-- 							</div> -->
+<!-- 							<div class="form-group col-md-2"> -->
+<!-- 								<p:outputLabel value="#{label['label.tipocalculo']}" -->
+<!-- 									for="tipoCalculoCofinsTemp" /> -->
+<!-- 																<p:inputText value="#{tributosBean.cofins.calculo}" -->
+<!-- 																	readonly="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 																	id="tipoCalculoCofins" /> -->
+<!-- 								<p:selectOneMenu id="tipoCalculoCofinsTemp" filter="true" -->
+<!-- 									value="#{nfeBean.tributoTemporario.cofins.calculo}" required="true" -->
+<!-- 									disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 									converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 									immediate="true"> -->
+<!-- 									<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 										itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 									<f:selectItems value="#{tributosBean.tipoCalculos}" /> -->
+<!-- 								</p:selectOneMenu> -->
+<!-- 							</div> -->
+<!-- 							<div class="form-group col-md-2"> -->
+<!-- 								<p:outputLabel value="#{label['label.valorcalculo']}" -->
+<!-- 									for="valorCalculoCofinsTemp" /> -->
+<!-- 								<p:inputNumber value="#{nfeBean.tributoTemporario.cofins.valor}" -->
+<!-- 									decimalPlaces="2" emptyValue="zero" -->
+<!-- 									readonly="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 									id="valorCalculoCofinsTemp" /> -->
+<!-- 							</div> -->
+
+<!-- 						</div> -->
+
+<!-- 					</p:tab> -->
+<!-- 					<p:tab title="#{label['label.cofinsst']}" id="tabCofinsSTTemp" -->
+<!-- 						rendered="#{tributosBean.tributos.st eq 'true'}"> -->
+
+<!-- 						<div class="box-body row"> -->
+<!-- 							<div class="form-group col-md-6"> -->
+<!-- 								<p:outputLabel value="#{label['label.cofinsst.des']}" -->
+<!-- 									for="sitTribCofinsStTemp" /> -->
+<!-- 								<p:selectOneMenu id="sitTribCofinsStTemp" filter="true" -->
+<!-- 									value="#{nfeBean.tributoTemporario.cofinsSt.cstCofinsSt}" required="true" -->
+<!-- 									disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 									converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 									immediate="true"> -->
+<!-- 									<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 										itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 									<f:selectItems value="#{tributosBean.CSTCOFINS}" /> -->
+<!-- 								</p:selectOneMenu> -->
+<!-- 							</div> -->
+<!-- 							<div class="form-group col-md-2"> -->
+<!-- 								<p:outputLabel value="#{label['label.tipocalculo']}" -->
+<!-- 									for="tipoCalculoCofinsSTTemp" /> -->
+<!-- 																<p:inputText value="#{tributosBean.cofinsSt.calculo}" -->
+<!-- 																	readonly="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 																	id="tipoCalculoCofinsST" /> -->
+<!-- 								<p:selectOneMenu id="tipoCalculoCofinsSTTemp" filter="true" -->
+<!-- 									value="#{nfeBean.tributoTemporario.cofinsSt.calculo}" required="true" -->
+<!-- 									disabled="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 									converter="omnifaces.GenericEnumConverter" style="width:100%" -->
+<!-- 									immediate="true"> -->
+<!-- 									<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 										itemLabel="#{messages['filial.form.select-one']}" /> -->
+<!-- 									<f:selectItems value="#{tributosBean.tipoCalculos}" /> -->
+<!-- 								</p:selectOneMenu> -->
+<!-- 							</div> -->
+<!-- 							<div class="form-group col-md-2"> -->
+<!-- 								<p:outputLabel value="#{label['label.valorcalculo']}" -->
+<!-- 									for="valorCalculoCofinsSTTemp" /> -->
+<!-- 								<p:inputNumber value="#{nfeBean.tributoTemporario.cofinsSt.valor}" -->
+<!-- 									decimalPlaces="0" emptyValue="zero" -->
+<!-- 									readonly="userSessionBean.hasRole(authorization.NFE_INSERT eq 'false'}" -->
+<!-- 									id="valorCalculoCofinsSTTemp" /> -->
+<!-- 							</div> -->
+
+<!-- 						</div> -->
+
+<!-- 					</p:tab> -->
+				</p:tabView>
+			</div>
+		</div>
+	</div>
+</p:dialog>
+

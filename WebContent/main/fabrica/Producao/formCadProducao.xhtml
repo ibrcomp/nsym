@@ -1,0 +1,343 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:of="http://omnifaces.org/functions"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml">
+
+
+	<ui:param name="activeMenu" value="FABRICA" />
+	<ui:param name="activeSubmenu" value="Producao" />
+	<f:metadata>
+		<f:viewAction action="#{fabricaBean.initializeFormOP(param.opID)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+       #{breadcrumb['entries.fabrica.op']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{fabricaBean.viewState eq 'ADDING'}"
+			value="#{messages['fabrica.producao.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{fabricaBean.viewState eq 'EDITING'}"
+			value="#{messages['fabrica.producao.page-description-editing']}">
+			<f:param value="#{fabricaBean.producao.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries.fabrica']}</a></li>
+		<li><a href="formCadProducao.xhtml">#{breadcrumb['entries.producao']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['entries.producao']}"></p:outputLabel>
+					</h2>
+				</div>
+				<div class="box-body ">
+					<p:focus for="selectModelo" context="empresaForm" />
+					<p:defaultCommand target="buttonSave" />
+					<div class="form-group col-md-12">
+						<div class="row">
+							<p:toolbar id="navegador">
+								<f:facet name="left">
+									<p:commandButton update="empresaForm" process="empresaForm"
+										id="buttonSave" value="#{menu['save']}"
+										action="#{fabricaBean.doSalvarOP()}"
+										onstart="PF('formBlock').block()"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUCAO_INSERT) eq 'false'}"
+										styleClass="btn btn-flat btn-success"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{fabricaBean.viewState eq 'ADDING'}"
+										icon="fa fa-hdd-o" />
+
+									<p:commandButton process="empresaForm"
+										value="#{menu['update']}" action="#{fabricaBean.doSalvarOP()}"
+										onstart="PF('formBlock').block()"
+										update="empresaForm pageDescription"
+										styleClass="btn btn-flat btn-warning"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUCAO_EDIT) eq 'false'}"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{fabricaBean.viewState eq 'EDITING'}" />
+
+								</f:facet>
+								<f:facet name="right">
+									<p:commandButton immediate="true" value="#{menu['back']}"
+										action="#{fabricaBean.toListOP()}"
+										styleClass="btn btn-flat btn-default" />
+								</f:facet>
+							</p:toolbar>
+						</div>
+					</div>
+					<div class="col-md-12">
+						<div class="row">
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.op.modelo']}: "
+									for="selectModelo" />
+								<p:selectOneMenu
+									value="#{fabricaBean.modelo}" filter="true"  
+									filterMatchMode="contains" id="selectModelo" required="true" 
+									disabled="#{userSessionBean.hasRole(authorization.FABRICA_INSERT) eq 'false'}"
+									converter="omnifaces.SelectItemsConverter" style="width:100%">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{fabricaBean.listaModelos()}"
+										itemLabel="#{item.descricao}" var="item" />
+									<p:ajax update="listaItensProduto listaGradeTable tabMestre" event="change"
+										listener="#{fabricaBean.pegaGrade()}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.op.quant']}: "
+									for="quantProd" />
+								<p:inputNumber value="#{fabricaBean.producao.estimativa}"
+									id="quantProd" decimalPlaces="3" />
+							</div>
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.op.linhaProd']}: "
+									for="selectLinhaProd" />
+								<p:selectOneMenu
+									value="#{fabricaBean.producao.sequenciaProducao}" filter="true"
+									filterMatchMode="contains" id="selectLinhaProd" required="true"
+									disabled="#{userSessionBean.hasRole(authorization.FABRICA_INSERT) eq 'false'}"
+									converter="omnifaces.SelectItemsConverter" style="width:100%">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{fabricaBean.listaLinhaProd()}"
+										itemLabel="#{item.descricao}" var="item" />
+								</p:selectOneMenu>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-12">
+					<h:form id="listForm" prependId="false">
+						<div class="col-md-6">
+							<div class="box box-success box-body">
+								<div class="row">
+									<div class="form-group col-md-12">
+										<p:outputLabel
+											value="#{messages['fabrica.modelo.text.list.material']}" />
+										<p:dataTable id="listaItensProduto" var="lista"
+											styleClass="table" widgetVar="listaItemNfe"
+											value="#{fabricaBean.modelo.listaDeMaterias}"
+											paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+											paginator="true" rows="20" lazy="false" rowKey="#{lista.id}"
+											sortBy="#{lista.produto.descricao}"
+											rowsPerPageTemplate="20,30">
+
+											<p:column headerText="#{label['label.ref']}" rendered="true"
+												style="width:15%">
+												<h:outputText value="#{lista.produto.referencia}" />
+											</p:column>
+
+											<p:column headerText="#{label['label.descricao']}"
+												style="width:45%" rendered="true">
+												<h:outputText value="#{lista.produto.descricao}" />
+											</p:column>
+
+											<p:column headerText="#{label['label.nfe.item.quantidade']}"
+												style="width:15%" rendered="true">
+												<h:outputText value="#{lista.quant}" />
+											</p:column>
+
+											<p:column headerText="#{label['label.tipoMedida']}"
+												style="width:15%" rendered="true">
+												<h:outputText value="#{lista.produto.tipoMedida.toString()}" />
+											</p:column>
+										</p:dataTable>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="box box-success box-body">
+								<div class="row">
+									<div class="form-group col-md-12">
+										<p:outputLabel
+											value="#{messages['fabrica.producao.text.list.grade']}" />
+										<p:dataTable id="listaGradeTable" var="listGrade"
+											styleClass="table" widgetVar="listGradeWidg"
+											value="#{fabricaBean.listaGrade}"
+											paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+ 							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+											paginator="true" rows="20" lazy="false" rowKey="#{lista.id}"
+											sortBy="#{listGrade.tamanho.tamanho}" editable="true"
+											editMode="cell" rowsPerPageTemplate="20,30">
+											<p:ajax event="cellEdit" listener="#{fabricaBean.onCellEdit}"
+												process="listaGradeTable" update="listaGradeTable" />
+											<p:column headerText="#{label['label.list.tamanho']}"
+												rendered="true" style="width:15%">
+												<p:outputLabel value="#{listGrade.tamanho.tamanho}" />
+											</p:column>
+
+											<p:column headerText="#{label['label.nfe.item.quantidade']}"
+												style="width:45%" rendered="true">
+												<p:cellEditor>
+													<f:facet name="output">
+														<h:outputText value="#{listGrade.quantidade}" />
+													</f:facet>
+													<f:facet name="input">
+														<p:inputText value="#{listGrade.quantidade}"
+															style="width:100%">
+														</p:inputText>
+													</f:facet>
+												</p:cellEditor>
+											</p:column>
+											<p:columnGroup type="footer">
+												<p:row>
+													<p:column colspan="1"
+														style="text-align:right;font-size:18px;font-weight:bold;"
+														footerText="#{label['label.op.fichaTecnica.totGrade']}" />
+													<p:column>
+														<f:facet name="footer">
+															<h:outputText value="#{fabricaBean.totalGradeTemp} un."
+																style="font-size:18px;color:blue;font-weight:bold;">
+															</h:outputText>
+														</f:facet>
+													</p:column>
+												</p:row>
+											</p:columnGroup>
+										</p:dataTable>
+									</div>
+								</div>
+							</div>
+						</div>
+					</h:form>
+					</div>
+					<div class="form-group col-md-12">
+						<div class="box box-success box-body">
+							<div class="row">
+								<h4>Informações do Produto - Cadastro</h4>
+								<p:tabView prependId="false" id="tabMestre">
+									<p:tab title="Cadastro" id="cadastroForm">
+										<div class="box-body">
+											<div class="row">
+												<div class="form-group col-md-2">
+													<p:outputLabel value="#{label['label.ref']}" for="ref" />
+													<p:inputText value="#{fabricaBean.produto.referencia}" disabled="#{fabricaBean.produtoVisivel}"
+														styleClass="form-control" id="ref" />
+												</div>
+												<div class="form-group col-md-2">
+													<p:outputLabel value="#{label['label.ncm']}: " for="ncm" />
+													<p:autoComplete id="ncm" dropdown="true"
+														forceSelection="true" value="#{fabricaBean.produto.ncm}"
+														scrollHeight="300"
+														completeMethod="#{produtoBean.completaNcm}" var="ncm"
+														styleClass="ui-autocomplete" itemLabel="#{ncm.ncm}" disabled="#{fabricaBean.produtoVisivel}"
+														itemValue="#{ncm}" minQueryLength="1">
+														<o:converter converterId="omnifaces.ListConverter"
+															list="#{produtoBean.listaNcm()}" />
+														<p:column>
+															<h:outputText value="#{ncm.ncm}"
+																style="font-weight: bold" />
+														</p:column>
+
+														<p:column>
+															<h:outputText value="#{ncm.descricao}" />
+														</p:column>
+													</p:autoComplete>
+
+												</div>
+											</div>
+											<div class="row">
+
+												<div class="form-group col-md-5">
+													<p:outputLabel value="#{label['label.descricao']}: "
+														for="desc" />
+													<p:inputText value="#{fabricaBean.produto.descricao}" disabled="#{fabricaBean.produtoVisivel}"
+														id="desc" styleClass="form-control" />
+												</div>
+											</div>
+										</div>
+									</p:tab>
+									<p:tab title="Centro de Custos" id="custosTab" >
+
+										<div class="box-body">
+											<div class="row">
+												<div class="form-group col-md-2">
+													<p:outputLabel value="#{label['label.preco.custo']}: "
+														for="custo" />
+													<p:inputNumber value="#{fabricaBean.custoProduto.custo}"
+														id="custo" decimalPlaces="4" thousandSeparator="."
+														decimalSeparator="," symbol="R$">
+													</p:inputNumber>
+												</div>
+											</div>
+											<div class="row">
+												<div class="form-group col-md-2">
+													<p:outputLabel value="#{label['label.preco.a']}: "
+														for="preco1" />
+													<p:inputNumber value="#{fabricaBean.custoProduto.preco1}"
+														decimalPlaces="4" id="preco1" thousandSeparator="."
+														decimalSeparator="," symbol="R$">
+													</p:inputNumber>
+												</div>
+												<div class="form-group col-md-2">
+													<p:outputLabel value="#{label['label.preco.b']}: "
+														for="preco2" />
+													<p:inputNumber value="#{fabricaBean.custoProduto.preco2}"
+														decimalPlaces="4" id="preco2" thousandSeparator="."
+														decimalSeparator="," symbol="R$">
+													</p:inputNumber>
+												</div>
+												<div class="form-group col-md-2">
+													<p:outputLabel value="#{label['label.preco.c']}: "
+														for="preco3" />
+													<p:inputNumber value="#{fabricaBean.custoProduto.preco3}"
+														decimalPlaces="4" id="preco3" thousandSeparator="."
+														decimalSeparator="," symbol="R$">
+													</p:inputNumber>
+												</div>
+												<div class="form-group col-md-2">
+													<p:outputLabel value="#{label['label.preco.d']}: "
+														for="preco4" />
+													<p:inputNumber value="#{fabricaBean.custoProduto.preco4}"
+														decimalPlaces="4" id="preco4" thousandSeparator="."
+														decimalSeparator="," symbol="R$">
+													</p:inputNumber>
+												</div>
+												<div class="form-group col-md-2">
+													<p:outputLabel value="#{label['label.preco.e']}: "
+														for="preco5" />
+													<p:inputNumber value="#{fabricaBean.custoProduto.preco5}"
+														decimalPlaces="4" id="preco5" thousandSeparator="."
+														decimalSeparator="," symbol="R$">
+													</p:inputNumber>
+												</div>
+											</div>
+										</div>
+									</p:tab>
+								</p:tabView>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="resources/nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+	</ui:define>
+	<ui:define name="popups">
+	</ui:define>
+</ui:composition>

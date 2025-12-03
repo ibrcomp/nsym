@@ -1,0 +1,153 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="Fiscal" />
+	<ui:param name="activeSubmenu" value="DI" />
+
+	<f:metadata>
+		<f:viewAction action="#{dIBean.initializeListing()}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['di.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{dIBean.viewState eq 'ADDING'}"
+			value="#{messages['di.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{dIBean.viewState eq 'EDITING'}"
+			value="#{messages['di.page-description-editing']}">
+			<f:param value="#{dIBean.di.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li><a href="formListDI.xhtml">#{breadcrumb['list.di']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['list.di']}"></p:outputLabel>
+					</h2>
+				</div>
+
+				<div class="box-body">
+					<div class="row">
+						<div class="navbar-form">
+							<p:toolbar>
+								<f:facet name="left">
+									<p:commandButton update="empresaForm" process="empresaForm"
+										value="#{menu['new']}" action="#{dIBean.newDI}"
+										onstart="PF('formBlock').block()"
+										disabled="#{userSessionBean.hasRole(authorization.DI_INSERT) eq 'false'}"
+										styleClass="btn btn-flat btn-success"
+										oncomplete="PF('formBlock').unblock()" rendered="true" />
+									<p:commandButton process="empresaForm" value="#{menu['view']}"
+										action="#{dIBean.changeToEdit(dIBean.di.id)}"
+										onstart="PF('formBlock').block()"
+										update="empresaForm pageDescription"
+										disabled="#{userSessionBean.hasRole(authorization.DI_VIEW) eq 'false'}"
+										styleClass="btn btn-flat btn-warning"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{dIBean.viewState eq 'EDITING'}" />
+
+								</f:facet>
+								<f:facet name="right">
+									<p:commandButton immediate="true" value="#{menu['back']}"
+										action="#{dIBean.toListDI()}"
+										styleClass="btn btn-flat btn-default" />
+								</f:facet>
+							</p:toolbar>
+						</div>
+						<div class="form-group col-md-12">
+							<p:dataTable id="di" var="lista" widgetVar="listaDI"
+								value="#{dIBean.listaDIModel}" selection="#{dIBean.di}"
+								paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+	 							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+								paginator="true" rows="10" selectionMode="single" lazy="true"
+								rowKey="#{lista.id}" sortBy="#{lista.id}"
+								rowsPerPageTemplate="5,10,15">
+
+								<p:ajax event="rowSelect" listener="#{dIBean.onRowSelect}"
+									update="empresaForm" />
+
+								<p:column headerText="#{label['label.di.numero']}"
+									rendered="true" style="width:10%" filterBy="#{lista.nnDi}"
+									filterMatchMode="contains" sortBy="#{lista.nnDi}">
+									<h:outputLabel value="#{lista.nnDi}" />
+								</p:column>
+
+								<p:column sortBy="#{lista.ddDesemb}"
+									headerText="#{label['label.di.dDesemb']}" style="width:30%">
+									<h:outputLabel value="#{lista.ddDesemb}">
+										<f:converter converterId="localDateConverter"
+											pattern="dd/mm/yyyy" />
+									</h:outputLabel>
+								</p:column>
+
+
+							</p:dataTable>
+							<p:outputLabel value="#{label['label.list.export']}:" />
+							<h:commandLink>
+								<p:graphicImage name="/nsym/img/excel.png" width="28"
+									style="right:0;" />
+								<p:dataExporter type="xls" target="produto"
+									fileName="listaProduto" />
+							</h:commandLink>
+
+						</div>
+
+					</div>
+
+					<!-- 				<div class="box-footer align-right"> -->
+					<!-- 					<p:commandButton update="empresaForm" process="empresaForm" -->
+					<!-- 						value="#{menu['new']}" action="#{produtoBean.newProduto}" -->
+					<!-- 						onstart="PF('formBlock').block()" -->
+					<!-- 						disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}" -->
+					<!-- 						styleClass="btn btn-flat btn-success" -->
+					<!-- 						oncomplete="PF('formBlock').unblock()" rendered="true" /> -->
+					<!-- 					<p:commandButton process="empresaForm" value="#{menu['view']}" -->
+					<!-- 						action="#{produtoBean.changeToEdit(produtoBean.produto.id)}" -->
+					<!-- 						onstart="PF('formBlock').block()" -->
+					<!-- 						update="empresaForm pageDescription" -->
+					<!-- 						disabled="#{userSessionBean.hasRole(authorization.PRODUTO_VIEW) eq 'false'}" -->
+					<!-- 						styleClass="btn btn-flat btn-success" -->
+					<!-- 						oncomplete="PF('formBlock').unblock()" -->
+					<!-- 						rendered="#{produtoBean.viewState eq 'EDITING'}" /> -->
+					<!-- 					<p:spacer width="10" /> -->
+					<!-- 					<p:commandButton immediate="true" value="#{menu['back']}" -->
+					<!-- 						action="#{userBean.toDashboard}" -->
+					<!-- 						styleClass="btn btn-flat btn-default" /> -->
+					<!-- 				</div> -->
+				</div>
+			</div>
+		</h:form>
+
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+</ui:composition>

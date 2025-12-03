@@ -1,0 +1,309 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="configurations" />
+	<ui:param name="activeSubmenu" value="RegraNegocio" />
+
+	<f:metadata>
+		<f:viewAction
+			action="#{regraNegocioBean.initializeForm(param.configId)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['userConfig.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{regraNegocioBean.viewState eq 'ADDING'}"
+			value="#{messages['userConfig.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{regraNegocioBean.viewState eq 'EDITING'}"
+			value="#{messages['userConfig.page-description-editing']}">
+			<f:param value="#{regraNegocioBean.user.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['adm']}</a></li>
+		<li><a href="formCadRegraNegocio.xhtml">#{breadcrumb['adm.user.config']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row" id="men">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel
+							value="#{messages['userConfig.box-title']} #{regraNegocioBean.user.name}" />
+					</h2>
+				</div>
+				<div class="navbar-form">
+					<p:toolbar>
+						<f:facet name="left">
+
+
+
+						</f:facet>
+						<f:facet name="right">
+							<p:commandButton process="empresaForm" value="#{menu['update']}"
+								action="#{regraNegocioBean.doSave()}"
+								onstart="PF('formBlock').block()"
+								update="empresaForm pageDescription"
+								styleClass="btn btn-flat btn-warning"
+								oncomplete="PF('formBlock').unblock()"
+								rendered="#{regraNegocioBean.viewState eq 'EDITING'}" />
+
+
+							<p:commandButton immediate="true" value="#{menu['back']}"
+								action="#{regraNegocioBean.toLisUsersConfig()}"
+								styleClass="btn btn-flat btn-default" />
+						</f:facet>
+					</p:toolbar>
+				</div>
+				<p:tabView prependId="false" id="tabMestre">
+					<p:tab title="Config Geral" id="configGeral">
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-1">
+									<p:outputLabel
+										value="#{label['label.adm.changeSalePriceTransfer']}"
+										for="booleanPrecoTransfer" />
+									<p:selectBooleanCheckbox
+										value="#{regraNegocioBean.config.alteraPrecoTransferencia}"
+										id="booleanPrecoTransfer" immediate="true" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.adm.portACBR']}"
+										for="imputPorta" />
+									<p:inputText value="#{regraNegocioBean.config.portaACBR}"
+										id="imputPorta" immediate="true" styleClass="form-control" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.adm.ipACBR']}"
+										for="imputIP" />
+									<p:inputText value="#{regraNegocioBean.config.ipACBR}"
+										id="imputIP" immediate="true" styleClass="form-control" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel
+										value="#{label['label.order.selectTransaction']}"
+										for="selectTransacaoPadrao" />
+									<br />
+									<p:selectOneMenu value="#{regraNegocioBean.transacao}"
+										filter="true" filterMatchMode="contains"
+										id="selectTransacaoPadrao" required="true"
+										disabled="#{userSessionBean.hasRole(authorization.ADM_UPDATE) eq 'false'}"
+										onchange="$(function(){PrimeFaces.focus('selectAtendentePadrao');});"
+										converter="omnifaces.SelectItemsConverter" style="width:100%"
+										immediate="true">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{regraNegocioBean.listaDeTransacao}"
+											itemLabel="#{item.descricao}" var="item" />
+									</p:selectOneMenu>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-3">
+									<p:outputLabel value="#{label['label.adm.defaultPrinterPDV']}"
+										for="selectModeloImpressora" />
+									<p:selectOneMenu
+										value="#{regraNegocioBean.config.impressoraPdv}"
+										id="selectModeloImpressora" filter="true"
+										filterMatchMode="contains"
+										disabled="#{userSessionBean.hasRole(authorization.ADM_UPDATE) eq 'false'}"
+										converter="omnifaces.GenericEnumConverter" required="false"
+										style="width:100%">
+										<f:selectItem itemValue="#{null}" noSelectionOption="false"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{regraNegocioBean.listaImpressoras}"
+											var="imp" itemLabel="#{imp.modelo}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-3">
+									<p:outputLabel value="#{label['label.adm.portPrinterPdv']}"
+										for="selectSpooler" />
+									<p:selectOneMenu
+										value="#{regraNegocioBean.config.portaUsbVendaPdv}"
+										id="selectSpooler" filter="true" filterMatchMode="contains"
+										disabled="#{userSessionBean.hasRole(authorization.ADM_UPDATE) eq 'false'}"
+										required="false" converter="omnifaces.SelectItemsConverter"
+										style="width:100%">
+										<f:selectItem itemValue="#{null}" noSelectionOption="false"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems
+											value="#{regraNegocioBean.listaimpressoraSpooler}"
+											var="printer" itemLabel="#{printer.toString()}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-1">
+									<p:outputLabel
+										value="#{label['label.config.user.permiteDesconto']}"
+										for="booleanDesconto" />
+									<p:selectBooleanCheckbox
+										value="#{regraNegocioBean.config.desconto}"
+										id="booleanDesconto" immediate="true" />
+								</div>
+								<div class="form-group col-md-1">
+									<p:outputLabel
+										value="#{label['label.config.user.porcentagem']}:"
+										for="porcentagem" style="width:100%" />
+									<p:inputNumber
+										value="#{regraNegocioBean.config.porcentagemDesconto}"
+										id="porcentagem" maxValue="9999999.99" minValue="0.0"
+										emptyValue="0" immediate="true" decimalSeparator=","
+										thousandSeparator="." style="width:5%" size="5">
+									</p:inputNumber>
+								</div>
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="Config Fiscal" id="configFiscal">
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-1">
+									<p:outputLabel value="#{label['label.adm.changeSalePriceNfe']}"
+										for="booleanNFE" />
+									<p:selectBooleanCheckbox
+										value="#{regraNegocioBean.config.alteraPrecoNFeAvulso}"
+										id="booleanNFE" immediate="true" />
+								</div>
+								<div class="form-group col-md-1">
+									<p:outputLabel value="#{label['label.adm.changeSalePreceSAT']}"
+										for="booleanSat" />
+									<p:selectBooleanCheckbox
+										value="#{regraNegocioBean.config.alteraPrecoSatAvulso}"
+										id="booleanSat" immediate="true" />
+								</div>
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="Config Vendas" id="configVendas">
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-1">
+									<p:outputLabel value="#{label['label.adm.changeSalePrice']}"
+										for="booleanVenda" />
+									<br />
+									<p:selectBooleanCheckbox
+										value="#{regraNegocioBean.config.alteraPrecoVenda}"
+										id="booleanVenda" />
+								</div>
+								<div class="form-group col-md-1">
+									<p:outputLabel value="#{label['label.adm.descontoPDV']}"
+										for="booleanDescPdv" />
+									<p:selectBooleanCheckbox
+										value="#{regraNegocioBean.config.descontoPDV}"
+										id="booleanDescPdv" immediate="true" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel
+										value="#{label['label.config.user.quantiPadrao']}:"
+										for="quantPdv" style="width:100%" />
+									<p:inputNumber
+										value="#{regraNegocioBean.config.quantidadePadraoPDV}"
+										id="quantPdv" maxValue="9999999.99" minValue="0.0"
+										immediate="true" decimalSeparator="," thousandSeparator="."
+										style="width:5%" size="5">
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-1">
+									<p:outputLabel value="#{label['label.empresa.frenteCaixa']}"
+										for="booleanFrenteCaixa" />
+									<br />
+									<p:selectBooleanCheckbox
+										value="#{regraNegocioBean.config.vendaCaixa}"
+										id="booleanFrenteCaixa" />
+								</div>
+								<div class="form-group col-md-1">
+									<p:outputLabel value="CupomPdf"
+										for="booleanVendaPDF" />
+									<br />
+									<p:selectBooleanCheckbox
+										value="#{regraNegocioBean.config.cupomPDF}"
+										id="booleanVendaPDF" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-1">
+									<p:outputLabel value="#{label['label.adm.resumoVendaPdv']}"
+										for="booleanResumo" />
+									<p:selectBooleanCheckbox
+										value="#{regraNegocioBean.config.resumoCupomPdv}"
+										id="booleanResumo" immediate="true" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.adm.quantViaPDV']}"
+										for="quantViaVenda" />
+									<p:inputNumber value="#{regraNegocioBean.config.quantViaVenda}"
+										id="quantViaVenda" maxValue="9999999" minValue="0"
+										immediate="true" decimalSeparator="," thousandSeparator="."
+										style="width:5%" size="5">
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-1">
+									<p:outputLabel value="#{label['label.adm.cabecalho']}"
+										for="booleanCabecalho" />
+									<p:selectBooleanCheckbox
+										value="#{regraNegocioBean.config.cabecalhoPDV}"
+										id="booleanCabecalho" immediate="true" />
+								</div>
+								<div class="form-group col-md-1">
+									<p:outputLabel value="#{label['label.adm.nomeFantasia']}"
+										for="booleanNomeFantasia" />
+									<p:selectBooleanCheckbox
+										value="#{regraNegocioBean.config.fantasia}"
+										id="booleanNomeFantasia" immediate="true" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="align-left col-md-12">
+									<div class="form-group col-md-6">
+										<p:outputLabel value="#{label['label.adm.mensagemPDV']}"
+											for="mensPDV" />
+										<p:inputTextarea rows="6" cols="75" immediate="true"
+											disabled="false" styleClass="form-control"
+											counterTemplate="{0} caracteres restantes"
+											value="#{regraNegocioBean.config.mensPDV}" id="mensPDV"
+											autoResize="false" />
+									</div>
+								</div>
+							</div>
+						</div>
+					</p:tab>
+				</p:tabView>
+			</div>
+
+			<div class="box-footer align-right"></div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="resources/nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+		<h:form id="testeEnvio" prependId="false">
+			<div class="box">
+				<div class="box-body "></div>
+			</div>
+
+		</h:form>
+	</ui:define>
+	<ui:define name="popups">
+	</ui:define>
+</ui:composition>

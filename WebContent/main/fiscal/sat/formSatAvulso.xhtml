@@ -1,0 +1,419 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="NFE" />
+	<ui:param name="activeSubMenu" value="Sat" />
+
+	<f:metadata>
+		<f:viewAction action="#{satBean.initializeForm(param.idCFe)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['satAvulso.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{satBean.viewState eq 'ADDING'}"
+			value="#{messages['satAvulso.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{satBean.viewState eq 'EDITING'}"
+			value="#{messages['satAvulso.page-description-editing']}">
+			<f:param value="#{satBean.cfe.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['fiscal']}</a></li>
+		<li><a href="formSatAvulso.xhtml">#{breadcrumb['fiscal.sat.emissao']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+
+			<p:remoteCommand name="insere"
+				actionListener="#{satBean.localizaProduto()}" update="messages"
+				immediate="true" />
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['fiscal.sat.emissao']}"></p:outputLabel>
+					</h2>
+				</div>
+			</div>
+			<div class="navbar-form">
+				<p:toolbar>
+					<f:facet name="left">
+
+						<p:commandButton process="empresaForm" value="#{menu['save']}"
+							action="#{satBean.doSalvar()}" onstart="PF('formBlock').block()"
+							styleClass="btn btn-flat btn-success"
+							disabled="#{userSessionBean.hasRole(authorization.SAT_INSERT) eq 'false'}"
+							update="messages listaForma respSefaz"
+							oncomplete="PF('formBlock').unblock()"
+							rendered="#{satBean.viewState eq 'ADDING' }" icon="fa fa-hdd-o" />
+
+						<p:commandButton process="empresaForm" value="#{menu['update']}"
+							action="#{satBean.doSalvar()}" onstart="PF('formBlock').block()"
+							styleClass="btn btn-flat btn-info"
+							disabled="#{userSessionBean.hasRole(authorization.SAT_INSERT) eq 'false'}"
+							update="messages listaForma respSefaz"
+							oncomplete="PF('formBlock').unblock()"
+							rendered="#{satBean.viewState eq 'EDITING'}" icon="fa fa-hdd-o" />
+
+						<p:commandButton process="empresaForm"
+							value="#{menu['fiscal.sat.printCFe']}"
+							action="#{satBean.doEmitir()}" onstart="PF('formBlock').block()"
+							update="empresaForm pageDescription respSefaz"
+							styleClass="btn btn-flat btn-warning"
+							disabled="#{userSessionBean.hasRole(authorization.SAT_INSERT) eq 'false'}"
+							oncomplete="PF('formBlock').unblock()"
+							rendered="#{satBean.viewState eq 'ADDING'}" />
+
+					</f:facet>
+					<f:facet name="right">
+
+						<span class="ui-separator"> <span
+							class="ui-icon ui-icon-grip-dotted-vertical" />
+						</span>
+						<p:commandButton immediate="true" value="#{menu['back']}"
+							action="#{satBean.toListSat}"
+							styleClass="btn btn-flat btn-default" />
+					</f:facet>
+				</p:toolbar>
+			</div>
+			<div class="box box-success">
+				<div class="box-body with-border">
+					<div class="col-sm-5">
+						<div class="boxEspecial box-primary">
+							<div class="box-body width-border">
+								Dados do cliente:
+								<div class="row">
+									<div class="form-group col-md-4">
+										<p:outputLabel value="#{label['label.documento']}"
+											for="imputDoc" />
+										<br />
+										<p:inputText value="#{satBean.documento}" id="imputDoc"
+											immediate="true" styleClass="form-control" />
+									</div>
+									<div class="form-group col-md-8">
+										<p:outputLabel value="#{label['label.nfe.nomeRazao']}"
+											for="imputNome" />
+										<br />
+										<p:inputText value="#{satBean.destinatario.nome}"
+											id="imputNome" styleClass="form-control" />
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-sm-7">
+						<h:form id="divPagamento" prependId="false">
+							<div class="boxEspecial box-primary">
+								<div class="box-body width-border">
+									<div class="form-group col-md-4">
+										<p:outputLabel value="#{label['label.nfe.Pagamento']}"
+											for="listaForma"></p:outputLabel>
+										<p:selectOneMenu value="#{satBean.formaPag}" id="listaForma"
+											filter="true"
+											disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+											required="true" converter="omnifaces.SelectItemsConverter"
+											style="width:100%">
+											<f:selectItem itemValue="#{null}" noSelectionOption="false"
+												itemLabel="#{messages['filial.form.select-one']}" />
+											<f:selectItems value="#{satBean.listaFormasDePagamento}"
+												var="forma" itemLabel="#{forma.descricao}" />
+											<p:ajax update="tabParcelas" event="change"
+												process="divPagamento"
+												listener="#{satBean.preencheParcelamento()}" />
+										</p:selectOneMenu>
+									</div>
+									<div class="form-group col-md-8">
+										<p:dataTable id="tabParcelas" var="parcela"
+											value="#{satBean.listaParcelamento}" editable="true">
+											<p:column headerText="#{label['label.financial.numParcela']}"
+												style="width:20%">
+												<p:cellEditor>
+													<f:facet name="output">
+														<p:outputLabel value="#{parcela.numParcela}"
+															disabled="true" />
+													</f:facet>
+													<f:facet name="input">
+														<h:outputText value="#{parcela.numParcela}"
+															disabled="true" />
+													</f:facet>
+												</p:cellEditor>
+											</p:column>
+											<p:column headerText="#{label['label.pagamento.parcela']}"
+												style="width:30%">
+												<p:cellEditor>
+													<f:facet name="output">
+														<p:inputNumber value="#{parcela.valorParcela}"
+															decimalPlaces="2" symbol="R$" disabled="true" />
+													</f:facet>
+													<f:facet name="input">
+														<p:inputNumber value="#{parcela.valorParcela}"
+															id="vParcela" decimalPlaces="2" symbol="R$" />
+													</f:facet>
+												</p:cellEditor>
+											</p:column>
+											<p:column headerText="#{label['label.financial.vencimento']}"
+												style="width:40%">
+												<p:cellEditor>
+													<f:facet name="output">
+														<p:calendar value="#{parcela.vencimento}"
+															pattern="dd/MM/yyyy" converter="localDateConverter"
+															disabled="true" />
+													</f:facet>
+													<f:facet name="input">
+														<p:calendar value="#{parcela.vencimento}" id="dVencimento"
+															pattern="dd/MM/yyyy" converter="localDateConverter" />
+													</f:facet>
+												</p:cellEditor>
+											</p:column>
+											<p:column style="width:10%">
+												<p:rowEditor />
+											</p:column>
+										</p:dataTable>
+									</div>
+								</div>
+							</div>
+						</h:form>
+					</div>
+				</div>
+			</div>
+			<div class="box box-warning">
+				<div class="box-body with-border">
+					<div class="form-group col-md-12">
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.ref']}" />
+							<br />
+							<p:outputLabel value="#{satBean.produto.referencia}"
+								id="labelRef" style="color:blue" />
+						</div>
+						<div class="form-group col-md-4">
+							<p:outputLabel value="#{label['label.descricao']}" />
+							<br />
+							<p:outputLabel value="#{satBean.produto.descricao}"
+								id="labelDesc" style="color:blue" />
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.nfe.preco']}" />
+							<br />
+							<p:outputLabel value="#{satBean.tempValorUnitario}"
+								id="labelPreco" style="color:blue" />
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.nfe.item.quantidade']}"
+								for="labelQuant" />
+							<br />
+							<p:outputLabel value="#{satBean.quantidade}" id="labelQuant"
+								style="color:blue" />
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.nfe.item.valorTotal']}"
+								for="labelTotal" />
+							<br />
+							<p:outputLabel value="#{satBean.tempTotalUnitario}"
+								id="labelTotal" style="color:blue" />
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="box box-success">
+				<div class="box-body with-border">
+					<div class="col-sm-5">
+						<h:form id="commandGroup" prependId="false">
+							<div class="boxEspecial box-primary box-body with-border">
+								<p:focus context="commandGroup" />
+								<p:defaultCommand target="insereItem" />
+								<div class="row">
+									<div class="form-group col-md-5">
+										<p:outputLabel value="#{label['label.nfe.item.codigo']}"
+											for="idRefItem">
+											<p:commandButton
+												actionListener="#{satBean.telaListaProduto()}"
+												styleClass="btn btn-flat btn-info"
+												disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+												icon="fa fa-search" style="width:20px;height:20px"
+												process="commandGroup" />
+										</p:outputLabel>
+										<h:inputText value="#{satBean.ref}" id="idRefItem"
+											onkeypress="setaFoco(this)" immediate="true"
+											styleClass="form-control">
+										</h:inputText>
+									</div>
+									<div class="form-group col-md-2">
+										<p:outputLabel value="#{label['label.nfe.item.quantidade']}"
+											for="idItemQuant" />
+										<p:inputNumber value="#{satBean.quantidade}" id="idItemQuant"
+											onkeypress="setaFoco(this)" maxValue="9999999.99"
+											minValue="0.0" immediate="true" decimalSeparator=","
+											thousandSeparator="." style="width:5%" size="5">
+										</p:inputNumber>
+									</div>
+								</div>
+								<div class="row">
+									<div class="form-group col-md-2">
+										<p:outputLabel value="Preço: " for="preco1"
+											rendered="#{satBean.usuarioAutenticado.config.alteraPrecoSatAvulso eq 'true'}" />
+										<p:inputNumber value="#{satBean.precoVenda}" size="10"
+											rendered="#{satBean.usuarioAutenticado.config.alteraPrecoSatAvulso eq 'true'}"
+											decimalPlaces="2" id="preco1" thousandSeparator="."
+											decimalSeparator="," symbol="R$" />
+										<br />
+										<p:commandButton actionListener="#{satBean.localizaProduto()}"
+											process="commandGroup"
+											oncomplete="$(function(){PrimeFaces.focus('idRefItem');});"
+											update="tabParcelas labelRef labelDesc labelPreco labelQuant labelTotal idRefItem preco1 listaItensProduto"
+											id="insereItem" style="width:70%;margin:5px"
+											styleClass="btn btn-flat btn-warning" icon="fa fa-plus" />
+									</div>
+								</div>
+								<div class="row">
+									<div class="form-group col-md-4">
+										<p:outputLabel value="#{label['label.tabelaPreco']}" />
+										<p:selectOneMenu value="#{satBean.tabelaSelecionada}"
+											id="tabelaSelecionada" filter="true" required="true"
+											disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+											onchange="$(function(){PrimeFaces.focus('insereItem');});"
+											converter="omnifaces.GenericEnumConverter" style="width:100%">
+											<f:selectItem itemValue="#{null}" noSelectionOption="true"
+												itemLabel="#{messages['filial.form.select-one']}" />
+											<f:selectItems value="#{satBean.tabelaPreco}" />
+
+											<p:ajax update="idRefItem idItemQuant preco1"
+												listener="#{satBean.definePreco()}" process="commandGroup" />
+										</p:selectOneMenu>
+									</div>
+									<div class="form-group col-md-2">
+										<p:outputLabel value="Desconto por %" for="tDesc" />
+										<p:selectBooleanCheckbox value="#{satBean.descontoPercentual}"
+											onkeypress="setaFoco(this)" id="tDesc" style="width:50%">
+										</p:selectBooleanCheckbox>
+									</div>
+									<div class="form-group col-md-2">
+										<p:outputLabel value="Desc Val." for="desPerc" />
+										<p:inputNumber value="#{satBean.desPercVal}" id="desPerc"
+											maxValue="999.99" minValue="0.00" immediate="true"
+											emptyValue="empty" onkeypress="setaFoco(this)"
+											decimalSeparator="," thousandSeparator="." style="width:100%"
+											size="10">
+										</p:inputNumber>
+									</div>
+								</div>
+							</div>
+						</h:form>
+					</div>
+					<div class="col-sm-7">
+						<h:form id="listItens" prependId="false">
+							<div class="boxEspecial box-primary">
+								<div class="box-body width-border">
+									<h3 class="box-title">
+										<p:outputLabel value="Itens" />
+									</h3>
+									<div class="form-group col-md-12">
+										<p:dataTable id="listaItensProduto" var="lista"
+											styleClass="table" widgetVar="listaItemNfe"
+											value="#{satBean.listaItemModel}"
+											paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+											paginator="true" rows="20" lazy="false" rowKey="#{lista.id}"
+											selectionMode="single" selection="#{satBean.itemSelecionado}"
+											sortBy="#{lista.produto.descricao}"
+											rowsPerPageTemplate="20,30">
+
+											<p:column headerText="#{label['label.ref']}" rendered="true"
+												style="width:15%">
+												<h:outputText value="#{lista.produto.referencia}" />
+											</p:column>
+
+											<p:column headerText="#{label['label.descricao']}"
+												style="width:40%" rendered="true">
+												<h:outputText value="#{lista.produto.descricao}" />
+											</p:column>
+
+											<p:column headerText="#{label['label.nfe.item.quantidade']}"
+												style="width:15%" rendered="true">
+												<h:outputText value="#{lista.quantidade}" />
+											</p:column>
+
+											<p:column headerText="#{label['label.nfe.preco']}"
+												rendered="true">
+												<h:outputText value="#{lista.valorUnitario}" />
+											</p:column>
+											<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+												rendered="true">
+												<h:outputText value="#{lista.valorTotal}">
+													<f:convertNumber type="currency" currencySymbol="R$" />
+												</h:outputText>
+											</p:column>
+											<p:column headerText="#{label['label.list.Action']}">
+												<p:commandButton process="listaItensProduto"
+													icon="fa fa-remove" title="#{menu['delete']}"
+													styleClass="btn btn-flat btn-danger"
+													actionListener="#{satBean.excluiItem(lista)}"
+													update="tabParcelas listaItensProduto" />
+											</p:column>
+											<p:columnGroup type="footer">
+												<p:row>
+													<h:outputText value="Total CFe: "
+														style="text-align:right;font-size:18px;font-weight:bold;" />
+													<h:outputText value="#{satBean.totalCFe}"
+														style="font-size:18px;color:red;font-weight:bold;">
+														<f:convertNumber type="currency" currencySymbol="R$" />
+													</h:outputText>
+												</p:row>
+											</p:columnGroup>
+										</p:dataTable>
+									</div>
+								</div>
+							</div>
+						</h:form>
+					</div>
+				</div>
+			</div>
+			<div class="box-footer">
+				<div class="align-left">
+					<div class="form-group col-md-6">
+						<p:outputLabel value="Resposta Sat" for="respSefaz" />
+						<p:inputTextarea rows="5" cols="100" maxlength="300"
+							immediate="true" disabled="true" styleClass="form-control"
+							counterTemplate="{0} caracteres restantes"
+							value="#{satBean.respostaAcbrLocal}" id="respSefaz"
+							autoResize="false" />
+					</div>
+				</div>
+				<div class="align-right"></div>
+			</div>
+		</h:form>
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+
+	<ui:define name="sub-content">
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="formPopup" prependId="false">
+			<ui:include
+				src="/main/fiscal/sat/tools/dialogPesquisaProdutoSat.xhtml" />
+			<ui:include src="/main/fiscal/sat/tools/dialogPesquisaBarras.xhtml" />
+		</h:form>
+
+	</ui:define>
+</ui:composition>

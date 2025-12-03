@@ -1,0 +1,166 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="A3" />
+
+	<!--     <f:metadata> -->
+	<!--         <f:viewAction action="#{assinaA3.initializeForm(param.userId)}"/> -->
+	<!--     </f:metadata> -->
+
+	<ui:define name="pageTitle">
+        #{messages['sat.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{assinaA3Bean.viewState eq 'ADDING'}"
+			value="#{messages['sat.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{userBean.viewState eq 'EDITING'}"
+			value="#{messages['sat.page-description-editing']}">
+			<f:param value="#{assinaA3Bean.cnpjCliente}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['suport']}</a></li>
+		<li><a href="formAssinador.xhtml">#{breadcrumb['suport.assinaA3']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="userForm" prependId="false">
+
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel
+							value="Gerador do arquivo Chave.dat para o siadcom 4.0"></p:outputLabel>
+					</h2>
+				</div>
+
+				<div class="box-body row">
+					<div class="form-group col-md-0">
+						<p:commandButton
+							actionListener="#{assinaA3Bean.listaCertificados()}"
+							value="gera lista de certificados" />
+					</div>
+					<div class="form-group col-md-4">
+
+						<p:outputLabel value="Cnpj Cliente: " for="cliente"></p:outputLabel>
+						<p:inputText id="cliente" value="#{assinaA3Bean.cnpjCliente}"
+							required="true" requiredMessage="Preencha o campo Cnpj Cliente"
+							maxlength="19" styleClass="form-control" />
+
+					</div>
+					<div class="form-group col-md-4">
+						<p:outputLabel value="Senha Certificado: " for="senha" />
+						<p:password id="senha" value="#{assinaA3Bean.senha}"
+							required="true"
+							requiredMessage="Informe a senha do certificado A3"
+							maxlength="15" styleClass="form-control" />
+					</div>
+					<div class="form-group col-md-6">
+						<p:outputLabel value="Assinatura: " for="disp" />
+						<p:inputTextarea id="disp" value="#{assinaA3Bean.assinatura}"
+							counter="disp1" counterTemplate="{0} characters remaining."
+							maxlength="344" autoResize="false" rows="10" cols="50"
+							styleClass="form-control" />
+						<p:outputLabel id="disp1" for="disp" />
+					</div>
+					<div class="form-group col-md-4">
+						<p:outputLabel value="Mensagem Cupom Fiscal (SAT): " for="mCupom" />
+						<p:inputText id="mCupom" value="#{assinaA3Bean.mensagemCupom}"
+							required="false" maxlength="100" styleClass="form-control" />
+					</div>
+					<div class="form-group col-md-2">
+						<p:outputLabel value="Valor aproximado de tributos: "
+							for="tributos" />
+						<p:inputText id="tributos" value="#{assinaA3Bean.tributo}"
+							required="true" maxlength="5" styleClass="form-control" />
+					</div>
+					<div class="form-group col-md-4">
+						<p:commandButton type="submit"
+							actionListener="#{assinaA3Bean.assina}" value="Assinar"
+							update=":userForm" styleClass="btn btn-flat btn-default" />
+						<p:spacer width="10" />
+						<h:commandButton value="Gerar Arquivo" type="submit"
+							actionListener="#{assinaA3Bean.geraChave}"
+							styleClass="btn btn-flat btn-default">
+						</h:commandButton>
+						<p:spacer width="10" />
+						<h:commandButton value="Download"
+							styleClass="btn btn-flat btn-default">
+							<p:fileDownload value="#{assinaA3Bean.arq}" />
+						</h:commandButton>
+
+					</div>
+					<!--                     <div class="form-group col-md-4"> -->
+					<!--                         <p:outputLabel for="inUsername"  -->
+					<!--                                        value="#{messages['user.form.username']}"/> -->
+					<!--                         <p:inputText id="inUsername"  -->
+					<!--                                      maxlength="45" -->
+					<!--                                      styleClass="form-control" -->
+					<!--                                      value="#{userBean.user.username}"  -->
+					<!--                                      readonly="#{userBean.user.id ne null}"/> -->
+					<!--                     </div> -->
+					<!--                     <div class="form-group col-md-4"> -->
+					<!--                         <p:outputLabel for="inPassword"  -->
+					<!--                                        value="#{messages['user.form.password']}"/> -->
+					<!--                         <p:password id="inPassword"  -->
+					<!--                                     match="inConfirmPassword" -->
+					<!--                                     styleClass="form-control" -->
+					<!--                                     value="#{userBean.user.password}" -->
+					<!--                                     required="#{userBean.user.id eq null}" -->
+					<!--                                     validatorMessage="#{validation['user.password-not-match']}"/> -->
+					<!--                     </div> -->
+					<!--                     <div class="form-group col-md-4"> -->
+					<!--                         <p:outputLabel for="inConfirmPassword"  -->
+					<!--                                        value="#{messages['user.form.confirm-password']}"/> -->
+					<!--                         <p:password id="inConfirmPassword" -->
+					<!--                                     styleClass="form-control" -->
+					<!--                                     value="#{userBean.user.passwordConfirmation}"/> -->
+					<!--                     </div> -->
+				</div>
+
+				<div class="box-footer align-right">
+					<p:commandButton update="userForm" process="userForm"
+						value="#{menu['save']}" action="#{userBean.doSave()}"
+						onstart="PF('formBlock').block()"
+						styleClass="btn btn-flat btn-success"
+						oncomplete="PF('formBlock').unblock()"
+						rendered="#{userBean.viewState eq 'ADDING'}" />
+					<p:commandButton process="userForm" value="#{menu['update']}"
+						action="#{userBean.doUpdate()}" onstart="PF('formBlock').block()"
+						update="userForm pageDescription"
+						styleClass="btn btn-flat btn-success"
+						oncomplete="PF('formBlock').unblock()"
+						rendered="#{userBean.viewState eq 'EDITING'}" />
+					<p:spacer width="10" />
+					<p:commandButton immediate="true" value="#{menu['back']}"
+						action="#{userBean.toDashboard}"
+						styleClass="btn btn-flat btn-default" />
+				</div>
+			</div>
+		</h:form>
+
+		<pe:blockUI target="userForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+</ui:composition>

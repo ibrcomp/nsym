@@ -1,0 +1,333 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="FABRICA" />
+	<ui:param name="activeSubMenu" value="RecebimentoProdutoFabrica" />
+
+	<f:metadata>
+		<f:viewAction
+			action="#{estoqueGeralBean.initializeRecProdFormFabrica(param.idEntrada)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['entProduto.fab.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{estoqueGeralBean.viewState eq 'ADDING'}"
+			value="#{messages['entProduto.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{estoqueGeralBean.viewState eq 'EDITING'}"
+			value="#{messages['entProduto.page-description-editing']}">
+			<f:param value="#{estoqueGeralBean.entradaProduto.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['estoque']}</a></li>
+		<li><a href="formListEntradaEstoque.xhtml">#{breadcrumb['estoqueGeral.list.produto']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['estoqueGeral.Insert.new']}"></p:outputLabel>
+					</h2>
+				</div>
+			</div>
+			<div class="navbar-form">
+				<p:toolbar id="navegador">
+					<f:facet name="left">
+						<p:commandButton update="empresaForm" process="empresaForm"
+							value="#{menu.save}" action="#{estoqueGeralBean.toSaveRecProd()}"
+							onstart="PF('formBlock').block()"
+							styleClass="btn btn-flat btn-success" icon="ui-icon-document"
+							disabled="#{userSessionBean.hasRole(authorization.ESTOQUE_PRODUTO_INSERT) eq 'false' or estoqueGeralBean.viewState != 'ADDING' or estoqueGeralBean.entradaProduto.atualizado eq 'true'}"
+							oncomplete="PF('formBlock').unblock()" rendered="true" />
+
+						<span class="ui-separator"> <span
+							class="ui-icon ui-icon-grip-dotted-vertical" />
+						</span>
+
+						<p:commandButton update="empresaForm" process="empresaForm"
+							value="#{menu.update}"
+							action="#{estoqueGeralBean.toSaveRecProd()}"
+							onstart="PF('formBlock').block()"
+							styleClass="btn btn-flat btn-warning" icon="ui-icon-document"
+							disabled="#{userSessionBean.hasRole(authorization.ESTOQUE_PRODUTO_INSERT) eq 'false' or estoqueGeralBean.viewState != 'EDITING' or estoqueGeralBean.entradaProduto.atualizado eq 'true'}"
+							oncomplete="PF('formBlock').unblock()" rendered="true" />
+
+						<span class="ui-separator"> <span
+							class="ui-icon ui-icon-grip-dotted-vertical" />
+						</span>
+					</f:facet>
+					<f:facet name="right">
+						<p:spacer width="5" />
+						<span class="ui-separator"> <span
+							class="ui-icon ui-icon-grip-dotted-vertical" />
+						</span>
+						<p:commandButton immediate="true" value="#{menu['back']}"
+							action="#{estoqueGeralBean.toListRecebimentoProduto()}"
+							styleClass="btn btn-flat btn-default" />
+					</f:facet>
+				</p:toolbar>
+			</div>
+			<div class="box box-success">
+				<div class="box-body with-border">
+					<div class="col-md-12">
+						<h:form id="formCabecalho" prependId="false">
+							<div class="box-body with-border">
+								<div class="row">
+									<h4>#{messages['entProduto.insert.fornecedor']}</h4>
+									<div class="form-group col-md-4">
+										<p:outputLabel value="#{label['label.fornecedor']}: "
+											for="inputRazaoSocial">
+										</p:outputLabel>
+										<p:inputText value="#{estoqueGeralBean.razaoFornecedor}"
+											id="inputRazaoSocial" onkeypress="setaFoco(this)"
+											placeholder="Digite aqui parte do nome que deseja localizar"
+											styleClass="form-control" autocomplete="false" />
+									</div>
+									<div class="form-group col-md-2">
+										<br />
+										<p:commandButton
+											value="#{label['label.nfe.destino.pesquisa']}"
+											actionListener="#{estoqueGeralBean.pesquisaFornecedor()}"
+											process="empresaForm" update="empresaForm"
+											rendered="#{estoqueGeralBean.entradaProduto.atualizado eq 'false'}"
+											id="buttonPesquisa" style="width:100%;margin:5px"
+											styleClass="btn btn-flat btn-info" icon="fa fa-search" />
+									</div>
+								</div>
+							</div>
+						</h:form>
+					</div>
+				</div>
+			</div>
+			<div class="col-md-8">
+				<h:form id="commandGroup" prependId="false"
+					rendered="#{estoqueGeralBean.isHabilita() and estoqueGeralBean.entradaProduto.atualizado eq 'false'}">
+					<div class="box box-success box-body">
+						<div class="boxEspecial box-primary box-body with-border">
+							<p:focus for="idRefItem" context="commandGroup" />
+							<p:defaultCommand target="insereItem" />
+							<div class="row">
+								<div class="form-group col-md-3">
+									<p:outputLabel value="#{label['label.nfe.item.codigo']}"
+										for="idRefItem">
+										<p:commandButton
+											actionListener="#{estoqueGeralBean.telaPesquisaProduto()}"
+											styleClass="btn btn-flat btn-info"
+											disabled="#{userSessionBean.hasRole(authorization.VENDA_INSERT) eq 'false'}"
+											icon="fa fa-search" style="width:20px;height:20px"
+											process="commandGroup" />
+									</p:outputLabel>
+									<h:inputText value="#{estoqueGeralBean.ref}" id="idRefItem"
+										onkeypress="setaFoco(this)" immediate="true"
+										styleClass="form-control">
+									</h:inputText>
+								</div>
+								<div class="form-group col-md-1">
+									<p:outputLabel value="#{label['label.nfe.item.quantidade']}:"
+										for="idItemQuant" style="width:100%" />
+									<p:inputNumber value="#{estoqueGeralBean.quantidade}"
+										id="idItemQuant" onkeypress="setaFoco(this)"
+										maxValue="9999999.99" minValue="0.0" immediate="true"
+										decimalSeparator="," thousandSeparator="." size="5">
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.preco.custo']} "
+										for="custo" style="width:100%"
+										rendered="#{estoqueGeralBean.calcularCusto eq 'true'}" />
+									<p:inputNumber value="#{estoqueGeralBean.precoCusto}" size="10"
+										rendered="#{estoqueGeralBean.calcularCusto eq 'true'}"
+										decimalPlaces="2" id="custo" thousandSeparator="."
+										decimalSeparator="," symbol="R$" />
+								</div>
+								<!-- 							</div> -->
+								<!-- 							<div class="row"> -->
+								<div class="form-group col-md-1">
+									<p:outputLabel value="#{label['label.insert']} "
+										for="insereItem" style="width:100%" />
+									<p:commandButton
+										actionListener="#{estoqueGeralBean.localizaProduto()}"
+										process="commandGroup"
+										oncomplete="$(function(){PrimeFaces.focus('idRefItem');});"
+										update="custo totalRecebimento idRefItem idItemQuant labelRef labelDesc labelQuant dtInventario"
+										id="insereItem" style="width:70%;margin:2px"
+										styleClass="btn btn-flat btn-warning" icon="fa fa-plus" />
+								</div>
+							</div>
+						</div>
+					</div>
+				</h:form>
+			</div>
+			<div class="col-md-4">
+				<h:form id="totalizador" prependId="false"
+					rendered="#{estoqueGeralBean.isHabilita()}">
+					<div class="box box-warning box-body">
+						<div class="boxEspecial box-primary box-body with-border">
+							<div class="form-group col-md-4">
+								<p:outputLabel value="#{label['label.nfe.totalNfe']} "
+									for="totalRecebimento" style="width:100%"
+									rendered="#{estoqueGeralBean.calcularCusto eq 'true'}" />
+								<p:inputNumber value="#{estoqueGeralBean.totalRecebimento}"
+									size="10"
+									rendered="#{estoqueGeralBean.calcularCusto eq 'true'}"
+									decimalPlaces="2" id="totalRecebimento" thousandSeparator="."
+									readonly="true" decimalSeparator="," symbol="R$" />
+							</div>
+						</div>
+					</div>
+				</h:form>
+			</div>
+			<div class="col-md-12">
+				<h:form id="formLabel" prependId="false"
+					rendered="#{estoqueGeralBean.isHabilita() }">
+					<div class="box box-warning">
+						<div class="box-body with-border">
+							<div class="form-group col-md-12">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.ref']}" />
+									<br />
+									<p:outputLabel
+										value="#{estoqueGeralBean.item.produto.referencia}"
+										id="labelRef" style="color:blue" />
+								</div>
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.descricao']}" />
+									<br />
+									<p:outputLabel
+										value="#{estoqueGeralBean.item.produto.descricao}"
+										id="labelDesc" style="color:blue" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.nfe.item.quantidade']}"
+										for="labelQuant" />
+									<br />
+									<p:outputLabel value="#{estoqueGeralBean.item.quantidade}"
+										id="labelQuant" style="color:blue" />
+								</div>
+
+							</div>
+						</div>
+					</div>
+				</h:form>
+			</div>
+			<div class="col-md-12">
+				<h:form id="listaLancamento" prependId="false"
+					rendered="#{estoqueGeralBean.isHabilita()}">
+					<div class="box box-success box-body">
+						<div class="row">
+							<div class="form-group col-md-12">
+								<p:dataTable id="dtInventario" var="lista"
+									widgetVar="listaItemRecProduto"
+									value="#{estoqueGeralBean.listaItemRecProdutoModel}"
+									paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+									paginator="true" rows="10" lazy="true" rowKey="#{lista.id}"
+									sortBy="#{lista.produto.descricao}" sortOrder="descending"
+									styleClass="table">
+
+									<p:ajax event="rowSelect"
+										listener="#{estoqueGeralBean.onRowSelectProduto}"
+										process="empresaForm" update="navegador" />
+
+									<p:column headerText="#{label['label.ref']}" rendered="true"
+										sortBy="#{lista.produto.referencia}" style="width:8%">
+										<h:outputLabel value="#{lista.produto.referencia}" />
+									</p:column>
+
+									<p:column headerText="#{label['label.barras']}" rendered="true"
+										style="width:12%">
+										<h:outputLabel value="#{lista.barras.barras}" />
+									</p:column>
+
+									<p:column headerText="#{label['label.descricao']}"
+										rendered="true" sortBy="#{lista.produto.descricao}"
+										style="width:30%">
+										<h:outputLabel value="#{lista.produto.descricao}" />
+									</p:column>
+
+									<p:column headerText="#{label['label.list.tamanho']}"
+										rendered="true" sortBy="#{lista.barras.tamanho}"
+										style="width:5%">
+										<h:outputLabel value="#{lista.barras.tamanho.tamanho}" />
+									</p:column>
+
+									<p:column headerText="#{label['label.list.cor']}"
+										rendered="true" sortBy="#{lista.barras.cor}" style="width:5%">
+										<h:outputLabel value="#{lista.barras.cor.nome}" />
+									</p:column>
+
+									<p:column headerText="#{label['label.nfe.item.quantidade']}"
+										rendered="true" style="width:8%">
+										<h:outputLabel value="#{lista.quantidade}">
+										</h:outputLabel>
+									</p:column>
+									<p:column headerText="#{label['label.nfe.preco']}"
+										rendered="true" style="width:8%">
+										<h:outputLabel value="#{lista.custoRecebimento}">
+										</h:outputLabel>
+									</p:column>
+									<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+										rendered="true" style="width:10%">
+										<h:outputLabel value="#{lista.valorTotal}">
+										</h:outputLabel>
+									</p:column>
+
+									<p:column headerText="#{label['label.list.Action']}">
+										<p:commandButton process="dtInventario" icon="fa fa-remove"
+											title="#{menu['delete']}"
+											styleClass="btn btn-flat btn-danger"
+											actionListener="#{estoqueGeralBean.removeItemRecProdutoEstoque(lista)}"
+											rendered="#{estoqueGeralBean.entradaProduto.atualizado eq 'false'}"
+											update="totalRecebimento dtInventario" />
+									</p:column>
+								</p:dataTable>
+							</div>
+						</div>
+					</div>
+				</h:form>
+			</div>
+			<div class="box-footer"></div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="formPopupPesquisaProduto" prependId="false">
+			<ui:include
+				src="/main/estoque/tools/dialogPesquisaProdutoInventario.xhtml" />
+		</h:form>
+		<h:form id="formPopupPesquisaBarras" prependId="false">
+			<ui:include src="/main/estoque/tools/dialogPesquisaBarras.xhtml" />
+		</h:form>
+		<h:form id="formPopupPesquisaFornecedor" prependId="false">
+			<ui:include src="/main/estoque/tools/dialogListaResultado.xhtml" />
+		</h:form>
+
+	</ui:define>
+</ui:composition>

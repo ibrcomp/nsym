@@ -1,0 +1,104 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="pesquisaEnderecoDialog"
+	width="70%" modal="true" resizable="false" closeOnEscape="true"
+	widgetVar="dialogEndereco"
+	header="#{messages['endereco.pesquisa-dialog.title']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-2">
+				<p:outputLabel value="Endereço"></p:outputLabel>
+			</h2>
+		</div>
+		<div class="box-body row">
+			<div class="col-sm-2">
+				<p:outputLabel value="#{label['label.cep']}" for="procuraCEP"
+					rendered="#{empresaBean.consultaPorCepVisivel eq 'true'}" />
+				<p:inputMask value="#{empresaBean.cep}" id="procuraCEP"
+					mask="99999-999"
+					rendered="#{empresaBean.consultaPorCepVisivel eq 'true'}" />
+			</div>
+			<div class="col-sm-2">
+				<p:outputLabel for="uff" value="Estado "
+					rendered="#{empresaBean.consultaPorCepVisivel eq 'false'}" />
+				<p:selectOneMenu id="uff" value="#{empresaBean.estado}"
+					style="width:100%"
+					rendered="#{empresaBean.consultaPorCepVisivel eq 'false'}"
+					immediate="true">
+					<f:selectItem itemValue="#{null}" noSelectionOption="true"
+						itemLabel="#{messages['empresa.form.select-one']}" />
+					<f:selectItems var="uf" itemValue="#{uf}"
+						value="#{empresaBean.ufSiglaType}" />
+				</p:selectOneMenu>
+			</div>
+			<div class="col-sm-5">
+				<p:outputLabel value="Logradouro" for="logra"
+					rendered="#{empresaBean.consultaPorCepVisivel eq 'false'}" />
+				<p:inputText value="#{empresaBean.logra}" id="logra"
+					rendered="#{empresaBean.consultaPorCepVisivel eq 'false'}"
+					styleClass="form-control" />
+			</div>
+			<div class="col-sm-3">
+				<p:outputLabel value="Município" for="muni"
+					rendered="#{empresaBean.consultaPorCepVisivel eq 'false'}" />
+				<p:inputText value="#{empresaBean.munic}" id="muni"
+					rendered="#{empresaBean.consultaPorCepVisivel eq 'false'}"
+					styleClass="form-control" />
+			</div>
+			<div class="col-sm-12">
+				<p:dataTable id="Enderecos" var="listaEnd"
+					value="#{empresaBean.listaEncontrada}"
+					paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true" rows="7" selection="#{empresaBean.endereco}"
+					selectionMode="single" lazy="true" rowKey="#{listaEnd.cep}"
+					rendered="#{empresaBean.consultaPorCepVisivel eq 'false'}">
+					<p:ajax event="rowSelect"
+						listener="#{empresaBean.onRowEnderecoSelect}"
+						update="logradouro bairro localidade ibge cep"
+						oncomplete="PF('dialogEndereco').hide()" />
+					<p:column headerText="#{label['label.cep']}"
+						sortBy="#{listaEnd.cep}" rendered="true">  
+            					#{listaEnd.cep}  
+        					</p:column>
+					<p:column sortBy="#{listaEnd.logra}" headerText="Logradouro">
+						<h:outputText value="#{listaEnd.logra}" />
+					</p:column>
+					<p:column headerText="Bairro" rendered="true">
+						#{listaEnd.bairro}
+					</p:column>
+					<p:column headerText="Município" rendered="true">  
+            					#{listaEnd.localidade}  
+        					</p:column>
+					<p:column headerText="Estado" rendered="true">  
+            					#{listaEnd.uf.toString()}  
+        					</p:column>
+				</p:dataTable>
+
+			</div>
+		</div>
+		<div class="box-footer align-right">
+
+			<p:commandButton actionListener="#{empresaBean.localizaCep()}"
+				process="testeEnvio" style="align-left"
+				oncomplete="PF('dialogEndereco').hide()"
+				value="#{label['label.search']}" styleClass="btn btn-flat btn-seach"
+				icon="fa fa-search-plus"
+				rendered="#{empresaBean.consultaPorCepVisivel eq 'true'}"
+				update="logradouro bairro localidade ibge cep" />
+
+
+			<p:commandButton actionListener="#{empresaBean.localizaEndereco()}"
+				process="testeEnvio" style="align-left" update="Enderecos"
+				value="#{label['label.search']}" styleClass="btn btn-flat btn-seach"
+				rendered="#{empresaBean.consultaPorCepVisivel eq 'false'}"
+				icon="fa fa-search-plus" />
+		</div>
+	</div>
+
+
+</p:dialog>
+

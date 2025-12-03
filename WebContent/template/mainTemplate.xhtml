@@ -1,0 +1,937 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:of="http://omnifaces.org/functions"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:a4j="http://richfaces.org/a4j"
+	xmlns:f="http://java.sun.com/jsf/core">
+
+<h:head>
+	<title>Nsym</title>
+	<meta http-equiv="x-ua-compatible" content="IE=edge" />
+	<meta charset="UTF-8" />
+	<meta http-equiv="refresh"
+		content="${request.session.maxInactiveInterval};url=/logout" />
+
+	<meta name="viewport"
+		content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+
+	<link rel="shortcut icon" type="image/x-icon"
+		href="#{resource['nsym/img/faviconNsym.ico']}" />
+		
+
+	<h:outputStylesheet library="bootstrap" name="css/bootstrap.css" />
+	<h:outputStylesheet library="ionicons" name="css/ionicons.css" />
+	<h:outputStylesheet library="nsym" name="css/admintle1.css" />
+	<h:outputStylesheet library="nsym" name="css/adminlte.min.css" />
+	<h:outputStylesheet library="nsym" name="css/all-skins.min.css" />
+	<h:outputStylesheet library="nsym" name="css/common.css" />
+	<h:outputStylesheet library="primefaces-bootstrap" name="custom.css" />
+	<script src="https://kit.fontawesome.com/01667ddc7a.js" crossorigin="anonymous"></script>
+	<ui:insert name="head" />
+</h:head>
+
+<h:body
+	styleClass="hold-transition sidebar-mini #{userSessionBean.authenticatedUserUI}">
+
+	<h:form>
+		<p:remoteCommand autoRun="true" name="updateMessages"
+			update="userMessagesBox"
+			actionListener="#{messagingBean.updateMessageStatus}" />
+		<script type="text/javascript">
+			window.onbeforeunload = function(){ 
+				verificaLogon();
+			}
+			window.onload = function(){
+				bloqueiaLogon();
+				}
+		</script>
+		<script type="text/javascript">
+ 			function setaFoco(elemento)  {
+    			var keyCode = event.keyCode ? event.keyCode : event.which ? event.which : event.charCode;
+   				if (keyCode == 13) {
+         		var i;
+         		for (i = 0; elemento.form.elements.length > i; i++)
+             		if (elemento == elemento.form.elements[i])
+                 		break;
+         				i = (i + 1) % elemento.form.elements.length;       				
+         				elemento.form.elements[i].focus();
+         				event.preventDefault();
+         			return false;
+     			}
+     			return false;
+ 			}
+		</script>
+		<script type="text/javascript">
+				$(document).ready(function(e) {	
+				$('#idRefItem').keydown( function(e) {
+					var keyCode = e.keyCode ? e.keyCode : e.which ? e.which : e.charCode;
+   				if (keyCode == 13) {
+   					e.preventDefault();
+   		            $('idItemQuant').focus();
+   		        }
+				});
+   		});
+		</script>
+		<script type="text/javascript">
+				$(document).ready(function(e) {	
+				$('input,textarea,select,panel').keydown( function(e) {
+					var keyCode = e.keyCode ? e.keyCode : e.which ? e.which : e.charCode;
+   				if (keyCode == 13) {
+   					e.preventDefault();
+   		            var inputs = $(this).closest('form').find(':input:visible');
+   		            inputs.eq( inputs.index(this)+ 1 ).focus();
+   		        }
+				});
+   		});
+		</script>
+		<script type="text/javascript">
+			function enterTab(elemento){
+				}
+		</script>
+		<p:remoteCommand name="verificaLogon"
+			actionListener="#{authenticationBean.liberaAcesso()}"
+			immediate="true" />
+		<p:remoteCommand name="bloqueiaLogon"
+			actionListener="#{authenticationBean.bloqueiaAcesso()}"
+			immediate="true" />
+		<p:idleMonitor timeout="1200000">
+			<!-- 20 minutos para executar o liberaInativo  -->
+			<p:ajax event="idle" listener="#{authenticationBean.liberaInativo()}" />
+		</p:idleMonitor>
+
+	</h:form>
+	<div class="wrapper">
+		<header class="main-header">
+			<a href="/main/dashboard.xhtml" class="logo"> <span
+				class="logo-mini"><p:graphicImage library="nsym"
+						name="img/nsym45.png" id="logoCompany" /></span> <span
+				class="logo-lg"><p:graphicImage library="nsym"
+						name="img/nsym45.png" id="logoCompany2" /><B>NSYM</B></span>
+			</a>
+			<nav class="navbar navbar-static-top" role="navigation">
+				<a href="#" class="sidebar-toggle" data-toggle="offcanvas"
+					role="button"> <span class="sr-only"></span>
+				</a>		
+				<div class="navbar-custom-menu">
+					<ul class="nav navbar-nav">
+						<li jsf:id="userMessagesBox" class="dropdown messages-menu">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown"> <i
+								class="fa fa-envelope-o"></i> <span
+								jsf:rendered="#{messagingBean.newMessages ne 0}"
+								class="label label-danger">#{messagingBean.newMessages}</span>
+						</a>
+							<ul class="dropdown-menu">
+								<li class="header align-center"><o:outputFormat
+										rendered="#{messagingBean.newMessages ne 0}"
+										value="#{messages['message-box.tip']}">
+										<f:param value="#{messagingBean.newMessages}" />
+									</o:outputFormat> <span jsf:rendered="#{messagingBean.newMessages eq 0}">
+										#{messages['message-box.no-messages']} </span></li>
+								<li>
+									<ul class="menu">
+										<ui:repeat value="#{messagingBean.unreadMessages}"
+											var="unreadMessage">
+											<li><p:link
+													outcome="/main/tools/messaging/received/detailReceivedMessage.xhtml">
+													<f:param name="id" value="#{unreadMessage.id}" />
+													<f:param name="viewState" value="DETAILING" />
+													<f:param name="faces-redirect" value="true" />
+													<div class="pull-left">
+														<img class="img-circle"
+															src="#{resource['nsym:img/ui-icon-high.svg']}"
+															jsf:rendered="#{unreadMessage.priority eq 'HIGH'}" /> <img
+															class="img-circle"
+															src="#{resource['nsym:img/ui-icon-medium.svg']}"
+															jsf:rendered="#{unreadMessage.priority eq 'MEDIUM'}" />
+														<img class="img-circle"
+															src="#{resource['nsym:img/ui-icon-low.svg']}"
+															jsf:rendered="#{unreadMessage.priority eq 'LOW'}" />
+													</div>
+													<h4>
+														#{of:abbreviate(unreadMessage.title, 20)} <small>
+															<i class="fa fa-search"></i> <p:spacer width="5" /> <o:outputFormat
+																value="#{messages['message-box.hours']}"
+																rendered="#{unreadMessage.timeUnit eq 'message-box.hours'}">
+																<f:param value="#{unreadMessage.elapsedTime}" />
+															</o:outputFormat> <o:outputFormat
+																value="#{messages['message-box.minutes']}"
+																rendered="#{unreadMessage.timeUnit eq 'message-box.minutes'}">
+																<f:param value="#{unreadMessage.elapsedTime}" />
+															</o:outputFormat> <o:outputFormat value="#{messages['message-box.date']}"
+																rendered="#{unreadMessage.timeUnit eq null}">
+																<f:param value="#{unreadMessage.elapsedTime}" />
+															</o:outputFormat>
+														</small>
+													</h4>
+													<p>#{of:abbreviate(unreadMessage.content, 48)}</p>
+												</p:link></li>
+										</ui:repeat>
+									</ul>
+								</li>
+								<li class="footer"><p:link
+										href="/main/tools/messaging/received/listReceivedMessages.xhtml">
+										<span>#{menu['tools.messaging.view-received']}</span>
+									</p:link></li>
+							</ul>
+						</li>
+						<li class="dropdown user user-menu"><a href="#"
+							class="dropdown-toggle" data-toggle="dropdown"> 
+							<pe:gravatar 
+									id="userImage"
+									value="#{userSessionBean.authenticatedUserEmail}" /> <span
+								class="hidden-xs">#{userSessionBean.authenticatedUserName}</span>
+						</a>
+							<ul class="dropdown-menu">
+								<li class="user-header"><pe:gravatar 
+										style="border-radius: 50%"
+										value="#{userSessionBean.authenticatedUserEmail}" />
+									<p>
+										<p:outputLabel
+											value="#{label['label.empresa']} #{userSessionBean.authenticatedUserIDEmpresa}-#{userSessionBean.authenticatedUserIDFilial} 
+										#{userSessionBean.empAuthenticated}"
+											class="badge label-default">										
+										</p:outputLabel>
+										<br />
+										#{userSessionBean.authenticatedUserName}
+										<br />
+										 <small>#{userSessionBean.authenticatedUserGroup}</small>
+									</p></li>
+								<li class="user-footer"><h:form>
+										<div class="pull-left">
+											<p:commandLink value="#{menu['profile']}"
+												styleClass="btn btn-flat btn-default"
+												action="/main/profile/formUserProfile.xhtml?faces-redirect=true" />
+										</div>
+										<div class="pull-right">
+											<p:commandLink value="#{menu['logout']}"
+												styleClass="btn btn-flat btn-danger"
+												action="#{authenticationBean.doLogout()}" />
+										</div>
+									</h:form></li>
+							</ul></li>
+					</ul>
+				</div>
+			</nav>
+		</header>
+
+		<aside class="main-sidebar">
+			<section class="sidebar">
+				<ul class="sidebar-menu">
+					<li class="header">#{menu['entries']}</li>
+					<li class="treeview #{activeMenu eq 'Cadastros' ? 'active' : ''}">
+						<p:link href="#">
+							<i class="fa fa-users"></i>
+							<span>#{menu['entries']}</span>
+							<i class="fa fa-angle-left pull-right"></i>
+						</p:link>
+						<ul class="treeview-menu">
+							<li class=" #{activeSubmenu eq 'Cliente' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.CLIENT_VIEW)}">
+								<p:link href="/main/cadastro/Cliente/formListCliente.xhtml">
+									<i class="fa fa-user-plus"></i>
+									<span>#{menu['entries.client']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubMenu eq 'Transportadora' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.TRANSPORTADORA_VIEW)}">
+								<p:link
+									href="/main/cadastro/Transportadora/formListTransportadora.xhtml">
+									<i class="fa fa-truck"></i>
+									<span>#{menu['entries.transportadora']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubMenu eq 'Fornecedor' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.FORNECEDOR_VIEW)}">
+								<p:link
+									href="/main/cadastro/Fornecedor/formListFornecedor.xhtml">
+									<i class="fa-solid fa-dolly"></i>
+									<span>#{menu['entries.fornecedor']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubMenu eq 'Colaborador' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.COLABORADOR_VIEW)}">
+								<p:link
+									href="/main/cadastro/Colaborador/formListColaborador.xhtml">
+									<i class="fa fa-handshake-o"></i>
+									<span>#{menu['entries.colaborador']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubMenu eq 'Produto' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.PRODUTO_VIEW)}">
+								<p:link href="/main/cadastro/Produto/formListProduto.xhtml">
+									<i class="fa-solid fa-shirt"></i>
+									<span>#{menu['entries.produto']}</span>
+								</p:link>
+							</li>
+							<li class="header"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.GERENCIA_REPORT)}"
+								style="color: #4CA8DB">#{menu['caixa.adm.rel']}</li>
+							<li
+								class="#{activeSubmenu eq 'CadastroRelatorios' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.GERENCIA_REPORT)}">
+								<p:link href="/main/cadastro/relatorio/formRelCadastro.xhtml">
+									<i class="fa fa-list-ul"></i>
+									<span>#{menu['cadastro.adm.rel']}</span>
+								</p:link>
+							</li>
+						</ul>
+					</li>
+					<li class="treeview #{activeMenu eq 'Auxiliares' ? 'active' : ''}">
+						<p:link href="#">
+							<i class="fa fa-cog"></i>
+							<span>#{menu['entries.aux']}</span>
+							<i class="fa fa-angle-left pull-right"></i>
+						</p:link>
+						<ul class="treeview-menu">
+							<li class="#{activeSubMenu eq 'Fabricante' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.FABRICANTE_VIEW)}">
+								<p:link
+									href="/main/tools/cadastro/Fabricante/formListFabricante.xhtml">
+									<i class="fa fa-university"></i>
+									<span>#{menu['entries.fabricante']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubMenu eq 'Cargo' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.CARGO_VIEW)}">
+								<p:link href="/main/tools/cadastro/Cargo/formListCargo.xhtml">
+									<i class="fa fa-asterisk"></i>
+									<span>#{menu['entries.cargo']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubMenu eq 'Departamento' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.DEPARTAMENTO_VIEW)}">
+								<p:link
+									href="/main/tools/cadastro/Departamento/formListDepartamento.xhtml">
+									<i class="fa fa-asterisk"></i>
+									<span>#{menu['entries.dep']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubMenu eq 'Secao' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.SECAO_VIEW)}">
+								<p:link href="/main/tools/cadastro/Secao/formListSecao.xhtml">
+									<i class="fa fa-asterisk"></i>
+									<span>#{menu['entries.secao']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubMenu eq 'SubSecao' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.SUBSECAO_VIEW)}">
+								<p:link
+									href="/main/tools/cadastro/SubSecao/formListSubSecao.xhtml">
+									<i class="fa fa-asterisk"></i>
+									<span>#{menu['entries.subsecao']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubMenu eq 'Tamanho' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.TAMANHO_VIEW)}">
+								<p:link
+									href="/main/tools/cadastro/Tamanho/formListTamanho.xhtml">
+									<i class="fa fa-asterisk"></i>
+									<span>#{menu['entries.tamanho']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubMenu eq 'Cores' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.CORES_VIEW)}">
+								<p:link href="/main/tools/cadastro/Cores/formListCores.xhtml">
+									<i class="fa fa-asterisk"></i>
+									<span>#{menu['entries.cores']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubMenu eq 'Grades' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.GRADES_VIEW)}">
+								<p:link href="#">
+									<i class="fa fa-asterisk"></i>
+									<span>#{menu['entries.grade']}</span>
+								</p:link>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<ul class="sidebar-menu">
+					<li class="header"
+						jsf:rendered="#{userSessionBean.hasRole(authorization.CAIXA_VIEW)}">#{menu['caixa']}</li>
+					<li class="treeview #{activeMenu eq 'Caixa' ? 'active' : ''}"
+						jsf:rendered="#{userSessionBean.hasRole(authorization.CAIXA_VIEW)}"><p:link
+							href="#">
+							<i class="fa fa-solid fa-money"></i>
+							<span>#{menu['caixa']}</span>
+							<i class="fa fa-angle-left pull-right"></i>
+						</p:link>
+						<ul class="treeview-menu">
+							<li class="#{activeSubmenu eq 'Recebimento' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.CAIXA_VIEW)}">
+								<p:link href="/main/financial/caixa/formCaixaRecebimento.xhtml">
+									<i class="fas fa-cash-register"></i>
+									<span>#{menu['caixa.recebimento']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'Abertura' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.CAIXA_VIEW)}">
+								<p:link href="/main/financial/caixa/formCaixaAbertura.xhtml">
+									<i class="fa fa-handshake-o"></i>
+									<span>#{menu['caixa.abertura']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'Fechamento' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.CAIXA_VIEW)}">
+								<p:link href="/main/financial/caixa/formCaixaFechamento.xhtml">
+									<i class="fa fa-suitcase"></i>
+									<span>#{menu['caixa.fechamento']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'LancaMovimento' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.CAIXA_VIEW)}">
+								<p:link href="/main/financial/caixa/formLancaMovimento.xhtml">
+									<i class="fa fa-balance-scale"></i>
+									<span>#{menu['caixa.movimentoFinanceiro']}</span>
+								</p:link>
+							</li>
+							<li class="header"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.GERENCIA_REPORT)}"
+								style="color: #4CA8DB">#{menu['entries.aux']}</li>
+							<li class="#{activeSubmenu eq 'MotivoMovimento' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.CAIXA_VIEW)}">
+								<p:link
+									href="/main/financial/caixa/tools/formListMotivoMovimento.xhtml">
+									<i class="fa fa-list-ul"></i>
+									<span>#{menu['caixa.motivoMovimento']}</span>
+								</p:link>
+							</li>
+							<li class="header"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.GERENCIA_REPORT)}"
+								style="color: #4CA8DB">#{menu['caixa.adm.rel']}</li>
+							<li
+								class="#{activeSubmenu eq 'CaixaRelGerencia' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.GERENCIA_REPORT)}">
+								<p:link
+									href="/main/financial/caixa/relatorio/formListaFechamentoCaixa.xhtml">
+									<i class="fa fa-list-ul"></i>
+									<span>#{menu['caixa.adm.rel.fechamento']}</span>
+								</p:link>
+							</li>
+						</ul></li>
+				</ul>
+				<ul class="sidebar-menu">
+					<li class="header"
+						jsf:rendered="#{userSessionBean.hasRole(authorization.VENDA_VIEW)}">#{menu['vendas']}</li>
+					<li class="treeview #{activeMenu eq 'Venda' ? 'active' : ''}"
+						jsf:rendered="#{userSessionBean.hasRole(authorization.VENDA_VIEW)}"><p:link
+							href="#">
+							<i class="fa-solid fa-basket-shopping"></i>
+							<span>#{menu['vendas']}</span>
+							<i class="fa fa-angle-left pull-right"></i>
+						</p:link>
+						<ul class="treeview-menu">
+							<li class="#{activeSubmenu eq 'listaVendas' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.VENDA_LIST)}">
+								<p:link href="/main/Vendas/pdv/formListVendas.xhtml">
+									<i class="fa fa-line-chart"></i>
+									<span>#{menu['vendas.list']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'VendaVarejo' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.VENDA_VIEW)}">
+								<p:link href="/main/Vendas/pdv/formPDV.xhtml">
+									<i class="fa fa-cart-arrow-down"></i>
+									<span>#{menu['vendas.pdv.varejo']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'Troca' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.VENDA_VIEW)}">
+								<p:link href="/main/Vendas/devolucao/formDevolucao.xhtml">
+									<i class="fa fa-cart-arrow-down"></i>
+									<span>#{menu['vendas.pdv.troca']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'Transferencia' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.VENDA_VIEW)}">
+								<p:link
+									href="/main/Vendas/transferencia/formTransferencia.xhtml">
+									<i class="fa fa-cart-arrow-down"></i>
+									<span>#{menu['vendas.pdv.transfere']}</span>
+								</p:link>
+							</li>
+							<li class="header"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.GERENCIA_REPORT)}"
+								style="color: #4CA8DB">#{menu['caixa.adm.rel']}</li>
+							<li class="#{activeSubmenu eq 'listaVendas' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.VENDA_REPORT)}">
+								<p:link href="/main/Vendas/pdv/formListVendas.xhtml">
+									<i class="fa fa-line-chart"></i>
+									<span>#{menu['vendas.list.rel']}</span>
+								</p:link>
+							</li>
+							<li
+								class="#{activeSubmenu eq 'RelProdutosVendidos' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.GERENCIA_REPORT)}">
+								<p:link href="/main/Vendas/relatorio/formRelProdVendido.xhtml">
+									<i class="fa fa-list-ul"></i>
+									<span>#{menu['venda.adm.rel.Vendas']}</span>
+								</p:link>
+							</li>
+						</ul></li>
+				</ul>
+				<ul class="sidebar-menu">
+					<li class="header">#{menu['fiscal']}</li>
+					<li class="treeview #{activeMenu eq 'NFE' ? 'active' : ''}"
+						jsf:rendered="#{userSessionBean.hasRole(authorization.NFE_VIEW) or userSessionBean.hasRole(authorization.SAT_VIEW)}">
+						<p:link href="#">
+							<i class="fa-solid fa-file-invoice-dollar"></i>
+							<span>#{menu['fiscal']}</span>
+							<i class="fa fa-angle-left pull-right"></i>
+						</p:link>
+						<ul class="treeview-menu">
+							<li class="#{activeSubmenu eq 'Nfe' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.NFE_VIEW)}">
+								<p:link href="/main/fiscal/formListNfe.xhtml">
+									<i class="fa-solid fa-file-invoice"></i>
+									<span>#{menu['fiscal.cad.nfe']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'Sat' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.SAT_VIEW)}">
+								<p:link href="/main/fiscal/sat/formSatAvulso.xhtml">
+									<i class="fa-regular fa-file-lines"></i>
+									<span>#{menu['fiscal.sat']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'Sat' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.SAT_VIEW)}">
+								<p:link href="/main/fiscal/sat/formListSat.xhtml">
+									<i class="fa-solid fa-table-list"></i>
+									<span>#{menu['fiscal.list.sat']}</span>
+								</p:link>
+							</li>
+							<li
+								class="#{activeSubmenu eq 'NaturezaOperacao' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.NATUREZAOPERACAO_VIEW)}">
+								<p:link href="/main/fiscal/tools/formListNaturezaOperacao.xhtml">
+									<i class="fa-solid fa-timeline"></i>
+									<span>#{menu['fiscal.cad.natOperacao']}</span>
+								</p:link>
+							</li>
+							<li class="header"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.GERENCIA_REPORT)}"
+								style="color: #4CA8DB">#{menu['caixa.adm.rel']}</li>
+							<li class="#{activeSubmenu eq 'RelFiscal' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.GERENCIA_REPORT)}">
+								<p:link href="/main/fiscal/relatorio/formRelFiscal.xhtml">
+									<i class="fa fa-list-ul"></i>
+									<span>#{menu['fiscal.adm.report']}</span>
+								</p:link>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<ul class="sidebar-menu">
+					<li class="header">#{menu['fiscal.tools']}</li>
+					<li class="treeview #{activeMenu eq 'Fiscal' ? 'active' : ''}">
+						<p:link href="#">
+							<i class="fa-solid fa-hand-holding-dollar"></i>
+							<span>#{menu['fiscal.tributos']}</span>
+							<i class="fa fa-angle-left pull-right"></i>
+						</p:link>
+						<ul class="treeview-menu">
+							<li class="#{activeSubmenu eq 'Tributos' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.TRIBUTOS_VIEW)}">
+								<p:link href="/main/tributos/Tributos/formListTributos.xhtml">
+									<i class="fa-solid fa-comment-dollar"></i>
+									<span>#{menu['fiscal.cad.tributos']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'Ncm' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.NCM_VIEW)}">
+								<p:link href="/main/tributos/NCM/formListNcm.xhtml">
+									<i class="fa-solid fa-stamp"></i>
+									<span>#{menu['fiscal.cad.ncm']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'Cfop' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.CFOP_VIEW)}">
+								<p:link href="/main/tributos/CFOP/formListCfop.xhtml">
+									<i class="fa-solid fa-pen"></i>
+									<span>#{menu['fiscal.cad.cfop']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'DI' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.DI_VIEW)}">
+								<p:link href="/main/cadastro/Produto/DI/formListDI.xhtml">
+									<i class="fa-solid fa-pen"></i>
+									<span>#{menu['fiscal.tributos.di']}</span>
+								</p:link>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<ul class="sidebar-menu">
+					<li class="header"
+						jsf:rendered="#{userSessionBean.hasRole(authorization.ESTOQUE_VIEW)}">#{menu['estoque']}</li>
+					<li class="treeview #{activeMenu eq 'Estoque' ? 'active' : ''}"
+						jsf:rendered="#{userSessionBean.hasRole(authorization.ESTOQUE_VIEW)}">
+						<p:link href="#">
+							<i class="fa-solid fa-boxes-stacked"></i>
+							<span>#{menu['estoque']}</span>
+							<i class="fa fa-angle-left pull-right"></i>
+						</p:link>
+						<ul class="treeview-menu">
+							<li class="#{activeSubMenu eq 'Recebimento' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.ESTOQUE_VIEW)}">
+								<p:link href="/main/estoque/formListRecebimento.xhtml">
+									<i class="fa-solid fa-truck-moving"></i>
+									<span>#{menu['estoque.recebimento.nfe']}</span>
+								</p:link>
+							</li>
+							<li
+								class="#{activeSubMenu eq 'NotasEmitidasCompra' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.ESTOQUE_VIEW)}">
+								<p:link href="/main/estoque/formListNotasEmitidasCompras.xhtml">
+									<i class="fa-solid fa-truck-ramp-box"></i>
+									<span>#{menu['estoque.notaCompra.sefaz']}</span>
+								</p:link>
+							</li>
+							<li
+								class="#{activeSubMenu eq 'RecebimentoProduto' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.ESTOQUE_PRODUTO_VIEW)}">
+								<p:link href="/main/estoque/formListRecebimentoProduto.xhtml">
+									<i class="fa-solid fa-boxes-stacked"></i>
+									<span>#{menu['estoque.recebimento.produto']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubMenu eq 'Inventario' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.ESTOQUE_VIEW)}">
+								<p:link href="/main/estoque/formListEntradaEstoque.xhtml">
+									<i class="fa-solid fa-cart-flatbed"></i>
+									<span>#{menu['estoque.inventario']}</span>
+								</p:link>
+							</li>
+							<li class="header"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.GERENCIA_REPORT)}"
+								style="color: #4CA8DB">#{menu['caixa.adm.rel']}</li>
+							<li class="#{activeSubmenu eq 'RelEstoque' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.GERENCIA_REPORT)}">
+								<p:link href="/main/estoque/relatorio/formRelEstoque.xhtml">
+									<i class="fa fa-list-ul"></i>
+									<span>#{menu['fiscal.adm.report']}</span>
+								</p:link>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<ul class="sidebar-menu">
+					<li class="header"
+						jsf:rendered="#{userSessionBean.hasRole(authorization.FABRICA_VIEW)}">#{menu['fabrica']}</li>
+					<li class="treeview #{activeMenu eq 'FABRICA' ? 'active' : ''}"
+						jsf:rendered="#{userSessionBean.hasRole(authorization.FABRICA_VIEW)}">
+						<p:link href="#">
+							<i class="fa-solid fa-vest"></i>
+							<span>#{menu['fabrica']}</span>
+							<i class="fa fa-angle-left pull-right"></i>
+						</p:link>
+						<ul class="treeview-menu">
+							<li class="header"
+							jsf:rendered="#{userSessionBean.hasRole(authorization.PRODUCAO_VIEW)}" style="color: #4CA8DB">#{menu['fabrica.producao']}</li>
+							<li class="#{activeSubmenu eq 'Producao' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.PRODUCAO_VIEW)}">
+								<p:link href="/main/fabrica/Producao/formListProducao.xhtml">
+									<i class="fa-regular fa-arrow-progress"></i>
+									<span>#{menu['fabrica.OP']}</span>
+								</p:link>
+							</li>
+							<li class="header"
+							jsf:rendered="#{userSessionBean.hasRole(authorization.OS_VIEW)}" style="color: #4CA8DB">#{menu['fabrica.OS']}</li>
+							<li class="#{activeSubmenu eq 'OS' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.OS_VIEW)}">
+								<p:link href="/main/fabrica/Producao/Servico/formListOS.xhtml">
+									<i class="fa-regular fa-arrow-progress"></i>
+									<span>#{menu['fabrica.OS']}</span>
+								</p:link>
+							</li>
+							<li class="header"
+							jsf:rendered="#{userSessionBean.hasRole(authorization.FABRICA_VIEW)}" style="color: #4CA8DB">#{menu['entries']}</li>
+							<li class="#{activeSubmenu eq 'Material' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.FABRICA_VIEW)}">
+								<p:link href="/main/fabrica/cadastro/formListMaterial.xhtml">
+									<i class="fa-solid fa-tag"></i>
+									<span>#{menu['fabrica.material']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'Modelos' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.MODELO_VIEW)}">
+								<p:link href="/main/fabrica/cadastro/formListModelos.xhtml">
+									<i class="fa-solid fa-vest-patches"></i>
+									<span>#{menu['fabrica.modelos']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'CORTADOR' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.MODELO_VIEW)}">
+								<p:link href="/main/fabrica/cadastro/formListCortador.xhtml">
+									<i class="fa-regular fa-user-tie-hair"></i>
+									<span>#{menu['fabrica.cortador']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'SERVICO' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.LISTASERVICO_VIEW)}">
+								<p:link href="/main/fabrica/cadastro/formListServicos.xhtml">
+									<i class="fa-regular fa-industry-windows"></i>
+									<span>#{menu['fabrica.servico']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'RISCO' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.RISCO_VIEW)}">
+								<p:link href="/main/fabrica/cadastro/formListRisco.xhtml">
+									<i class="fa-regular fa-presentation-screen"></i>
+									<span>#{menu['fabrica.risco']}</span>
+								</p:link>
+							</li>
+							<li class="header"
+							jsf:rendered="#{userSessionBean.hasRole(authorization.FABRICA_VIEW)}" style="color: #4CA8DB">#{menu['estoque']}</li>
+							<li
+								class="#{activeSubMenu eq 'RecebimentoProdutoFabrica' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.FABRICA_VIEW)}">
+								<p:link href="/main/fabrica/Estoque/formListRecebimentoProdutoFab.xhtml">
+									<i class="fa-solid fa-boxes-stacked"></i>
+									<span>#{menu['estoque.recebimento.materiaPrima']}</span>
+								</p:link>
+							</li>
+							<li class="header"
+							jsf:rendered="#{userSessionBean.hasRole(authorization.FABRICA_VIEW)}" style="color: #4CA8DB">#{menu['fabrica.util']}</li>
+							<li class="#{activeSubmenu eq 'Etapa' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.FABRICA_VIEW)}">
+								<p:link href="/main/fabrica/cadastro/util/formListEtapaProd.xhtml">
+									<i class="fa-regular fa-list-tree"></i>
+									<span>#{menu['fabrica.EtapaFabrica']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'LinhaProd' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.FABRICA_VIEW)}">
+								<p:link href="/main/fabrica/cadastro/util/formListLinhaProd.xhtml">
+									<i class="fa-regular fa-timeline-arrow"></i>
+									<span>#{menu['fabrica.linhaProd']}</span>
+								</p:link>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<ul class="sidebar-menu">
+					<li class="header"
+						jsf:rendered="#{userSessionBean.hasRole(authorization.FINANCIAL_PERIOD_VIEW)}">#{menu['financial']}</li>
+					<li class="treeview #{activeMenu eq 'FINANCEIRO' ? 'active' : ''}"
+						jsf:rendered="#{userSessionBean.hasRole(authorization.FINANCIAL_PERIOD_VIEW)}">
+						<p:link href="#">
+							<i class="fa-solid fa-vault"></i>
+							<span>#{menu['financial']}</span>
+							<i class="fa fa-angle-left pull-right"></i>
+						</p:link>
+						<ul class="treeview-menu">
+							<li class="#{activeSubmenu eq 'Agenda' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.FINANCEIRO_VIEW)}">
+								<p:link
+									href="/main/financial/financeiro/formAgenda.xhtml">
+									<i class="fa-solid fa-file-invoice-dollar"></i>
+									<span>#{menu['financial.agenda']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'Gerir' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.FINANCEIRO_PAY)}">
+								<p:link
+									href="/main/financial/financeiro/Baixa/formGerirTitulos.xhtml">
+									<i class="fa-solid fa-wallet"></i>
+									<span>#{menu['financeiro.gerir']}</span>
+								</p:link>
+							</li>
+							<li	class="treeview #{activeMenu eq 'AuxFinanceiro' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.FINANCIAL_PERIOD_VIEW)}">
+								<p:link href="#">
+									<i class="fa-solid fa-file-invoice-dollar"></i>
+									<span>#{menu['financeiro.aux']}</span>
+									<i class="fa fa-angle-left pull-right"></i>
+								</p:link>
+								<ul class="treeview-menu">
+									<li	class="#{activeSubmenu eq 'FormasPagamento' ? 'active' : ''}"
+										jsf:rendered="#{userSessionBean.hasRole(authorization.FINANCIAL_PERIOD_VIEW)}">
+										<p:link
+											href="/main/financial/formasDePagamento/formListFormaDePagamento.xhtml">
+											<i class="fa-solid fa-file-invoice-dollar"></i>
+											<span>#{menu['financial.formasPagamento']}</span>
+										</p:link>
+									</li>
+									<li class="#{activeSubmenu eq 'Banco' ? 'active' : ''}"
+										jsf:rendered="#{userSessionBean.hasRole(authorization.FINANCEIRO_VIEW)}">
+										<p:link href="/main/financial/financeiro/formListBanco.xhtml">
+											<i class="fa fa-solid fa-building-columns"></i>
+											<span>#{menu['financial.banco']}</span>
+										</p:link>
+									</li>
+									<li class="#{activeSubmenu eq 'ContaCorrente' ? 'active' : ''}"
+										jsf:rendered="#{userSessionBean.hasRole(authorization.FINANCEIRO_VIEW)}">
+										<p:link
+											href="/main/financial/financeiro/formListContaCorrente.xhtml">
+											<i class="fa-solid fa-money-check-dollar"></i>
+											<span>#{menu['financial.ContaCorrente']}</span>
+										</p:link>
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<ul class="sidebar-menu">
+					<li class="header">#{menu['miscellany']}</li>
+					<li class="treeview #{activeMenu eq 'messaging' ? 'active' : ''}">
+						<p:link href="#">
+							<i class="fa fa-envelope-o"></i>
+							<span>#{menu['tools.messaging']}</span>
+							<i class="fa fa-angle-left pull-right"></i>
+						</p:link>
+						<ul class="treeview-menu">
+							<li class="#{activeSubmenu eq 'messagesSent' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.MESSAGE_SEND)}">
+								<p:link href="/main/tools/messaging/sent/listSentMessages.xhtml">
+									<i class="fa fa-circle-o"></i>
+									<span>#{menu['tools.messaging.sent']}</span>
+								</p:link>
+							</li>
+							<li
+								class="#{activeSubmenu eq 'messagesReceived' ? 'active' : ''}">
+								<p:link
+									href="/main/tools/messaging/received/listReceivedMessages.xhtml">
+									<i class="fa fa-circle-o"></i>
+									<span>#{menu['tools.messaging.received']}</span>
+								</p:link>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<ul class="sidebar-menu">
+					<li class="header"
+						jsf:rendered="#{userSessionBean.hasRole(authorization.GROUP_VIEW)}">#{menu['tools']}</li>
+					<li class="#{activeMenu eq 'groups' ? 'active' : ''}"
+						jsf:rendered="#{userSessionBean.hasRole(authorization.GROUP_VIEW)}">
+						<p:link href="/main/tools/group/listGroups.xhtml">
+							<i class="fa fa-users"></i>
+							<span>#{menu['tools.groups']}</span>
+						</p:link>
+					</li>
+					<li class="#{activeMenu eq 'users' ? 'active' : ''}"
+						jsf:rendered="#{userSessionBean.hasRole(authorization.USER_VIEW)}">
+						<p:link href="/main/tools/user/listUsers.xhtml">
+							<i class="fa fa-user"></i>
+							<span>#{menu['tools.users']}</span>
+						</p:link>
+					</li>
+					<li class="#{activeMenu eq 'configurations' ? 'active' : ''}"
+						jsf:rendered="#{userSessionBean.hasRole(authorization.CONFIGURATION_VIEW)}">
+						<p:link href="#">
+							<i class="fa fa-gears"></i>
+							<span>#{menu['tools.configurations']}</span>
+							<i class="fa fa-angle-left pull-right"></i>
+						</p:link>
+						<ul class="treeview-menu">
+							<li class="#{activeSubmenu eq 'ConfigVendas' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.VENDA_VIEW)}">
+								<p:link href="/main/Vendas/TiposDeVenda/formListTipoVenda.xhtml">
+									<i class="fa fa-exchange" aria-hidden="true"></i>
+									<span>#{menu['tools.configurations.vendas']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubmenu eq 'RegraNegocio' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.ADM_VIEW)}">
+								<p:link href="/main/Admin/Config/listUsersConfig.xhtml">
+									<i class="fa fa-sitemap" aria-hidden="true"></i>
+									<span>#{menu['tools.configurations.regrasNegocio']}</span>
+								</p:link>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<ul class="sidebar-menu">
+					<li class="header"
+						jsf:rendered="#{userSessionBean.hasRole(authorization.SUPORT_VIEW)}">
+						#{menu['suport']}</li>
+					<li class="treeview #{activeMenu eq 'suport' ? 'active' : ''}"
+						jsf:rendered="#{userSessionBean.hasRole(authorization.SUPORT_VIEW)}">
+						<p:link href="#">
+							<i class="fa fa-life-ring"></i>
+							<span>#{menu['entries.emp']}</span>
+							<i class="fa fa-angle-left pull-right"></i>
+						</p:link>
+						<ul class="treeview-menu">
+							<li class="#{activeSubMenu eq 'Empresa' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.SUPORT_VIEW)}">
+								<p:link href="/main/cadastro/Empresa/formListEmpresa.xhtml">
+									<i class="fa fa-industry"></i>
+									<span>#{menu['entries.empresa']}</span>
+								</p:link>
+							</li>
+							<li class="#{activeSubMenu eq 'Filial' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.SUPORT_VIEW)}">
+								<p:link href="/main/cadastro/Filial/formListFilial.xhtml">
+									<i class="fa fa-plus"></i>
+									<span>#{menu['entries.filial']}</span>
+								</p:link>
+							</li>
+						</ul>
+					</li>
+				</ul>
+			</section>
+		</aside>
+
+		<div class="content-wrapper">
+			<section class="content-header">
+				<h1>
+					<ui:insert name="pageTitle" />
+					<small><ui:insert name="pageDescription" /></small>
+				</h1>
+				<ol class="breadcrumb">
+					<li><p:link href="/main/dashboard.xhtml">
+							<i class="fa fa-home"></i>
+                                Home
+                            </p:link></li>
+					<ui:insert name="breadcrumb" />
+				</ol>
+			</section>
+			<section class="content">
+				<ui:insert name="content" />
+			</section>
+			<section class="sub-content">
+				<ui:insert name="sub-content" />
+			</section>
+		</div>
+
+		<footer class="main-footer">
+			<a target="_blank" href="http://www.ibrcomp.com.br"> Copyright
+				(C) 2016 Ibrahim Yousef, Ibrcomp Sistemas. </a>
+			<div class="pull-right hidden-xs">
+				<strong>#{dashboardBean.version}</strong>
+			</div>
+		</footer>
+	</div>
+
+	<ui:insert name="popups" />
+
+	<script type="text/javascript">
+            var messagesChannel = new WebSocket("#{viewManagerBean.messagesChannel}");
+            messagesChannel.onmessage = function(message) {
+                if (message.data === "newMessage") {
+                    updateMessages();
+                }
+            };
+        </script>
+	<h:outputScript library="primefaces" name="primefaces-locale.js" />
+	<h:outputScript library="primefaces" name="jquery/jquery.js"
+		target="head" />
+	<h:outputScript library="bootstrap" name="js/bootstrap.min.js" />
+	<h:outputScript library="nsym" name="js/app.min.js" />
+	<h:outputScript library="nsym" name="js/chart.min.js" />
+	<h:outputScript library="nsym" name="js/helpers.js" />
+
+</h:body>
+</html>

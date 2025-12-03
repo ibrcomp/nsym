@@ -1,0 +1,80 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="PesquisaBarrasDialog"
+	width="50%" modal="true" resizable="false" closeOnEscape="true"
+	widgetVar="dialogPesquisaBarras"
+	header="#{messages['pedidoPDV.page-search-barras']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h3 class="box-title col-md-12">
+				<p:outputLabel
+					value="#{messages['pedidoPDV.page-search-barras-select']}"
+					style="color:blue" />
+			</h3>
+		</div>
+		<div class="box-body ">
+			<div class="row">
+				<div class="navbar-form">
+					<p:toolbar>
+						<f:facet name="right">
+							<p:commandButton value="#{menu['back']}"
+								onclick="PF('dialogPesquisaBarras').hide()"
+								styleClass="btn btn-flat btn-primary" />
+						</f:facet>
+					</p:toolbar>
+				</div>
+			</div>
+			<div class="row">
+				<div class="form-group col-md-12">
+					<p:dataTable id="lBarras" var="listaBarras" widgetVar="listaBarras"
+						value="#{nfeBean.listaBarrasTemp}"
+						paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+						paginator="true" rows="10" selection="#{nfeBean.barrasEstoque}"
+						selectionMode="single" lazy="true" rowKey="#{listaBarras.id}"
+						sortBy="#{listaBarras.barras}">
+
+						<p:ajax event="rowSelect" listener="#{nfeBean.onRowSelectBarras}"
+							oncomplete="$(function(){PrimeFaces.focus('idRefItem');});PF('dialogPesquisaBarras').hide()"
+							update="listaItensProduto" process="@form" />
+
+
+						<p:column headerText="#{label['label.list.ref']}" rendered="true"
+							style="width:15%"
+							filterBy="#{listaBarras.produtoBase.referencia}"
+							sortBy="#{listaBarras.produtoBase.referencia}">
+							<h:outputLabel value="#{listaBarras.produtoBase.referencia}" />
+						</p:column>
+
+						<p:column headerText="#{label['label.list.barras']}"
+							rendered="true" style="width:15%">
+							<h:outputText value="#{listaBarras.barras}" />
+						</p:column>
+
+						<p:column sortBy="#{listaBarras.produtoBase.descricao}"
+							headerText="#{label['label.descricao']}"
+							filterBy="#{listaBarras.produtoBase.descricao}" style="width:35%">
+							<h:outputText value="#{listaBarras.produtoBase.descricao}" />
+						</p:column>
+
+						<p:column headerText="#{label['label.list.cor']}" rendered="true">
+							<h:outputText value="#{listaBarras.cor.nome}" />
+						</p:column>
+
+						<p:column headerText="#{label['label.list.tamanho']}"
+							rendered="true">
+							<h:outputText value="#{listaBarras.tamanho.tamanho}" />
+						</p:column>
+
+
+					</p:dataTable>
+				</div>
+			</div>
+		</div>
+	</div>
+</p:dialog>
+

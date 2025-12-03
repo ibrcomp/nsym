@@ -1,0 +1,449 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="Venda" />
+	<ui:param name="activeSubMenu" value="VendaVarejo" />
+
+	<f:metadata>
+		<f:viewAction
+			action="#{pedidoBean.initializeFormTransferencia(param.idVenda)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['pedidoPDV.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{pedidoBean.viewState eq 'ADDING'}"
+			value="#{messages['pedidoPDV.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{pedidoBean.viewState eq 'EDITING'}"
+			value="#{messages['pedidoPDV.page-description-editing']}">
+			<f:param value="#{pedidoBean.pedido.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['sale']}</a></li>
+		<li><a href="formPDV.xhtml">#{breadcrumb['sale.pdv.varejo']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['sale.pdv.register']}"></p:outputLabel>
+					</h2>
+				</div>
+			</div>
+			<div class="navbar-form">
+				<p:toolbar>
+					<f:facet name="left">
+
+						<p:commandButton process="empresaForm" value="#{menu['save']}"
+							action="#{pedidoBean.salvaPedido()}" id="buttonSave"
+							onstart="PF('formBlock').block()"
+							styleClass="btn btn-flat btn-success"
+							disabled="#{userSessionBean.hasRole(authorization.VENDA_INSERT) eq 'false' or pedidoBean.pedido.listaItensPedido.size() eq '0'}"
+							update="messages" oncomplete="PF('formBlock').unblock()"
+							rendered="#{pedidoBean.viewState eq 'ADDING'}" icon="fa fa-hdd-o" />
+
+						<p:commandButton process="empresaForm" value="#{menu['update']}"
+							action="#{pedidoBean.salvaPedido()}"
+							onstart="PF('formBlock').block()"
+							update="empresaForm pageDescription"
+							styleClass="btn btn-flat btn-warning"
+							oncomplete="PF('formBlock').unblock()"
+							rendered="#{pedidoBean.viewState eq 'EDITING'}" />
+
+					</f:facet>
+					<f:facet name="right">
+
+						<span class="ui-separator"> <span
+							class="ui-icon ui-icon-grip-dotted-vertical" />
+						</span>
+						<p:commandButton immediate="true" value="#{menu['back']}"
+							action="#{pedidoBean.toTelaPrincipal}"
+							styleClass="btn btn-flat btn-default" />
+					</f:facet>
+				</p:toolbar>
+			</div>
+			<div class="box box-success">
+				<div class="box-body with-border">
+					<div class="col-md-6">
+						<h:form id="formCabecalho" prependId="false"
+							rendered="#{pedidoBean.transferenciaHabilitado}">
+							<div class="boxEspecial box-primary">
+								<div class="box-body width-border">
+									<!-- Grupo de informações padrões ao pedido -->
+									<div class="row">
+										<div class="form-group col-md-4">
+											<p:outputLabel
+												value="#{label['label.order.selectTransaction']}"
+												for="selectTransacaoPadrao" />
+											. <br />
+											<p:selectOneMenu value="#{pedidoBean.pedido.transacao}"
+												filter="true" filterMatchMode="contains"
+												id="selectTransacaoPadrao" required="true"
+												rendered="#{userSessionBean.hasRole(authorization.VENDA_INSERT) eq 'true'}"
+												disabled="#{pedidoBean.isHabilita() eq 'true'}"
+												onchange="$(function(){PrimeFaces.focus('selectAtendentePadrao');});"
+												converter="omnifaces.SelectItemsConverter"
+												style="width:100%">
+
+												<f:selectItem itemValue="#{null}" noSelectionOption="true"
+													itemLabel="#{messages['filial.form.select-one']}" />
+												<f:selectItems value="#{pedidoBean.listaDeTransacao}"
+													itemLabel="#{item.descricao}" var="item" />
+											</p:selectOneMenu>
+										</div>
+										<div class="form-group col-md-4">
+											<p:outputLabel
+												value="#{label['label.order.selectCollaborator']}"
+												for="selectAtendentePadrao" />
+											<br />
+											<p:selectOneMenu value="#{pedidoBean.colaborador}"
+												filter="true" filterMatchMode="contains"
+												id="selectAtendentePadrao" required="true"
+												disabled="#{userSessionBean.hasRole(authorization.VENDA_INSERT) eq 'false'}"
+												onchange="$(function(){PrimeFaces.focus('insereItem');});"
+												converter="omnifaces.SelectItemsConverter"
+												style="width:100%">
+												<f:selectItem itemValue="#{null}" noSelectionOption="true"
+													itemLabel="#{messages['filial.form.select-one']}" />
+												<f:selectItems value="#{pedidoBean.listaDeAtendentes}"
+													var="item" itemLabel="#{item.nome}" />
+												<p:ajax update="empresaForm"
+													listener="#{pedidoBean.habilitaInserirTransf()}"
+													process="formCabecalho" />
+											</p:selectOneMenu>
+										</div>
+										<div class="form-group col-md-2">
+											<p:outputLabel value="#{label['label.order.destMatriz']} "
+												for="tAcresc" style="width:100%" />
+											<p:selectBooleanCheckbox
+												value="#{pedidoBean.pedido.destinoMatriz}"
+												onkeypress="setaFoco(this)" id="tAcresc" style="width:50%">
+												<p:ajax update="empresaForm"
+													listener="#{pedidoBean.habilitaInserirTransf()}"
+													process="formCabecalho" />
+											</p:selectBooleanCheckbox>
+										</div>
+										<div class="form-group col-md-4">
+											<p:outputLabel value="#{label['label.order.grupoEmpresa']}"
+												rendered="#{pedidoBean.pedido.destinoMatriz eq 'false'}"
+												for="selectEmpresaFilial" />
+											<br />
+											<p:selectOneMenu
+												value="#{pedidoBean.destinoTransferencia.filial}"
+												filter="true" filterMatchMode="contains"
+												id="selectEmpresaFilial" required="false"
+												rendered="#{userSessionBean.hasRole(authorization.VENDA_INSERT) eq 'true' and pedidoBean.pedido.destinoMatriz eq 'false'}"
+												disabled="#{pedidoBean.isHabilita() eq 'true'}"
+												onchange="$(function(){PrimeFaces.focus('selectAtendentePadrao');});"
+												converter="omnifaces.SelectItemsConverter"
+												style="width:100%">
+
+												<f:selectItem itemValue="#{null}" noSelectionOption="true"
+													itemLabel="#{messages['filial.form.select-one']}" />
+												<f:selectItems value="#{pedidoBean.listaDeFiliais}"
+													itemLabel="#{item.razaoSocial}" var="item" />
+
+												<p:ajax update="empresaForm"
+													listener="#{pedidoBean.habilitaInserirTransf()}"
+													process="formCabecalho" />
+											</p:selectOneMenu>
+										</div>
+									</div>
+								</div>
+							</div>
+						</h:form>
+					</div>
+					<div class="col-md-6">
+						<h:form id="formCabCliente" prependId="false"
+							rendered="#{pedidoBean.isHabilita()}">
+							<div class="boxEspecial box-primary">
+								<div class="box-body width-border"></div>
+							</div>
+						</h:form>
+					</div>
+					<div class="col-md-12">
+						<h:form id="commandGroup" prependId="false"
+							rendered="#{pedidoBean.isHabilita()}">
+							<div class="boxEspecial box-primary box-body with-border">
+								<p:focus for="idRefItem" context="commandGroup" />
+								<p:defaultCommand target="insereItem" />
+								<div class="row">
+									<div class="form-group col-md-2">
+										<p:outputLabel value="#{label['label.nfe.item.codigo']}"
+											for="idRefItem">
+											<p:commandButton
+												actionListener="#{pedidoBean.telaListaProduto()}"
+												styleClass="btn btn-flat btn-info"
+												disabled="#{userSessionBean.hasRole(authorization.VENDA_INSERT) eq 'false'}"
+												icon="fa fa-search" style="width:20px;height:20px"
+												process="commandGroup" />
+										</p:outputLabel>
+										<h:inputText value="#{pedidoBean.ref}" id="idRefItem"
+											styleClass="form-control">
+
+										</h:inputText>
+									</div>
+									<div class="form-group col-md-1">
+										<p:outputLabel value="#{label['label.nfe.item.quantidade']}:"
+											for="idItemQuant" style="width:100%" />
+										<p:inputNumber value="#{pedidoBean.quantidade}"
+											id="idItemQuant" onkeypress="setaFoco(this)"
+											maxValue="9999999.99" minValue="0.0" immediate="true"
+											decimalSeparator="," thousandSeparator="." style="width:5%"
+											size="5">
+										</p:inputNumber>
+									</div>
+									<div class="form-group col-md-1">
+
+										<p:outputLabel value="#{label['label.insert']} "
+											for="insereItem" style="width:100%" />
+										<p:commandButton
+											actionListener="#{pedidoBean.localizaProduto()}"
+											process="commandGroup"
+											oncomplete="$(function(){PrimeFaces.focus('idRefItem');});"
+											update="buttonSave idRefItem idItemQuant desPerc labelRef labelDesc labelPreco labelQuant labelTotal preco1 listaItensProduto"
+											id="insereItem" style="width:70%;margin:5px"
+											styleClass="btn btn-flat btn-warning" icon="fa fa-plus" />
+									</div>
+									<div class="form-group col-md-2">
+										<p:outputLabel value="Preço: " for="preco1" style="width:100%"
+											rendered="#{pedidoBean.usuarioAutenticado.config.alteraPrecoVenda eq 'true'}" />
+										<p:inputNumber value="#{pedidoBean.precoVenda}" size="10"
+											rendered="#{pedidoBean.usuarioAutenticado.config.alteraPrecoVenda eq 'true'}"
+											decimalPlaces="2" id="preco1" thousandSeparator="."
+											decimalSeparator="," symbol="R$" />
+									</div>
+									<!-- 								<div class="row"> -->
+									<div class="form-group col-md-2">
+										<p:outputLabel value="#{label['label.tabelaPreco']}"
+											for="tabelaSelecionada"
+											rendered="#{pedidoBean.pedido.transacao.tabelaPorItem}" />
+										<p:selectOneMenu value="#{pedidoBean.tabelaSelecionada}"
+											id="tabelaSelecionada" filter="true" required="true"
+											disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+											onchange="$(function(){PrimeFaces.focus('idRefItem');}); #{pedidoBean.definePreco()}"
+											rendered="#{pedidoBean.pedido.transacao.tabelaPorItem}"
+											converter="omnifaces.GenericEnumConverter" style="width:100%">
+											<f:selectItem itemValue="#{null}" noSelectionOption="true"
+												itemLabel="#{messages['filial.form.select-one']}" />
+											<f:selectItems value="#{pedidoBean.tabelaPreco}" />
+
+											<!-- 											<p:ajax update="idRefItem idItemQuant preco1" -->
+											<!-- 												listener="#{pedidoBean.definePreco()}" -->
+											<!-- 												process="commandGroup" /> -->
+										</p:selectOneMenu>
+									</div>
+									<div class="form-group col-md-1">
+										<p:outputLabel value="Desconto por %" for="tDesc"
+											rendered="#{pedidoBean.configUser.descontoPDV}" />
+										<p:selectBooleanCheckbox
+											rendered="#{pedidoBean.configUser.descontoPDV}"
+											value="#{pedidoBean.descontoPercentual}"
+											onkeypress="setaFoco(this)" id="tDesc" style="width:50%">
+										</p:selectBooleanCheckbox>
+									</div>
+									<div class="form-group col-md-1">
+										<p:outputLabel value="Desc Val." for="desPerc"
+											rendered="#{pedidoBean.configUser.descontoPDV}" />
+										<p:inputNumber value="#{pedidoBean.desPercVal}" id="desPerc"
+											rendered="#{pedidoBean.configUser.descontoPDV}"
+											maxValue="999.99" minValue="0.00" immediate="true"
+											emptyValue="empty" onkeypress="setaFoco(this)"
+											decimalSeparator="," thousandSeparator="." style="width:100%"
+											size="10">
+										</p:inputNumber>
+									</div>
+								</div>
+							</div>
+						</h:form>
+					</div>
+				</div>
+			</div>
+			<h:form id="formLabel" prependId="false"
+				rendered="#{pedidoBean.isHabilita()}">
+				<div class="box box-warning">
+					<div class="box-body with-border">
+						<div class="form-group col-md-12">
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.ref']}" />
+								<br />
+								<p:outputLabel value="#{pedidoBean.item.produto.referencia}"
+									id="labelRef" style="color:blue" />
+							</div>
+							<div class="form-group col-md-4">
+								<p:outputLabel value="#{label['label.descricao']}" />
+								<br />
+								<p:outputLabel value="#{pedidoBean.item.produto.descricao}"
+									id="labelDesc" style="color:blue" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.nfe.preco']}" />
+								<br />
+								<p:outputLabel value="#{pedidoBean.item.valorUnitario}"
+									id="labelPreco" style="color:blue">
+									<f:convertNumber type="currency" currencyCode="BRL" />
+								</p:outputLabel>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.nfe.item.quantidade']}"
+									for="labelQuant" />
+								<br />
+								<p:outputLabel value="#{pedidoBean.item.quantidade}"
+									id="labelQuant" style="color:blue" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.nfe.item.valorTotal']}"
+									for="labelTotal" />
+								<br />
+								<p:outputLabel value="#{pedidoBean.item.valorTotal}"
+									id="labelTotal" style="color:blue">
+									<f:convertNumber type="currency" currencyCode="BRL" />
+								</p:outputLabel>
+							</div>
+						</div>
+					</div>
+				</div>
+			</h:form>
+			<h:form id="formItens" prependId="false"
+				rendered="#{pedidoBean.isHabilita()}">
+				<div class="box box-success">
+					<div class="box-body with-border">
+						<div class="col-md-12">
+							<h:form id="listItens" prependId="false">
+								<div class="boxEspecial box-primary">
+									<div class="box-body width-border">
+										<h3 class="box-title">
+											<p:outputLabel value="Itens" />
+										</h3>
+										<div class="form-group col-md-12">
+											<p:dataTable id="listaItensProduto" var="lista"
+												styleClass="table" widgetVar="listaItemNfe"
+												value="#{pedidoBean.listaItemModel}"
+												paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+												paginator="true" rows="20" lazy="false" rowKey="#{lista.id}"
+												selectionMode="single"
+												selection="#{pedidoBean.itemSelecionado}"
+												sortBy="#{lista.produto.descricao}"
+												rowsPerPageTemplate="20,30">
+
+												<p:column headerText="#{label['label.ref']}" rendered="true"
+													style="width:8%">
+													<h:outputText value="#{lista.produto.referencia}" />
+												</p:column>
+
+												<p:column headerText="#{label['label.list.barras']}"
+													rendered="true" style="width:10%">
+													<h:outputText value="#{lista.barras.barras}" />
+												</p:column>
+
+												<p:column headerText="#{label['label.descricao']}"
+													style="width:30%" rendered="true">
+													<h:outputText value="#{lista.produto.descricao}" />
+												</p:column>
+
+												<p:column headerText="#{label['label.nfe.item.quantidade']}"
+													style="width:15%" rendered="true">
+													<h:outputText value="#{lista.quantidade}" />
+												</p:column>
+
+												<p:column headerText="#{label['label.list.cor']}"
+													rendered="true">
+													<h:outputText value="#{lista.barras.cor.nome}" />
+												</p:column>
+
+												<p:column headerText="#{label['label.list.tamanho']}"
+													rendered="true">
+													<h:outputText value="#{lista.barras.tamanho.tamanho}" />
+												</p:column>
+
+												<p:column headerText="#{label['label.nfe.preco']}"
+													rendered="true">
+													<h:outputText value="#{lista.valorUnitario}" />
+												</p:column>
+												<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+													rendered="true">
+													<h:outputText value="#{lista.valorTotal}">
+														<f:convertNumber type="currency" currencyCode="BRL" />
+													</h:outputText>
+												</p:column>
+												<p:column headerText="#{label['label.list.Action']}">
+													<p:commandButton process="listaItensProduto"
+														icon="fa fa-remove" title="#{menu['delete']}"
+														styleClass="btn btn-flat btn-danger"
+														actionListener="#{pedidoBean.excluiItem(lista)}"
+														update="listaItensProduto" />
+												</p:column>
+												<p:columnGroup type="footer">
+													<p:row>
+														<h:outputText
+															value="#{label['label.nfe.item.valorTotal']} "
+															style="text-align:right;font-size:18px;font-weight:bold;" />
+														<h:outputText value="#{pedidoBean.totalPedido}"
+															style="font-size:18px;color:red;font-weight:bold;">
+															<f:convertNumber type="currency" currencyCode="BRL" />
+														</h:outputText>
+													</p:row>
+												</p:columnGroup>
+											</p:dataTable>
+										</div>
+									</div>
+								</div>
+							</h:form>
+						</div>
+					</div>
+				</div>
+			</h:form>
+			<!-- 			<div class="box-footer"> -->
+			<!-- 				<div class="align-left"> -->
+			<!-- 					<div class="form-group col-md-6"> -->
+			<!-- 						<p:outputLabel value="Resposta Sat" for="respSefaz" /> -->
+			<!-- 						<p:inputTextarea rows="5" cols="100" maxlength="300" -->
+			<!-- 							immediate="true" disabled="true" styleClass="form-control" -->
+			<!-- 							counterTemplate="{0} caracteres restantes" -->
+			<!-- 							value="#{pedidoBean.respostaAcbrLocal}" id="respSefaz" -->
+			<!-- 							autoResize="false" /> -->
+			<!-- 					</div> -->
+			<!-- 				</div> -->
+			<!-- 				<div class="align-right"></div> -->
+			<!-- 			</div> -->
+		</h:form>
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+
+	<ui:define name="sub-content">
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="formPopup" prependId="false">
+			<ui:include src="/main/Vendas/tools/dialogPesquisaBarras.xhtml" />
+			<ui:include src="/main/Vendas/tools/dialogPesquisaProdutoPDV.xhtml" />
+			<ui:include src="/main/Vendas/tools/dialogListaResultado.xhtml" />
+		</h:form>
+
+	</ui:define>
+</ui:composition>

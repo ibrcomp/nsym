@@ -1,0 +1,56 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="fichaTecMaterialDialog"
+	width="70%" modal="true" resizable="false" closeOnEscape="true"
+	widgetVar="dialogFichaTecMaterial"
+	header="#{messages['fabrica.dialog.fichaTecMaterial.header']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-8">
+				<p:outputLabel value="#{messages['material.page-title']}" > :
+					<p:outputLabel
+						value="#{fabricaBean.materialModelo.produto.descricao}"
+						style="color:blue;" />
+				</p:outputLabel>
+			</h2>
+		</div>
+		<div class="box-body ">
+			<div class="row">
+				<div class="form-group col-md-2">
+					<p:outputLabel for="qFolha"
+						value="#{label['label.fabrica.fichaTecnica.qFolha']}" />
+					<p:inputNumber id="qFolha" value="#{fabricaBean.ficha.numFolhas}"
+						emptyValue="zero" />
+				</div>
+				<div class="form-group col-md-2">
+					<p:outputLabel for="qCompr"
+						value="#{label['label.fabrica.fichaTecnica.qCompr']}" />
+					<p:inputNumber id="qCompr" value="#{fabricaBean.ficha.comprimento}"
+						emptyValue="zero" />
+				</div>
+				<div class="form-group col-md-2">
+					<p:outputLabel for="larg"
+						value="#{label['label.fabrica.fichaTecnica.larg']}" />
+					<p:inputNumber id="larg" value="#{fabricaBean.ficha.largura}"
+						emptyValue="zero" />
+				</div>
+			</div>
+		</div>
+		<div class="box-footer align-right">
+
+			<p:commandButton actionListener="#{fabricaBean.doSalvarFicha()}"
+				process="formPopup" style="align-left"
+				oncomplete="PF('dialogFichaTecMaterial').hide()" update="formPopup"
+				value="#{label['label.save']}" styleClass="btn btn-flat btn-seach"
+				icon="fa fa-search-plus" />
+
+		</div>
+	</div>
+
+
+</p:dialog>
+

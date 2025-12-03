@@ -1,0 +1,397 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="Colaborador" />
+
+	<f:metadata>
+		<f:viewAction
+			action="#{colaboradorBean.initializeForm(param.colabID)}" />
+			<f:viewAction
+			action="#{contatoBean.initializeFormT(param.colabID,param.tipoCadastro)}" />
+	</f:metadata>
+	<ui:define name="pageTitle">
+        #{messages['colaborador.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{colaboradorBean.viewState eq 'ADDING'}"
+			value="#{messages['colaborador.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{colaboradorBean.viewState eq 'EDITING'}"
+			value="#{messages['colaborador.page-description-editing']}">
+			<f:param value="#{colaboradorBean.colaborador.nome}"></f:param>
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li><a href="formListColaborador.xhtml">#{breadcrumb['entries.colaborador']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row" id="men">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['entries']}"></p:outputLabel>
+					</h2>
+				</div>
+				<p:tabView prependId="false">
+					<p:tab title="#{breadcrumb['entries']}" id="cadastroForm">
+						<div class="box-body row">
+
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.cpf']}" for="cpf" />
+								<p:inputMask mask="999.999.999-99"
+									value="#{colaboradorBean.colaborador.cpf}" maxlength="12"
+									readonly="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+									id="cpf" styleClass="form-control" />
+							</div>
+
+							<div class="form-group col-md-2">
+								<p:outputLabel for="tipoVendedor"
+									value="#{messages['colaborador.type.salesman']}: " />
+								<p:selectOneMenu id="tipoVendedor"
+									value="#{colaboradorBean.colaborador.tipoColaborador}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									disabled="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['cliente.form.select-one']}" />
+									<f:selectItems
+										value="#{colaboradorBean.pegaListaTipoColaborador()}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel for="cargo" value="#{label['label.cargo']}" />
+								<p:selectOneMenu id="cargo" style="width:80%"
+									value="#{colaboradorBean.colaborador.cargo}"
+									disabled="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+									converter="omnifaces.SelectItemsConverter">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['empresa.form.select-one']}" />
+									<f:selectItems var="func" itemValue="#{func}"
+										itemLabel="#{func.cargo}"
+										value="#{cargoBean.listaCargoPorFilial}" />
+								</p:selectOneMenu>
+							</div>
+
+							<div class="form-group col-md-10">
+								<p:outputLabel value="#{label['label.nome']}" for="nome" />
+								<p:inputText value="#{colaboradorBean.colaborador.nome}"
+									readonly="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+									id="nome" styleClass="form-control" />
+
+								<p:outputLabel value="#{label['label.apelido']}" for="apelido" />
+								<p:inputText value="#{colaboradorBean.colaborador.apelido}"
+									readonly="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+									id="apelido" styleClass="form-control" />
+
+								<p:outputLabel value="#{label['label.email']}"
+									for="emailColaborador" />
+								<p:inputText id="emailColaborador"
+									readonly="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+									value="#{colaboradorBean.email.email}"
+									styleClass="form-control" />
+
+							</div>
+
+							<div class="form-group col-md-8">
+								<p:outputLabel value="#{label['label.logradouro']}"
+									for="logradouro" />
+								<p:inputText value="#{colaboradorBean.endereco.logra}"
+									id="logradouro" styleClass="form-control"
+									readonly="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+									immediate="true" />
+							</div>
+
+							<div class="form-group col-md-1">
+								<p:outputLabel value="#{label['label.numero']}" for="numero" />
+								<p:inputText value="#{colaboradorBean.endComplemento.numero}"
+									readonly="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+									id="numero" styleClass="form-control" immediate="true" />
+							</div>
+
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.bairro']}" for="bairro" />
+								<p:inputText value="#{colaboradorBean.endereco.bairro}"
+									id="bairro"
+									readonly="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+									styleClass="form-control" />
+							</div>
+
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.municipio']}"
+									for="localidade" />
+								<p:inputText value="#{colaboradorBean.endereco.localidade}"
+									styleClass="form-control" id="localidade" readonly="true" />
+							</div>
+
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.estado']}" for="ibge" />
+								<p:inputText value="#{colaboradorBean.endereco.uf}" id="ibge"
+									readonly="true" styleClass="form-control">
+								</p:inputText>
+							</div>
+
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.cep']}" for="cep" />
+								<p:inputMask mask="99999-999" required="true"
+									requiredMessage="#{validation['endereco.null']}"
+									value="#{colaboradorBean.endereco.cep}" id="cep"
+									readonly="true" styleClass="form-control" immediate="true" />
+							</div>
+
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.complemento']}"
+									for="complemento" />
+								<p:inputText id="complemento"
+									value="#{colaboradorBean.endComplemento.complemento}"
+									readonly="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+									styleClass="form-control" />
+							</div>
+
+							<div class="form-group col-md-10">
+								<p:outputLabel value="#{label['label.obs']}" for="obs" />
+								<p:inputTextarea value="#{colaboradorBean.endComplemento.obs}"
+									readonly="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+									id="obs" maxlength="300" style="width:60%"
+									styleClass="form-control" />
+							</div>
+						</div>
+					</p:tab>
+
+					<p:tab title="Contato" id="formContato"
+						rendered="#{colaboradorBean.visivelPorIdColaborador}">
+						<div class="box-body row">
+							<div class="form-group col-md-6">
+								<p:dataTable id="listaContato" var="contato"
+									value="#{contatoBean.contatoModel}" selectionMode="single"
+									paginator="true" rows="10" lazy="true"
+									paginatorTemplate="{CurrentPageReport}
+									 {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+									rowKey="#{contato.id}" styleClass="from-control">
+									<p:ajax event="rowSelect" listener="#{contatoBean.onRowSelect}"
+										update="messages empresaForm @form" process="empresaForm" />
+									<p:ajax event="rowUnselect"
+										listener="#{contatoBean.onRowUnselect()}" />
+									<f:facet name="header">
+		            						#{label['label.contact.list']}
+		     						   </f:facet>
+									<p:column headerText="Contato">
+										<h:outputText value="#{contato.nome}" />
+									</p:column>
+									<p:column headerText="Telefone" id="listaTel" style="width:25%">
+										<ui:repeat value="#{contato.fone}" var="fone"
+											varStatus="foneStatus">
+
+											<li><p:outputLabel value="#{fone.fone}"
+													lang="Clique aqui para inserir" /> <p:commandButton
+													update="messages empresaForm @form" process="empresaForm"
+													icon="fa fa-pencil" style="width:20px; margin-left: 15px;">
+													<f:actionListener
+														binding="#{contatoBean.editaFoneContato(fone)}" />
+												</p:commandButton></li>
+
+										</ui:repeat>
+									</p:column>
+									<p:column headerText="Email" style="width:50%;">
+										<ui:repeat value="#{contato.email}" var="email">
+											<li><p:outputLabel value="#{email.email}" /> <p:commandButton
+													update="messages empresaForm @form" process="empresaForm"
+													icon="fa fa-pencil" style="width:20px; margin-left: 15px;">
+													<f:actionListener
+														binding="#{contatoBean.editaEmailContato(email)}" />
+												</p:commandButton></li>
+										</ui:repeat>
+									</p:column>
+									<f:facet name="footer">
+										<p:commandButton process="empresaForm"
+											update="listaContato @form" icon="ui-icon-search"
+											value="Adiciona"
+											actionListener="#{colaboradorBean.telaTelefone()}"
+											rendered="#{colaboradorBean.visivelPorIdColaborador}"
+											disabled="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+											immediate="true" />
+									</f:facet>
+								</p:dataTable>
+
+							</div>
+							<div class="form-group col-sm-3">
+								<p:outputLabel value="#{label['label.telefone.DDI']}" for="ddi"
+									rendered="#{contatoBean.contatoDisponivel}" />
+								<p:inputMask value="#{contatoBean.fone.ddi}" id="ddi" mask="99"
+									styleClass="form-control"
+									rendered="#{contatoBean.contatoDisponivel}" immediate="true" />
+							</div>
+							<div class="form-group col-md-3">
+								<p:outputLabel for="ddd" value="#{label['label.telefone.ddd']}"
+									rendered="#{contatoBean.contatoDisponivel}" />
+								<p:inputMask value="#{contatoBean.fone.ddd}" id="ddd" mask="99"
+									styleClass="form-control" immediate="true"
+									rendered="#{contatoBean.contatoDisponivel}" />
+							</div>
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.Telefone']}" for="tel"
+									rendered="#{contatoBean.contatoDisponivel}" />
+								<p:inputText value="#{contatoBean.fone.fone}" id="tel"
+									styleClass="form-control"
+									rendered="#{contatoBean.contatoDisponivel}" maxlength="9">
+									<p:keyFilter mask="num" />
+								</p:inputText>
+								<p:outputLabel value="#{label['label.whatsApp']}" for="whats"
+									rendered="#{contatoBean.contatoDisponivel}" />
+								<p:selectBooleanCheckbox value="#{contatoBean.fone.whatsapp}"
+									id="whats" rendered="#{contatoBean.contatoDisponivel}" />
+							</div>
+							<div class="form-group col-md-3">
+								<p:outputLabel for="operadora"
+									value="#{label['label.telefone.operadora']}"
+									rendered="#{contatoBean.contatoDisponivel}" />
+								<p:selectOneMenu id="operadora"
+									value="#{contatoBean.fone.operadora}"
+									converter="omnifaces.GenericEnumConverter"
+									rendered="#{contatoBean.contatoDisponivel}" immediate="true"
+									styleClass="form-control">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['cliente.form.select-one']}" />
+									<f:selectItems var="op" itemValue="#{op}"
+										value="#{contatoBean.operadoraType}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.email']}" for="email"
+									rendered="#{contatoBean.alteraEmail}" />
+								<p:inputText value="#{contatoBean.email.email}" id="email"
+									rendered="#{contatoBean.alteraEmail eq 'true'}"
+									styleClass="form-control">
+								</p:inputText>
+
+							</div>
+							<div class="form-group col-md-2">
+								<br />
+								<p:commandButton value="#{menu['add']}"
+									actionListener="#{contatoBean.doSalva()}"
+									onstart="PF('formBlock').block()"
+									styleClass="form-control btn btn-flat btn-success"
+									oncomplete="PF('formBlock').unblock()"
+									rendered="#{contatoBean.contatoDisponivel eq 'true' or contatoBean.alteraEmail eq 'true'}"
+									icon="fa fa-hdd-o"
+									update="empresaForm formContato listaContato"
+									disabled="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+									process="empresaForm" id="botaoAdiciona" />
+							</div>
+							<div class="form-group col-md-2">
+								<br />
+								<p:commandButton value="#{menu.cancel}"
+									actionListener="#{contatoBean.doCancela()}"
+									onstart="PF('formBlock').block()"
+									styleClass="btn btn-flat btn-cancel"
+									oncomplete="PF('formBlock').unblock()"
+									rendered="#{contatoBean.contatoDisponivel}" icon="fa fa-undo"
+									update="empresaForm formContato listaContato @form"
+									process="empresaForm" id="botaoCancela" />
+							</div>
+						</div>
+					</p:tab>
+
+				</p:tabView>
+			</div>
+
+			<div class="box-footer align-right">
+				<p:commandButton update="empresaForm" process="empresaForm"
+					value="#{menu['save']}" action="#{colaboradorBean.doSalvar()}"
+					onstart="PF('formBlock').block()"
+					styleClass="btn btn-flat btn-success"
+					oncomplete="PF('formBlock').unblock()"
+					disabled="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+					rendered="#{colaboradorBean.viewState eq 'ADDING'}"
+					icon="fa fa-hdd-o" />
+
+				<p:commandButton process="empresaForm" value="#{menu['update']}"
+					action="#{colaboradorBean.doSalvar()}"
+					onstart="PF('formBlock').block()"
+					update="empresaForm pageDescription"
+					styleClass="btn btn-flat btn-warning"
+					disabled="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+					oncomplete="PF('formBlock').unblock()"
+					rendered="#{colaboradorBean.viewState eq 'EDITING'}" />
+
+				<p:commandButton process="empresaForm" value="#{menu['delete']}"
+					action="#{colaboradorBean.doExcluir()}" immediate="true"
+					styleClass="btn btn-flat btn-danger"
+					disabled="#{userSessionBean.hasRole(authorization.COLABORADOR_DELETE) eq 'false'}"
+					rendered="#{colaboradorBean.viewState eq 'EDITING'}">
+					<p:confirm header="Atenção" message="Excluir? "
+						icon="ui-icon-alert" />
+				</p:commandButton>
+
+				<p:confirmDialog global="true">
+					<p:commandButton value="#{menu.yes}"
+						styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
+					<p:commandButton value="#{menu.no}"
+						styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+				</p:confirmDialog>
+
+			</div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="resources/nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+			<ui:include
+				src="/main/cadastro/Colaborador/dialogContatoColaborador.xhtml" />
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+		<h:form id="testeEnvio" prependId="false">
+			<div class="box">
+				<div class="box-body ">
+					<div class="align-left col-md-10">
+						<p:outputLabel value="Consulta por CEP?" />
+						<p:selectBooleanButton id="value2"
+							value="#{colaboradorBean.consultaPorCepVisivel}"
+							onLabel="#{label['label.yes']}" offLabel="#{label['label.no']}"
+							onIcon="ui-icon-check" offIcon="ui-icon-close"
+							disabled="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+							styleClass="btn btn-flat">
+						</p:selectBooleanButton>
+						<p:commandButton action="#{enderecoBean.telaPesquisaEndereco()}"
+							value="#{label['label.search.cep']}"
+							disabled="#{userSessionBean.hasRole(authorization.COLABORADOR_INSERT) eq 'false'}"
+							styleClass="btn btn-flat btn-info" style="align-left"
+							icon="fa fa-search">
+						</p:commandButton>
+					</div>
+
+					<div class="align-right col-md-2">
+						<p:spacer width="10" />
+						<p:commandButton immediate="true" value="#{menu['back']}"
+							action="#{colaboradorBean.toListColaborador()}"
+							styleClass="btn btn-flat btn-default"
+							icon="fa fa-arrow-circle-o-left" />
+					</div>
+
+				</div>
+			</div>
+			<ui:include
+				src="/main/cadastro/Colaborador/dialogPesquisaEnderecoColaborador.xhtml" />
+		</h:form>
+	</ui:define>
+	<ui:define name="popups">
+	</ui:define>
+</ui:composition>

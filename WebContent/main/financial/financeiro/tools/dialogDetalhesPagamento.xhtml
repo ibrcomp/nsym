@@ -1,0 +1,211 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="listaDetalhesPagamentoDialog"
+	width="90%" modal="true" resizable="false" closeOnEscape="true" responsive="true" fitViewport="true" height="60%"
+	widgetVar="dialogListaDetalhesPagamento"
+	header="#{messages['financeiro.detalhePag.page-title']}">
+
+	<div class="box">
+		<div class="box-body ">
+				<p:outputLabel value="#{label['label.financeiro.detalhePagamento.agrupado']}" style="color:#51854C;font-weight:bold;font-style:italic;;font-size:14px"/>
+				<div class="row">
+					<div class="form-group col-sm-12">
+						<p:dataTable id="idDetalhesAgrupado" var="lista"
+							widgetVar="extratoAgrupado"
+							value="#{agendaBean.listaDeTitulosRecebidos}"
+							paginator="true" rows="10" lazy="false" rowKey="#{lista.id}"
+							selection="false" sortBy="#{lista.vencimento}"
+							rendered="true">
+
+<!-- 							<p:column headerText="#{label['label.id']}" rendered="true" -->
+<!-- 								style="width:10%"> -->
+<!-- 								<h:outputLabel value="#{lista.id}" /> -->
+<!-- 							</p:column> -->
+							<p:column headerText="#{label['label.financial.origemParcela']}"
+								rendered="true" style="width:40%">
+								<h:outputLabel value="#{lista.descricao}" />
+							</p:column>
+							<p:column headerText="#{label['label.financial.numParcela']}"
+								rendered="true" style="width:10%">
+								<h:outputLabel
+									value="#{lista.numParcela} - #{lista.QRecorrencia}" />
+							</p:column>
+							<p:column sortBy="#{lista.tipoLancamento}"
+								headerText="#{label['label.tipoLancamento']}" style="width:10%">
+								<h:outputText
+									value="#{lista.tipoLancamento == 'tpDebito' ? 'A Pagar' : 'A Receber'}"
+									styleClass="#{lista.tipoLancamento == 'tpDebito' ? 'ca' : 'en'}" />
+							</p:column>
+							<p:column headerText="#{label['label.financial.vencimento']}"
+								rendered="true" sortBy="#{lista.vencimento}" style="width:10%">
+								<h:outputLabel value="#{lista.vencimento}" />
+							</p:column>
+							<p:column headerText="#{label['label.financial.dataPagamento']}"
+								rendered="true" sortBy="#{lista.dataRecebimento}"
+								style="width:10%">
+								<h:outputLabel value="#{lista.dataRecebimento}" />
+							</p:column>
+							<p:column headerText="#{label['label.financial.tipoPagamento']}"
+								rendered="true" sortBy="#{lista.tipoPagamento}"
+								style="width:10%">
+								<h:outputLabel value="#{lista.tipoPagamento}" />
+							</p:column>
+							<p:column headerText="#{label['label.caixa.valorPagamento']}"
+								style="width:15%">
+								<h:outputText value="#{lista.exibeValorCobrado()}"
+									styleClass="#{lista.tipoLancamento == 'tpDebito' ? 'ca' : 'azul'}">
+									<f:convertNumber type="currency" currencySymbol="R$"
+										maxFractionDigits="2" currencyCode="BRL" />
+								</h:outputText>
+							</p:column>
+							<p:column headerText="#{label['label.caixa.saldoEmAberto']}"
+								style="width:15%">
+								<h:outputText value="#{lista.valorParcela}"
+									styleClass="#{lista.tipoLancamento == 'tpDebito' ? 'ca' : 'azul'}">
+									<f:convertNumber type="currency" currencySymbol="R$"
+										maxFractionDigits="2" currencyCode="BRL" />
+								</h:outputText>
+							</p:column>
+							<p:column headerText="#{label['label.financial.statuasParcela']}"
+								rendered="true" sortBy="#{lista.status}" style="width:10%">
+								<h:outputLabel
+									value="#{agendaBean.descricaoParcela(lista.status)}" />
+							</p:column>
+						</p:dataTable>
+					</div>
+				</div>
+				<div class="row">
+					<div class="form-group col-md-2">
+						<p:outputLabel value="Valor do agrupamento "
+							for="valorTotAgrupa" />
+						<p:inputNumber value="#{agendaBean.valorTotalAgrupado}"
+							id="valorTotAgrupa" required="true" immediate="false"
+							readonly="true" decimalPlaces="2" thousandSeparator="."
+							decimalSeparator="," symbol="R$" />
+					</div>
+					<div class="form-group col-md-2">
+						<p:outputLabel value="Valor Recebido " for="valorRecAgrupa" />
+						<p:inputNumber value="#{agendaBean.valorRecebidoAgrupado}"
+							id="valorRecAgrupa" required="true" immediate="false"
+							readonly="true" decimalPlaces="2" thousandSeparator="."
+							decimalSeparator="," symbol="R$" />
+					</div>
+				<div class="form-group col-md-8">
+					<p:outputLabel value="#{label['label.financeiro.obs']}"
+						for="inputOBS" />
+					<p:inputTextarea rows="2" cols="200" immediate="true"
+						readonly="#{agendaBean.viewState eq 'DETAILING'}"
+						value="#{agendaBean.obsAgrupado}" id="inputOBS" required="false"
+						styleClass="form-control" />
+				</div>
+			</div>
+			<div class="box box-info box-body with-border">
+				<p:outputLabel value="#{label['label.financeiro.detalhePagamento.titutlo']}"  style="color:#51854C;font-weight:bold;font-style:italic;;font-size:14px"/>
+				<div class="row">
+					<div class="form-group col-md-2">
+						<p:outputLabel value="#{label['label.financial.vencimento']}: "
+							for="inputVencimentoD" />
+						<p:calendar value="#{agendaBean.parcela.vencimento}"
+							id="inputVencimentoD" required="true" immediate="true"
+							pattern="dd/MM/yyyy" converter="localDateConverter"
+							disabled="true" readonly="true" />
+					</div>
+					<div class="form-group col-md-2">
+						<p:outputLabel value="#{label['label.caixa.valorPagamento']} "
+							for="inputValorD" />
+						<p:inputNumber value="#{agendaBean.parcela.valorParcela}"
+							id="inputValorD" required="true" immediate="false"
+							readonly="true" decimalPlaces="2" thousandSeparator="."
+							decimalSeparator="," symbol="R$" />
+					</div>
+					<div class="form-group col-md-2">
+						<p:outputLabel value="#{label['label.dataEmissao']}: "
+							for="inputEmissaoD" />
+						<br />
+						<p:outputLabel value="#{agendaBean.parcela.inclusionAsLocalDate}"
+							id="inputEmissaoD" required="true" immediate="true"
+							readonlyInput="true" showOn="false" pattern="dd/MM/yyyy"
+							converter="localDateConverter" disabled="false" readonly="true}" />
+					</div>
+					<div class="form-group col-md-2">
+						<p:outputLabel for="selectLancamentoD"
+							value="#{label['label.tipoLancamento']} " rendered="true" />
+						<p:selectOneMenu id="selectLancamentoD"
+							value="#{agendaBean.parcela.tipoLancamento}"
+							converter="omnifaces.GenericEnumConverter" style="width:100%"
+							rendered="true" required="false" editable="false"
+							requiredMessage="#{validation['tipoLancamento.null']}"
+							disabled="true">
+							<f:selectItem itemValue="#{null}" noSelectionOption="true"
+								itemLabel="#{messages['cliente.form.select-one']}" />
+							<f:selectItems value="#{agendaBean.listaTiposLancamento()}" />
+
+						</p:selectOneMenu>
+					</div>
+<!-- 					<div class="form-group col-md-4"> -->
+<!-- 						<p:outputLabel value="#{label['label.financial.origemParcela']} " -->
+<!-- 							for="labelOrigemD" /> -->
+<!-- 						<p:outputLabel value="#{agendaBean.parcela.origemParcela}" -->
+<!-- 							id="labelOrigemD" required="false" immediate="true" -->
+<!-- 							readonly="true" styleClass="form-control" /> -->
+<!-- 					</div> -->
+				</div>
+				<div class="row">
+					<div class="form-group col-sm-12">
+						<p:dataTable id="idDetalhesPagamento" var="listaPag"
+							widgetVar="extratoPag"
+							value="#{agendaBean.listaRecParcialPorTitulos}"
+							paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+							paginator="true"  lazy="false" rowKey="#{listaPag.id}"
+							selection="false" sortBy="#{listaPag.inclusion}"
+							rowsPerPageTemplate="10" rendered="true">
+
+							<p:column headerText="#{label['label.financial.dataPagamento']}"
+								rendered="true">
+								<h:outputLabel value="#{listaPag.inclusionDateAsString}" />
+							</p:column>
+
+							<p:column headerText="#{label['label.contaCorrente']}"
+								rendered="true">
+								<h:outputLabel value="#{listaPag.contaCorrente.contaCorrente}" />
+							</p:column>
+
+							<p:column
+								headerText="#{label['label.financeiro.formaPagamento']}"
+								style="width:35%">
+								<h:outputText value="#{listaPag.tipoPagamento.toString()}" />
+							</p:column>
+
+							<p:column headerText="#{label['label.financeiro.recebidoPago']}"
+								style="width:35%">
+								<h:outputText value="#{listaPag.valorRecebido}">
+									<f:convertNumber type="currency" currencySymbol="R$"
+										maxFractionDigits="2" currencyCode="BRL" />
+								</h:outputText>
+							</p:column>
+
+						</p:dataTable>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="box-footer align-right">
+
+			<!-- 			<p:commandButton actionListener="#{secaoBean.doSalvar()}" -->
+			<!-- 				process="formPopup" style="align-left" -->
+			<!-- 				oncomplete="PF('dialogSecao').hide()" -->
+			<!-- 				update="formPopup" -->
+			<!-- 				value="#{label['label.save']}" styleClass="btn btn-flat btn-seach" -->
+			<!-- 				icon="fa fa-search-plus" /> -->
+
+		</div>
+	</div>
+
+
+</p:dialog>
+

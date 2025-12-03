@@ -1,0 +1,170 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="Caixa" />
+	<ui:param name="activeSubmenu" value="LancaMovimento" />
+
+	<f:metadata>
+		<f:viewAction
+			action="#{motivoMovimentoCaixaBean.initializeFormLanc(param.lancaMoviID)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['lancaMovimento.page-description']}
+    </ui:define>
+
+
+	<ui:define name="pageDescription">
+		<h:outputText
+			rendered="#{motivoMovimentoCaixaBean.viewState eq 'ADDING'}"
+			value="#{messages['lancaMovimento.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{motivoMovimentoCaixaBean.viewState eq 'EDITING'}"
+			value="#{messages['lancaMovimento.page-description-editing']}">
+			<f:param value="#{motivoMovimentoCaixaBean.movimento.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['financeiro.tools']}</a></li>
+		<li><a href="formLancaMovimento.xhtml">#{breadcrumb['financeiro.motivo']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['entries']}"></p:outputLabel>
+					</h2>
+				</div>
+				<div class="navbar-form">
+					<p:toolbar>
+						<f:facet name="left">
+
+							<p:commandButton update="empresaForm" process="empresaForm"
+								value="#{menu['save']}"
+								action="#{motivoMovimentoCaixaBean.doSalvarLancamento()}"
+								onstart="PF('formBlock').block()"
+								styleClass="btn btn-flat btn-success"
+								disabled="#{userSessionBean.hasRole(authorization.CAIXA_INSERT) eq 'false'}"
+								rendered="#{motivoMovimentoCaixaBean.viewState eq 'ADDING'}"
+								icon="fa fa-hdd-o" />
+
+							<p:commandButton process="empresaForm" value="#{menu['update']}"
+								action="#{motivoMovimentoCaixaBean.doSalvarLancamento()}"
+								onstart="PF('formBlock').block()"
+								update="empresaForm pageDescription"
+								styleClass="btn btn-flat btn-warning"
+								disabled="#{userSessionBean.hasRole(authorization.CAIXA_INSERT) eq 'false'}"
+								oncomplete="PF('formBlock').unblock()"
+								rendered="#{motivoMovimentoCaixaBean.viewState eq 'EDITING'}" />
+						</f:facet>
+						<f:facet name="right">
+						</f:facet>
+					</p:toolbar>
+				</div>
+				<div class="box-body">
+					<div class="row">
+						<div class="form-group col-md-4">
+							<p:outputLabel value="#{label['label.descricao']}: "
+								rendered="#{motivoMovimentoCaixaBean.viewState eq 'ADDING'}"
+								for="selectMotivo" />
+							<p:selectOneMenu id="selectMotivo"
+								rendered="#{motivoMovimentoCaixaBean.viewState eq 'ADDING'}"
+								value="#{motivoMovimentoCaixaBean.movimento.motivo}"
+								converter="omnifaces.SelectItemsConverter" dynamic="true"
+								filter="true" filterMatchMode="contains">
+								<f:selectItem itemLabel="#{messages['cliente.form.select-one']}"
+									itemValue="" />
+								<f:selectItems
+									value="#{motivoMovimentoCaixaBean.listaDeMotivos}" var="mo"
+									itemLabel="#{mo.motivo}" />
+							</p:selectOneMenu>
+						</div>
+						<div class="form-group col-md-4">
+							<p:outputLabel value="#{label['label.nfe.Pagamento']}: "
+								rendered="#{motivoMovimentoCaixaBean.viewState eq 'ADDING'}"
+								for="selectPagamento" />
+							<p:selectOneMenu id="selectPagamento"
+								rendered="#{motivoMovimentoCaixaBean.viewState eq 'ADDING'}"
+								value="#{motivoMovimentoCaixaBean.movimento.pagamento}"
+								converter="omnifaces.SelectItemsConverter" dynamic="true"
+								filter="true" filterMatchMode="contains">
+								<f:selectItem itemLabel="#{messages['cliente.form.select-one']}"
+									itemValue="" />
+								<f:selectItems
+									value="#{motivoMovimentoCaixaBean.listaPagamentos}" var="pag"
+									itemLabel="#{pag.descricao}" />
+							</p:selectOneMenu>
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.nfe.totalNfe']}:"
+								rendered="#{motivoMovimentoCaixaBean.viewState eq 'ADDING'}"
+								for="inputTotal" style="width:100%" />
+							<p:inputNumber value="#{motivoMovimentoCaixaBean.valor}"
+								rendered="#{motivoMovimentoCaixaBean.viewState eq 'ADDING'}"
+								id="inputTotal" onkeypress="setaFoco(this)"
+								maxValue="99999999.99" minValue="0.0" immediate="true"
+								decimalSeparator="," thousandSeparator="." symbol="R$ "
+								size="10">
+							</p:inputNumber>
+						</div>
+					</div>
+					<div class="row">
+						<div class="form-group col-md-6">
+							<p:outputLabel value="#{label['label.obs']}:" for="areaOBS"
+								rendered="#{motivoMovimentoCaixaBean.viewState eq 'ADDING'}"
+								style="width:100%" />
+							<p:inputTextarea rows="6" cols="100" immediate="true"
+								rendered="#{motivoMovimentoCaixaBean.viewState eq 'ADDING'}"
+								disabled="false" styleClass="form-control" maxlength="200"
+								counterTemplate="{0} caracteres restantes" counter="contador"
+								value="#{motivoMovimentoCaixaBean.movimento.descMovimento}"
+								id="areaOBS" autoResize="false" />
+							<p:outputLabel id="contador"
+								rendered="#{motivoMovimentoCaixaBean.viewState eq 'ADDING'}" />
+						</div>
+					</div>
+				</div>
+			</div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="resources/nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+		<h:form id="testeEnvio" prependId="false">
+			<div class="box">
+				<div class="box-body ">
+					<div class="align-right col-md-12">
+						<p:spacer width="10" />
+						<p:commandButton immediate="true" value="#{menu['back']}"
+							action="#{userBean.toDashboard()}"
+							styleClass="btn btn-flat btn-default"
+							icon="fa fa-arrow-circle-o-left" />
+					</div>
+
+				</div>
+			</div>
+		</h:form>
+	</ui:define>
+	<ui:define name="popups">
+	</ui:define>
+</ui:composition>

@@ -1,0 +1,119 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="FABRICA" />
+	<ui:param name="activeSubmenu" value="Etapa" />
+
+	<f:metadata>
+		<f:viewAction action="#{etapaProducaoBean.initializeListing()}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['fabrica.Etapaproducao.list.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{etapaProducaoBean.viewState eq 'ADDING'}"
+			value="#{messages['fabrica.Etapaproducao.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{etapaProducaoBean.viewState eq 'EDITING'}"
+			value="#{messages['fabrica.Etapaproducao.page-description-editing']}">
+			<f:param value="#{etapaProducaoBean.etapa.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries.fabrica']}</a></li>
+		<li><a href="formListEtapaProd.xhtml">#{breadcrumb['entries.etapaProducao']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{label['label.list.etapaProducao']}" />
+					</h2>
+				</div>
+
+				<div class="box-body row">
+					<div class="navbar-form">
+						<p:toolbar id="navegador">
+							<f:facet name="left">
+								<p:commandButton update="empresaForm" process="empresaForm"
+									value="#{menu['new']}" action="#{etapaProducaoBean.newEtapa}"
+									onstart="PF('formBlock').block()"
+									styleClass="btn btn-flat btn-success"
+									disabled="#{userSessionBean.hasRole(authorization.FABRICA_INSERT) eq 'false'}"
+									oncomplete="PF('formBlock').unblock()" rendered="true" />
+								<p:commandButton process="empresaForm" value="#{menu['view']}"
+									action="#{etapaProducaoBean.changeToEdit(etapaProducaoBean.etapa.id)}"
+									onstart="PF('formBlock').block()"
+									update="empresaForm pageDescription"
+									styleClass="btn btn-flat btn-success"
+									oncomplete="PF('formBlock').unblock()"
+									disabled="#{userSessionBean.hasRole(authorization.FABRICA_EDIT) eq 'false'}"
+									rendered="#{etapaProducaoBean.viewState eq 'EDITING'}" />
+							</f:facet>
+							<f:facet name="right">
+								<p:commandButton immediate="true" value="#{menu['back']}"
+									action="#{userBean.toDashboard}"
+									styleClass="btn btn-flat btn-default" />
+							</f:facet>
+						</p:toolbar>
+					</div>
+					<div class="form-group col-md-12">
+						<p:dataTable id="etapas" var="lista" widgetVar="listaEtapas"
+							value="#{etapaProducaoBean.etapaModel}"
+							paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+							paginator="true" rows="10" selection="#{etapaProducaoBean.etapa}"
+							selectionMode="single" lazy="true" rowKey="#{lista.id}"
+							sortBy="#{lista.descricao}" rowsPerPageTemplate="10,20,30">
+
+							<p:ajax event="rowSelect" listener="#{etapaProducaoBean.onRowSelect}"
+								update="empresaForm" />
+
+							<p:column headerText="Id" rendered="true" style="width:30%">
+								<h:outputLabel value="#{lista.id}" />
+							</p:column>
+
+							<p:column sortBy="#{lista.descricao}" headerText="Secao">
+								<h:outputText value="#{lista.descricao}" />
+							</p:column>
+
+
+
+						</p:dataTable>
+					</div>
+
+				</div>
+
+				<div class="box-footer align-right">
+				</div>
+			</div>
+		</h:form>
+
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+</ui:composition>

@@ -1,0 +1,62 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="encontraDestinatarioDialog"
+	width="70%" modal="true" resizable="false" closeOnEscape="true"
+	widgetVar="dialogEncontraDestinatario"
+	header="#{messages['nfe.page-title.search']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-2">
+				<p:outputLabel value="#{messages['nfe.page-serch-client']}" />
+			</h2>
+		</div>
+		<div class="box-body row">
+			<div class="form-group col-md-4">
+				<p:outputLabel value="#{label['label.nfe.tipoPesquisa']}"
+					for="pesquisaDestino" />
+				<p:selectOneMenu id="pesquisaDestino" filter="false"
+					value="#{nfeBean.nfe.tipoPesquisa}"
+					disabled="#{userSessionBean.hasRole(authorization.VENDA_INSERT) eq 'false'}"
+					converter="omnifaces.GenericEnumConverter" style="width:100%"
+					onchange="$(function(){PrimeFaces.focus('finalidadeValue');});"
+					immediate="true" required="true">
+					<f:selectItem itemValue="#{null}" noSelectionOption="true"
+						itemLabel="#{messages['filial.form.select-one']}" />
+					<f:selectItems value="#{nfeBean.tipoPesquisa}" />
+				</p:selectOneMenu>
+			</div>
+			<div class="form-group col-md-4">
+				<p:outputLabel value="#{label['label.nfe.destinatario']}: "
+					for="nomeRazaoDestino">
+				</p:outputLabel>
+				<p:inputText value="#{nfeBean.destinatario}" id="nomeRazaoDestino"
+					onkeypress="setaFoco(this)" placeholder="Digite aqui a Razão/Nome"
+					styleClass="form-control" autocomplete="false" />
+			</div>
+			<div class="form-group col-md-4">
+				<br />
+				<p:commandButton value="#{label['label.nfe.destino.pesquisa']}"
+					actionListener="#{nfeBean.pesquisaDestinatario()}"
+					process="formSetCliente" update="nomeRazaoDestino" id="buttonPesquisaDestino"
+					style="width:100%;margin:5px" styleClass="btn btn-flat btn-info"
+					icon="fa fa-search" />
+			</div>
+		</div>
+		<div class="box-footer align-right">
+
+			<!-- 			<p:commandButton actionListener="#{secaoBean.doSalvar()}" -->
+			<!-- 				process="formPopup" style="align-left" -->
+			<!-- 				oncomplete="PF('dialogSecao').hide()" -->
+			<!-- 				update="formPopup" -->
+			<!-- 				value="#{label['label.save']}" styleClass="btn btn-flat btn-seach" -->
+			<!-- 				icon="fa fa-search-plus" /> -->
+
+		</div>
+	</div>
+
+
+</p:dialog>
+

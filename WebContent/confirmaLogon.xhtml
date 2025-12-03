@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui" xmlns:b="http://bootsfaces.net/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core">
+
+<h:head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta http-equiv="refresh"
+		content="${request.session.maxInactiveInterval};url=/index.xhtml" />
+	<title>Nsym</title>
+
+	<meta name="viewport"
+		content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+
+	
+<!-- 	<link rel="shortcut icon"  type="image/png" href="#{resources['nsym/img/faviconnNsym.png']}"  /> -->
+<!-- 	<link rel="shortcut icon" type="image/png" href="#{request.contextPath}faviconnNsym.png"/> -->
+	<link rel="shortcut icon" type="image/x-icon" href="#{resource['nsym/img/faviconNsym.ico']}"/>
+
+	<h:outputStylesheet library="bootstrap" name="css/bootstrap1.css" />
+	<h:outputStylesheet library="nsym" name="css/admintle1.css" />
+	<h:outputStylesheet library="nsym" name="css/common.css" />
+	<h:outputStylesheet library="primefaces-bootstrap" name="custom.css" />
+	<h:outputStylesheet library="primefaces-bootstrap"
+		name="/resources/primefaces-bootstrap/custom.css" />
+</h:head>
+
+<h:body styleClass="hold-transition login-page">
+
+	<f:metadata>
+		<f:viewAction action="#{authenticationBean.initialize()}" />
+	</f:metadata>
+
+	<div class="login-box">
+		<div class="login-logo">
+		<a href="/index.xhtml" class="logo">
+			<p:graphicImage library="nsym"
+			name="/img/nsym300novo.png" id="logo"  /></a>
+		</div>
+		<div class="login-box-body">
+			<p class="login-box-msg">#{messages['login.welcome-message']}</p>
+			<h:form id="loginForm" prependId="false">
+				<p:messages id="messages" closable="true" />
+				<div class="form-group has-feedback">
+
+					Pagina Confirma logon gerar tela!
+					<p:inputText pt:autocorrect="off" pt:spellcheck="false"
+						pt:autocomplete="off" pt:autocapitalize="off"
+						styleClass="form-control" value="#{customCredentials.username}"
+						placeholder="#{messages['login.username']}" />
+					<span class="fa fa-user form-control-feedback"></span>
+				</div>
+				<div class="form-group has-feedback">
+					<p:password pt:autocorrect="off" pt:spellcheck="false"
+						styleClass="form-control" value="#{customCredentials.password}"
+						placeholder="#{messages['login.password']}" />
+					<span class="fa fa-lock form-control-feedback"></span>
+				</div>
+				<div class="row">
+					<div class="col-xs-8" style="padding-top: 10px;">
+						<a href="#" style="display: none">#{messages['login.forgot-password']}</a>
+					</div>
+					<div class="col-xs-4">
+						<button type="submit" jsf:update="@form" jsf:process="@form"
+							class="btn btn-primary btn-block btn-flat"
+							jsf:action="#{authenticationBean.doLogin()}">
+							#{menu['login']}</button>
+					</div>
+				</div>
+				<div class="row" jsf:rendered="#{authenticationBean.systemTest}">
+					<div class="col-xs-12 align-center margin-t-15">
+						<i class="fa fa-hand-o-right"></i> <span class="text-bold">
+							#{messages['login.system-test-tip']} </span>
+					</div>
+				</div>
+			</h:form>
+		</div>
+	</div>
+
+	<h:outputScript library="primefaces"
+		name="/resources/primefaces/jquery/jquery.js" target="head" />
+	<h:outputScript library="bootstrap"
+		name="/resources/bootstrap/js/bootstrap.min.js" />
+	<h:outputScript library="nsym" name="/resources/nsym/js/app.min.js" />
+</h:body>
+</html>

@@ -1,0 +1,222 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="configurations" />
+	<ui:param name="activeSubmenu" value="ConfigVendas" />
+
+	<f:metadata>
+		<f:viewAction
+			action="#{transacaoBean.initializeForm(param.idTransacao)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['transacao.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{transacaoBean.viewState eq 'ADDING'}"
+			value="#{messages['transacao.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{transacaoBean.viewState eq 'EDITING'}"
+			value="#{messages['transacao.page-description-editing']}">
+			<f:param value="#{transacaoBean.transacao.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['config']}</a></li>
+		<li><a href="formListTipoVenda.xhtml">#{breadcrumb['entries.transacao']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row" id="men">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="Cadastro"></p:outputLabel>
+					</h2>
+				</div>
+				<div class="navbar-form">
+					<p:toolbar>
+						<f:facet name="left">
+
+
+
+						</f:facet>
+						<f:facet name="right">
+
+							<p:commandButton process="empresaForm" value="#{menu['save']}"
+								action="#{transacaoBean.doSave}"
+								onstart="PF('formBlock').block()"
+								styleClass="btn btn-flat btn-success"
+								disabled="#{userSessionBean.hasRole(authorization.TRANSACTION_INSERT) eq 'false'}"
+								update="empresaForm" oncomplete="PF('formBlock').unblock()"
+								rendered="#{transacaoBean.viewState eq 'ADDING'}"
+								icon="fa fa-hdd-o" />
+
+							<p:commandButton process="empresaForm" value="#{menu['update']}"
+								action="#{transacaoBean.doSave}"
+								onstart="PF('formBlock').block()"
+								update="empresaForm pageDescription"
+								styleClass="btn btn-flat btn-warning"
+								oncomplete="PF('formBlock').unblock()"
+								rendered="#{transacaoBean.viewState eq 'EDITING'}" />
+
+							<p:commandButton process="empresaForm" value="#{menu['delete']}"
+								action="#{transacaoBean.doExcluir()}" immediate="true"
+								styleClass="btn btn-flat btn-danger"
+								rendered="#{transacaoBean.viewState eq 'EDITING'}">
+								<p:confirm header="Atenção" message="Excluir? "
+									icon="ui-icon-alert" />
+							</p:commandButton>
+
+							<p:confirmDialog global="true">
+								<p:commandButton value="#{menu.yes}"
+									styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
+								<p:commandButton value="#{menu.no}"
+									styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+							</p:confirmDialog>
+							<span class="ui-separator"> <span
+								class="ui-icon ui-icon-grip-dotted-vertical" />
+							</span>
+							<p:commandButton immediate="true" value="#{menu['back']}"
+								action="#{transacaoBean.toListTransaction()}"
+								styleClass="btn btn-flat btn-default" />
+						</f:facet>
+					</p:toolbar>
+				</div>
+				<div class="box-body">
+					<div class="row">
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.codigo']}" for="imputCodigo" />
+							<p:inputText value="#{transacaoBean.transacao.codigo}"
+								id="imputCodigo" immediate="true" styleClass="form-control" />
+						</div>
+						<div class="form-group col-md-4">
+							<p:outputLabel value="#{label['label.descricao']}"
+								for="imputDesc" />
+							<p:inputText value="#{transacaoBean.transacao.descricao}"
+								id="imputDesc" immediate="true" styleClass="form-control" />
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.preco.padrao']}"
+								for="selectTransacaoPadrao" />
+							<p:selectOneMenu value="#{transacaoBean.transacao.tabelaPadrao}"
+								id="selectTransacaoPadrao" filter="true" required="true"
+								disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+								onchange="$(function(){PrimeFaces.focus('selectFormaPagamentoPadrao');});"
+								converter="omnifaces.GenericEnumConverter" style="width:100%"
+								immediate="true">
+								<f:selectItem itemValue="#{null}" noSelectionOption="true"
+									itemLabel="#{messages['filial.form.select-one']}" />
+								<f:selectItems value="#{nfeBean.tabelaPreco}" />
+							</p:selectOneMenu>
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.selectTabelaPrecoPorItem']}"
+								for="selectTabelaPorItem" />
+							<br />
+							<p:selectBooleanCheckbox
+								value="#{transacaoBean.transacao.tabelaPorItem}"
+								itemLabel="#{label['label.yes']}" id="selectTabelaPorItem" />
+						</div>
+					</div>
+					<div class="row">
+						<div class="form-group col-md-3">
+							<p:outputLabel value="#{label['label.formaPagamento.padrao']}"
+								for="selectFormaPagamentoPadrao" />
+							<p:selectOneMenu
+								value="#{transacaoBean.transacao.pagamentoPadrao}"
+								id="selectFormaPagamentoPadrao" filter="true"
+								filterMatchMode="contains"
+								disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+								required="true" converter="omnifaces.SelectItemsConverter"
+								onchange="$(function(){PrimeFaces.focus('selectTributoPadrao');});"
+								style="width:100%">
+								<f:selectItem itemValue="#{null}" noSelectionOption="false"
+									itemLabel="#{messages['filial.form.select-one']}" />
+								<f:selectItems value="#{transacaoBean.listaFormasDePagamento}"
+									var="forma" itemLabel="#{forma.descricao}" />
+							</p:selectOneMenu>
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.vendedorComissao']}"
+								for="selectColaboradorComissao" />
+							<br />
+							<p:selectBooleanCheckbox
+								value="#{transacaoBean.transacao.colaboradorComissao}"
+								itemLabel="#{label['label.yes']}" id="selectColaboradorComissao" />
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.gerenteComissao']}"
+								for="selectGerenteComissao" />
+							<br />
+							<p:selectBooleanCheckbox
+								value="#{transacaoBean.transacao.gerenciaComissao}"
+								itemLabel="#{label['label.yes']}" id="selectGerenteComissao" />
+						</div>
+						<div class="form-group col-md-3">
+							<p:outputLabel
+								value="#{label['label.transacao.tributoPadrao']}: "
+								for="selectTributoPadrao" />
+							<p:autoComplete id="selectTributoPadrao" dropdown="true"
+								value="#{transacaoBean.transacao.tributoPadrao}"
+								completeMethod="#{transacaoBean.completaTributos}" var="ncm"
+								itemLabel="#{ncm.descricao}" itemValue="#{ncm}" size="20"
+								minQueryLength="1">
+								<o:converter converterId="omnifaces.ListConverter"
+									list="#{transacaoBean.listaTributosAtivos}" />
+							</p:autoComplete>
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel value="#{label['label.transacao.tipo']}"
+								for="selectTipoTransacao" />
+							<p:selectOneMenu value="#{transacaoBean.transacao.tipoTransacao}"
+								id="selectTipoTransacao" filter="true" required="true"
+								disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+								onchange="$(function(){PrimeFaces.focus('selectFormaPagamentoPadrao');});"
+								converter="omnifaces.GenericEnumConverter" style="width:100%"
+								immediate="true">
+								<f:selectItem itemValue="#{null}" noSelectionOption="true"
+									itemLabel="#{messages['filial.form.select-one']}" />
+								<f:selectItems value="#{transacaoBean.listaTipoTransacao}" />
+							</p:selectOneMenu>
+						</div>
+					</div>
+				</div>
+
+			</div>
+
+			<div class="box-footer align-right"></div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="resources/nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+		<h:form id="testeEnvio" prependId="false">
+			<div class="box">
+				<div class="box-body "></div>
+			</div>
+
+		</h:form>
+	</ui:define>
+	<ui:define name="popups">
+	</ui:define>
+</ui:composition>

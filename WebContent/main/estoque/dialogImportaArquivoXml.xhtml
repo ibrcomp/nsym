@@ -1,0 +1,42 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="importaArquivoXml"
+	width="70%" modal="true" resizable="false" closeOnEscape="true"
+	widgetVar="dialogImportaArquivoXml"
+	header="#{messages['estoque.recebimento.arq.xml']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-2">
+				<p:outputLabel value="#{messages['recebimento.nfe.page-title.inf']}" />
+			</h2>
+		</div>
+		<div class="box-body">
+			<div class="row">
+				<div class="form-group col-md-6">
+					<p:outputLabel value="#{label['label.nfe.chaveReferenciada']}"
+						for="chaveRefARQ" />
+					<p:inputText value="#{recebimentoBean.chaveAcesso}"
+						id="chaveRefARQ" immediate="true" styleClass="form-control" />
+				</div>
+			</div>
+
+		</div>
+		<div class="box-footer align-right">
+
+			<p:commandButton process="formRecebimentoNfe"
+				value="#{label['label.transefere']}"
+				actionListener="#{recebimentoBean.salvaNfeEntradaPorXML()}"
+				onstart="PF('dialogImportaArquivoXml').block()"
+				styleClass="btn btn-flat btn-success"
+				oncomplete="PF('dialogImportaArquivoXml').unblock()"
+				onsuccess="PF('dialogImportaArquivoXml').hide()"
+				disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}" />
+
+		</div>
+
+	</div>
+</p:dialog>
+

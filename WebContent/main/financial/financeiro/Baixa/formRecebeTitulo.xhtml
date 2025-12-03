@@ -1,0 +1,362 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="FINANCEIRO" />
+	<ui:param name="activeSubMenu" value="Gerir" />
+
+	<f:metadata>
+			<f:viewAction action="#{agendaBean.initializeRecebeTitulo(param.idAgTitulo)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{breadcrumb['financial.baixa.recebeTitulo']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<o:outputFormat id="pageDescription"
+			rendered="#{caixaBean.viewState eq 'EDITING'}"
+			value="#{breadcrumb['financial.baixa.recebeAgTitulo']}}">
+			<f:param value="#{agendaBean.agTitulo.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['financial']}</a></li>
+		<li><a href="formGerirTitulos.xhtml">#{breadcrumb['financial.baixa.gerirTitulo']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['financial.baixa.recebeAgTitulo']}"></p:outputLabel>
+					</h2>
+				</div>
+			</div>
+			<div class="navbar-form">
+				<p:toolbar>
+					<f:facet name="left">
+						<p:commandButton immediate="true" value="#{menu['save']}" id="buttonSave"
+							action="#{agendaBean.gravaRecebimentoTitulo()}"
+							styleClass="btn btn-flat btn-success" />
+						<span class="ui-separator"> <span
+							class="ui-icon ui-icon-grip-dotted-vertical" />
+						</span>
+						<p:dialog header="Atenção!" widgetVar="dlg3" minHeight="40"
+							width="350" showEffect="fade" id="dlg3id" modal="true">
+							<p class="p-m-0">Este cliente ainda possui crédito disponível
+								que não foi totalmente utilizado! Deseja continuar assim mesmo?.</p>
+							<f:facet name="footer">
+								<p:commandButton value="#{label['label.no']}"
+									styleClass="ui-confirmdialog-no ui-button-flat p-mr-2"
+									style="width: 6rem" onclick="PF('dlg3').hide()" />
+								<p:commandButton value="#{label['label.yes']}"
+									style="width: 5rem"
+									action="#{caixaBean.salvaEImprimi()}" />
+							</f:facet>
+						</p:dialog>
+					</f:facet>
+					<f:facet name="right">
+						<span class="ui-separator"> <span
+							class="ui-icon ui-icon-grip-dotted-vertical" />
+						</span>
+						<p:commandButton immediate="true" value="#{menu['back']}"
+							action="#{agendaBean.toGerirTitulo()}"
+							styleClass="btn btn-flat btn-default" />
+					</f:facet>
+				</p:toolbar>
+			</div>
+			<div class="box box-info">
+				<div class="box-body with-border">
+					<h:form id="formLancaPag" prependId="false">
+						<p:defaultCommand target="insereItem" />
+						<div class="col-md-6">
+							<!-- Lado Esquerdo da tela -->
+							<div class="row">
+								<div class="form-group col-md-4">
+									<p:outputLabel value="Vl.Bruto" for="labelBruto"
+										style="width:100%" />
+									<p:outputLabel value="#{agendaBean.totalBruto}" id="labelBruto"
+										style="color:#f39c12;font-size:18px">
+										<f:convertNumber type="currency" currencyCode="BRL" />
+									</p:outputLabel>
+									<p:outputLabel value="#{label['label.nfe.totalNfe']}"
+										for="labelTotal" style="width:100%" />
+									<p:outputLabel value="#{agendaBean.totalGT}" id="labelTotal"
+										style="color: #3c8dbc;font-size:18px">
+										<f:convertNumber type="currency" currencyCode="BRL" />
+									</p:outputLabel>
+								</div>
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.caixa.agPedido']}"
+										for="idControle" style="width:100%" />
+									<p:outputLabel value="#{agendaBean.agTitulo.id}" id="idControle"
+										style="width:50%">
+									</p:outputLabel>
+<!-- 									<p:outputLabel value="#{label['label.caixa.available.credit']}" -->
+<!-- 										for="labelCredit" style="width:100%" /> -->
+<!-- 									<p:outputLabel -->
+<!-- 										value="#{caixaBean.credito.saldoCreditoDevolucao}" -->
+<!-- 										id="labelCredit" style="color: #185732;font-size:18px"> -->
+<!-- 										<f:convertNumber type="currency" currencyCode="BRL" /> -->
+<!-- 									</p:outputLabel> -->
+								</div>
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.caixa.valorResto']}"
+										for="labelResto" style="width:100%" />
+									<p:outputLabel value="#{agendaBean.resto}" id="labelResto"
+										style="color:red;font-size:18px">
+										<f:convertNumber type="currency" currencyCode="BRL" />
+									</p:outputLabel>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.desconto.forma']} "
+										for="tDesc" style="width:100%" />
+									<p:selectBooleanCheckbox value="#{agendaBean.tipoDesconto}"
+										onkeypress="setaFoco(this)" id="tDesc" style="width:50%">
+
+									</p:selectBooleanCheckbox>
+								</div>
+								<div class="form-group col-md-3">
+									<p:outputLabel value="#{label['label.desconto']} "
+										for="inputValorDesconto" style="width:100%" />
+									<p:inputNumber value="#{agendaBean.desconto}"
+										id="inputValorDesconto" onkeypress="setaFoco(this)"
+										maxValue="9999999.99" minValue="0.0" immediate="true"
+										decimalSeparator="," emptyValue="0" thousandSeparator="."
+										style="width:100%" size="5" decimalPlaces="2">
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.acrescimo.forma']} "
+										for="tAcresc" style="width:100%" />
+									<p:selectBooleanCheckbox value="#{agendaBean.tipoAcrescimo}"
+										onkeypress="setaFoco(this)" id="tAcresc" style="width:50%">
+
+									</p:selectBooleanCheckbox>
+								</div>
+								<div class="form-group col-md-3">
+									<p:outputLabel value="#{label['label.acrescimo']} "
+										for="inputValorAcrescimo" style="width:100%" />
+									<p:inputNumber value="#{agendaBean.acrescimo}"
+										id="inputValorAcrescimo" onkeypress="setaFoco(this)"
+										maxValue="9999999.99" emptyValue="0" minValue="0.0"
+										immediate="true" decimalSeparator="," thousandSeparator="."
+										style="width:100%" size="5" decimalPlaces="2">
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-2">
+									<br />
+									<p:commandButton
+										actionListener="#{agendaBean.recalculaTotais()}"
+										process="formLancaPag"
+										oncomplete="$(function(){PrimeFaces.focus('listaForma');});"
+										update="labelTotal labelResto" id="buttonRecalcula"
+										style="width:100%;margin:5px"
+										styleClass="btn btn-flat btn-info" icon="fa fa-percent" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-6">
+									<p:outputLabel value="#{label['label.nfe.Pagamento']}"
+										for="listaForma"></p:outputLabel>
+									<p:selectOneMenu value="#{agendaBean.tipoPagamento}" id="listaForma"
+										filter="true" filterMatchMode="contains"
+										disabled="#{userSessionBean.hasRole(authorization.CAIXA_INSERT) eq 'false'}"
+										required="false" converter="omnifaces.SelectItemsConverter"
+										style="width:100%">
+										<f:selectItem itemValue="#{null}" noSelectionOption="false"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{agendaBean.listaPagamentos()}"
+											var="forma" itemLabel="#{forma.toString()}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.caixa.valorPagamento']} "
+										for="inputValorRecebido" style="width:100%" />
+									<p:inputNumber value="#{agendaBean.valorRecebido}"
+										id="inputValorRecebido" onkeypress="setaFoco(this)"
+										maxValue="9999999.99" symbol="R$" emptyValue="0"
+										minValue="0.0" immediate="true" decimalSeparator=","
+										thousandSeparator="."  size="12"
+										decimalPlaces="2">
+									</p:inputNumber>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.contaCorrente']}"
+										for="selectContaCorrente" />
+									<p:selectOneMenu value="#{agendaBean.contaCorrente}"
+										label="#{label['label.financial.SelectContaCorrente']}"
+										disabled="#{userSessionBean.hasRole(authorization.CAIXA_INSERT) eq 'false'}"
+										converter="omnifaces.SelectItemsConverter" style="width:100%"
+										id="selectContaCorrente" immediate="true">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{agendaBean.listaContas}"
+											itemLabel="#{item.contaCorrente}-#{item.digitoContaCorrente}(#{item.banco.nomeBanco})" var="item" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.insert']} "
+										for="insereItem" style="width:100%" />
+									<p:commandButton
+										actionListener="#{agendaBean.inserePagamento()}"
+										process="formLancaPag"
+									 	oncomplete="$(function(){PrimeFaces.focus('idRefItem');});"
+										update="labelResto listaForma inputValorRecebido inputTroco dtPagamentos"
+										id="insereItem" style="width:80%;margin:5px"
+										styleClass="btn btn-flat btn-warning" icon="fa fa-plus" />
+								</div>
+								<div class="form-group col-md-3">
+									<p:outputLabel value="#{label['label.caixa.troco']} "
+										for="inputTroco" style="width:100%" id="outInputLabel" />
+									<p:outputLabel value="#{agendaBean.troco}" id="inputTroco"
+										style="font-size:18px">
+										<f:convertNumber type="currency" currencyCode="BRL" />
+									</p:outputLabel>
+								</div>
+							</div>
+							<div class="row">
+							<div class="form-group col-md-6">
+								<p:outputLabel value="#{label['label.financeiro.obs']}"
+									for="inputOBS" />
+								<p:inputTextarea rows="6" cols="200" immediate="true"
+									value="#{agendaBean.agTitulo.obs}" id="inputOBS"
+									required="false" styleClass="form-control" />
+							</div>
+							</div>
+						</div>
+						<!-- Lado Direito da tela -->
+						<div class="col-md-6">
+							<p:outputLabel value="#{label['label.caixa.lis.formaPagamento']}"
+								style="font-size:18px;font-weight:bold;" />
+							<p:dataTable id="dtPagamentos" var="lista"
+								widgetVar="listaPedido"
+								value="#{agendaBean.listaTipoPagamentoInserido}"
+								paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+ 								{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+								paginator="true" rows="5" rowKey="#{lista.key}" lazy="true"
+								sortBy="#{lista.key}" rowsPerPageTemplate="5,10,15">
+
+								<p:column headerText="#{label['label.nfe.Pagamento']}"
+									rendered="true" style="width:50%">
+									<h:outputLabel value="#{lista.key.toString()}" />
+								</p:column>
+								<p:column headerText="#{label['label.caixa.valorPagamento']}"
+									style="width:30%">
+									<h:outputLabel value="#{lista.value}">
+										<f:convertNumber type="currency" currencySymbol="R$"
+											maxFractionDigits="2" currencyCode="BRL" />
+									</h:outputLabel>
+								</p:column>
+
+								<p:column headerText="#{label['label.list.Action']}"
+									rendered="#{agendaBean.viewState eq 'EDITING'}">
+									<p:commandButton process="dtPagamentos" icon="fa fa-remove"
+										title="#{menu['delete']}" styleClass="btn btn-flat btn-danger"
+										rendered="#{agendaBean.viewState eq 'EDITING'}"
+										actionListener="#{agendaBean.removePagamento(lista.key)}"
+										update="labelResto inputValorRecebido dtPagamentos" />
+								</p:column>
+
+								<p:columnGroup type="footer">
+									<p:row>
+										<p:column colspan="1"
+											style="text-align:right;font-size:18px;font-weight:bold;"
+											footerText="#{label['label.nfe.item.valorTotal']}:" />
+										<p:column colspan ="2" >
+											<f:facet name="footer">
+												<h:outputText value="#{agendaBean.totalRecebido}"
+													style="font-size:18px;color:blue;font-weight:bold;">
+													<f:convertNumber type="currency" currencySymbol="R$"
+														maxFractionDigits="2" currencyCode="BRL" />
+												</h:outputText>
+											</f:facet>
+										</p:column>
+									</p:row>
+								</p:columnGroup>
+							</p:dataTable>
+						</div>
+					</h:form>
+				</div>
+			</div>
+			<div class="box box-info">
+				<div class="box-body with-border">
+					<div class="col-md-6">
+						<p:outputLabel value="#{label['label.financeiro.list.titulo.agrupado']}"
+							style="font-size:18px;font-weight:bold;" />
+						<p:dataTable id="dtPedidosAg" var="lista" widgetVar="listaTituloAgTitulo"
+							value="#{agendaBean.agTitulo.listaTitulosAgrupados}"
+							paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+ 								{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+							paginator="true" rows="20" rowKey="#{lista.id}" lazy="true"
+							sortField="#{lista.vencimento}" rowsPerPageTemplate="10,20,30"
+							rowStyleClass="#{lista.tipoLancamento == 'tpDebito' ? 'ca' : 'en'}">
+
+							<p:column headerText="#{label['label.venda.list.id']}"
+								rendered="true" style="width:12%">
+								<h:outputLabel value="#{lista.id}" />
+							</p:column>
+							<p:column headerText="#{label['label.dataEmissao']}"
+								rendered="true" sortBy="#{lista.inclusion}" style="width:15%">
+								<h:outputLabel value="#{lista.inclusionDateAsString}" />
+							</p:column>
+
+							<p:column headerText="#{label['label.financial.vencimento']}"
+								rendered="true" sortBy="#{lista.vencimento}" style="width:15%">
+								<h:outputLabel value="#{lista.vencimentoFormatoBR}" />
+							</p:column>
+
+							<p:column headerText="#{label['label.caixa.valorPagamento']}"
+								style="width:15%">
+								<h:outputLabel value="#{lista.valorParcela}">
+									<f:convertNumber type="currency" currencySymbol="R$"
+										maxFractionDigits="2" currencyCode="BRL" />
+								</h:outputLabel>
+							</p:column>
+							<p:column headerText="#{label['label.financial.tipoPagamento']}"
+								rendered="true" sortBy="#{lista.tipoPagamento}" style="width:15%">
+								<h:outputLabel value="#{lista.tipoPagamento.toString()}" />
+							</p:column>
+
+						</p:dataTable>
+					</div>
+				</div>
+			</div>
+		</h:form>
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+		<pe:blockUI target="formLancaPag" widgetVar="formLanca">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+
+	<ui:define name="sub-content">
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="formPopup" prependId="false">
+		</h:form>
+	</ui:define>
+</ui:composition>

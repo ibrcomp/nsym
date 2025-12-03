@@ -1,0 +1,740 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="Tributos" />
+
+	<f:metadata>
+		<f:viewAction action="#{tributosBean.initializeForm(param.idTributo)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['tributos.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{tributosBean.viewState eq 'ADDING'}"
+			value="#{messages['tributos.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{tributosBean.viewState eq 'EDITING'}"
+			value="#{messages['tributos.page-description-editing']}">
+			<f:param value="#{tributosBean.tributos.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li><a href="formListTributos.xhtml">#{breadcrumb['entries.tributos']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['entries']}"></p:outputLabel>
+					</h2>
+				</div>
+				<p:tabView prependId="false">
+					<p:tab title="#{label['label.tributos']}" id="tabPrincipal">
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-5">
+									<p:outputLabel value="#{label['label.descricao']}: "
+										for="descricao" />
+									<p:inputText value="#{tributosBean.tributos.descricao}"
+										id="descricao" required="true" immediate="true"
+										readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										requiredMessage="#{validation['tributos.descricao']}"
+										maxlength="100" label="descricao" styleClass="form-control" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.tipoNota']}: "
+										for="tipoNota" />
+									<p:selectOneMenu id="tipoNota" filter="true"
+										value="#{tributosBean.tributos.tipoNF}"
+										disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										converter="omnifaces.GenericEnumConverter" style="width:100%"
+										immediate="true">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{tributosBean.tipoNota}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-1">
+									<p:outputLabel value="#{label['label.devVenda']}: " for="dvVenda" />
+									<p:selectBooleanCheckbox value="#{tributosBean.tributos.devVenda}"
+										disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										id="dvVenda">
+										<p:ajax update="@form" />
+									</p:selectBooleanCheckbox>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.cfopDentro']}: "
+										for="cfopDentro">
+									</p:outputLabel>
+									<p:autoComplete id="cfopDentro" dropdown="false"
+										value="#{tributosBean.cfopDentro}" required="true"
+										readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										completeMethod="#{tributosBean.completaCfop}" var="cfop"
+										itemLabel="#{cfop.cfop}" itemValue="#{cfop}"
+										minQueryLength="1">
+										<o:converter converterId="omnifaces.ListConverter"
+											list="#{tributosBean.listaCfop()}" />
+									</p:autoComplete>
+								</div>
+
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.cfopFora']}: "
+										for="cfopFora">
+									</p:outputLabel>
+									<p:autoComplete id="cfopFora" dropdown="false"
+										value="#{tributosBean.cfopFora}" required="true"
+										readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										completeMethod="#{tributosBean.completaCfop}" var="cfop"
+										itemLabel="#{cfop.cfop}" itemValue="#{cfop}"
+										minQueryLength="1">
+										<o:converter converterId="omnifaces.ListConverter"
+											list="#{tributosBean.listaCfop()}" />
+									</p:autoComplete>
+								</div>
+
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.cfopExt']}: "
+										for="cfopExterior">
+									</p:outputLabel>
+									<p:autoComplete id="cfopExterior" dropdown="false"
+										value="#{tributosBean.cfopExterior}" required="true"
+										readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										completeMethod="#{tributosBean.completaCfop}" var="cfop"
+										itemLabel="#{cfop.cfop}" itemValue="#{cfop}"
+										minQueryLength="1">
+										<o:converter converterId="omnifaces.ListConverter"
+											list="#{tributosBean.listaCfop()}" />
+									</p:autoComplete>
+								</div>
+
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.cfopCons']}: "
+										for="cfopConsumidor">
+									</p:outputLabel>
+									<p:autoComplete id="cfopConsumidor" dropdown="false"
+										value="#{tributosBean.cfopConsumidor}" required="true"
+										readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										completeMethod="#{tributosBean.completaCfop}" var="cfop"
+										itemLabel="#{cfop.cfop}" itemValue="#{cfop}"
+										minQueryLength="1">
+										<o:converter converterId="omnifaces.ListConverter"
+											list="#{tributosBean.listaCfop()}" />
+									</p:autoComplete>
+								</div>
+
+								<div class="form-group col-md-1">
+									<p:outputLabel value="#{label['label.st']}: " for="st" />
+									<p:selectBooleanCheckbox value="#{tributosBean.tributos.st}"
+										disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										id="st">
+										<p:ajax update="@form" />
+									</p:selectBooleanCheckbox>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.estado']}: " for="uf" />
+									<p:selectOneMenu id="uf" filter="true"
+										value="#{tributosBean.estado}"
+										disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										converter="omnifaces.GenericEnumConverter" style="width:100%"
+										immediate="true">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{tributosBean.uf}" />
+									</p:selectOneMenu>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.cfopProDentro']}: "
+										for="cfopProDentro">
+									</p:outputLabel>
+									<p:autoComplete id="cfopProDentro" dropdown="false"
+										value="#{tributosBean.cfopProdDentro}" required="true"
+										readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										completeMethod="#{tributosBean.completaCfop}" var="cfop"
+										itemLabel="#{cfop.cfop}" itemValue="#{cfop}"
+										minQueryLength="1">
+										<o:converter converterId="omnifaces.ListConverter"
+											list="#{tributosBean.listaCfop()}" />
+									</p:autoComplete>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.cfopProFora']}: "
+										for="cfopProFora">
+									</p:outputLabel>
+									<p:autoComplete id="cfopProFora" dropdown="false"
+										value="#{tributosBean.cfopProdFora}" required="true"
+										readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										completeMethod="#{tributosBean.completaCfop}" var="cfop"
+										itemLabel="#{cfop.cfop}" itemValue="#{cfop}"
+										minQueryLength="1">
+										<o:converter converterId="omnifaces.ListConverter"
+											list="#{tributosBean.listaCfop()}" />
+									</p:autoComplete>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.cfopProExt']}: "
+										for="cfopProdExterior">
+									</p:outputLabel>
+									<p:autoComplete id="cfopProdExterior" dropdown="false"
+										value="#{tributosBean.cfopProdExterior}" required="true"
+										readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										completeMethod="#{tributosBean.completaCfop}" var="cfop"
+										itemLabel="#{cfop.cfop}" itemValue="#{cfop}"
+										minQueryLength="1">
+										<o:converter converterId="omnifaces.ListConverter"
+											list="#{tributosBean.listaCfop()}" />
+									</p:autoComplete>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.cfopProCons']}: "
+										for="cfopProdConsumidor">
+									</p:outputLabel>
+									<p:autoComplete id="cfopProdConsumidor" dropdown="false"
+										value="#{tributosBean.cfopProdConsumidor}" required="true"
+										readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										completeMethod="#{tributosBean.completaCfop}" var="cfop"
+										itemLabel="#{cfop.cfop}" itemValue="#{cfop}"
+										minQueryLength="1">
+										<o:converter converterId="omnifaces.ListConverter"
+											list="#{tributosBean.listaCfop()}" />
+									</p:autoComplete>
+								</div>
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="#{label['label.icms']}" id="tabIcms"
+						rendered="#{tributosBean.tributos.st eq 'false'}">
+						<div class="box-body row">
+							<div class="form-group col-md-6">
+								<p:outputLabel value="#{label['label.cst.vendanormal']}"
+									rendered="#{tributosBean.regimeUsuario eq 'Normal'}"
+									for="sitTribNormal" />
+								<p:selectOneMenu id="sitTribNormal" filter="true"
+									value="#{tributosBean.icms.cstVendaNormal}" required="true"
+									disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									rendered="#{tributosBean.regimeUsuario eq 'Normal'}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{tributosBean.CST}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-6">
+								<p:outputLabel value="#{label['label.cst.vendasimples']}"
+									rendered="#{tributosBean.regimeUsuario eq 'Normal'}"
+									for="sitTribNormalSimples" />
+								<p:selectOneMenu id="sitTribNormalSimples" filter="true"
+									value="#{tributosBean.icms.cstVendaNormalSimples}"
+									required="true"
+									disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									rendered="#{tributosBean.regimeUsuario eq 'Normal'}"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{tributosBean.CST}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-6">
+								<p:outputLabel value="#{label['label.cst.vendasimples']}"
+									for="sitTribSimples"
+									rendered="#{tributosBean.regimeUsuario ne 'Normal'}"/>
+								<p:selectOneMenu id="sitTribSimples" filter="true"
+									value="#{tributosBean.icms.cstVendaSimples}" required="true"
+									disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									rendered="#{tributosBean.regimeUsuario ne 'Normal'}"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{tributosBean.CST}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-6">
+								<p:outputLabel value="#{label['label.cst.vendanormal']}"
+									for="sitTribSimplesNormal"
+									rendered="#{tributosBean.regimeUsuario ne 'Normal'}" />
+								<p:selectOneMenu id="sitTribSimplesNormal" filter="true"
+									value="#{tributosBean.icms.cstVendaSimplesNormal}"
+									required="true"
+									disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									rendered="#{tributosBean.regimeUsuario ne 'Normal'}"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{tributosBean.CST}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-4">
+								<p:outputLabel value="#{label['label.origem']}" for="origem" />
+								<p:selectOneMenu id="origem" filter="true"
+									value="#{tributosBean.icms.origem}" required="true"
+									disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{tributosBean.origem}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-4">
+								<p:outputLabel value="#{label['label.modbaseicms']}"
+									for="modBaseCalcIcms" />
+								<p:selectOneMenu id="modBaseCalcIcms" filter="true"
+									value="#{tributosBean.icms.modICMSNormal}" required="true"
+									disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{tributosBean.modIcms}" />
+								</p:selectOneMenu>
+							</div>
+
+						</div>
+					</p:tab>
+					<p:tab title="#{label['label.icmsst']}" id="tabIcmsST"
+						rendered="#{tributosBean.tributos.st eq 'true'}">
+						<div class="box-body ">
+							<div class="row">
+								<div class="form-group col-md-6">
+									<p:outputLabel value="#{label['label.cst.vendanormal']}"
+										rendered="#{tributosBean.regimeUsuario eq 'Normal'}"
+										for="sitTribNormalSt" />
+									<p:selectOneMenu id="sitTribNormalSt" filter="true"
+										value="#{tributosBean.icmsSt.cstVendaNormal}" required="true"
+										disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										rendered="#{tributosBean.regimeUsuario eq 'Normal'}"
+										converter="omnifaces.GenericEnumConverter" style="width:100%"
+										immediate="true">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{tributosBean.CST}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-6">
+									<p:outputLabel value="#{label['label.cst.vendasimples']}"
+										rendered="#{tributosBean.regimeUsuario eq 'Normal'}"
+										for="sitTribNormalSimplesSt" />
+									<p:selectOneMenu id="sitTribNormalSimplesSt" filter="true"
+										value="#{tributosBean.icmsSt.cstVendaNormalSimples}"
+										required="true"
+										disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										converter="omnifaces.GenericEnumConverter" style="width:100%"
+										rendered="#{tributosBean.regimeUsuario eq 'Normal'}"
+										immediate="true">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{tributosBean.CST}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-6">
+									<p:outputLabel value="#{label['label.cst.vendasimples']}"
+										for="sitTribSimplesSt"
+										rendered="#{tributosBean.regimeUsuario ne 'Normal'}" />
+									<p:selectOneMenu id="sitTribSimplesSt" filter="true"
+										value="#{tributosBean.icmsSt.cstVendaSimples}" required="true"
+										disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										converter="omnifaces.GenericEnumConverter" style="width:100%"
+										rendered="#{tributosBean.regimeUsuario ne 'Normal'}"
+										immediate="true">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{tributosBean.CST}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-6">
+									<p:outputLabel value="#{label['label.cst.vendanormal']}"
+										for="sitTribSimplesNormalSt"
+										rendered="#{tributosBean.regimeUsuario ne 'Normal'}" />
+									<p:selectOneMenu id="sitTribSimplesNormalSt" filter="true"
+										value="#{tributosBean.icmsSt.cstVendaSimplesNormal}"
+										required="true"
+										disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										converter="omnifaces.GenericEnumConverter" style="width:100%"
+										rendered="#{tributosBean.regimeUsuario ne 'Normal'}"
+										immediate="true">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{tributosBean.CST}" />
+									</p:selectOneMenu>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.origem']}" for="origemSt" />
+									<p:selectOneMenu id="origemSt" filter="true"
+										value="#{tributosBean.icmsSt.origem}" required="true"
+										disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										converter="omnifaces.GenericEnumConverter" style="width:100%"
+										immediate="true">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{tributosBean.origem}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.modbaseicms']}"
+										for="modBaseCalcIcmsSemSt" />
+									<p:selectOneMenu id="modBaseCalcIcmsSemSt" filter="true"
+										value="#{tributosBean.icmsSt.modICMS}" required="true"
+										disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										converter="omnifaces.GenericEnumConverter" style="width:100%"
+										immediate="true">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{tributosBean.modIcms}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.modbaseicmsst']}"
+										for="modBaseCalcIcmsSt" />
+									<p:selectOneMenu id="modBaseCalcIcmsSt" filter="true"
+										value="#{tributosBean.icmsSt.modICMSST}" required="true"
+										disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+										converter="omnifaces.GenericEnumConverter" style="width:100%"
+										immediate="true">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{tributosBean.modIcmsSt}" />
+									</p:selectOneMenu>
+								</div>
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="#{label['label.ipi']}" id="tabIpi">
+						<div class="box-body row">
+							<div class="form-group col-md-6">
+								<p:outputLabel value="#{label['label.ipi.des']}"
+									for="sitTribIpi" />
+								<p:selectOneMenu id="sitTribIpi" filter="true"
+									value="#{tributosBean.ipi.cst}" required="true"
+									disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{tributosBean.CSTIPI}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel
+									value="#{label['label.ipi.codigo.enquadramento']}"
+									for="codEnquadramento" />
+								<p:inputText value="#{tributosBean.ipi.codigoEnquadramento}"
+									required="true" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									id="codEnquadramento" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel
+									value="#{label['label.ipi.classe.enquadramento']}"
+									for="claEnquadramento" />
+								<p:inputText value="#{tributosBean.ipi.classeEnquadramento}"
+									readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									id="claEnquadramento" immediate="true" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.tipocalculo']}"
+									for="tipoCalculoIPI" />
+								<p:selectOneMenu id="tipoCalculoIPI" filter="true"
+									value="#{tributosBean.ipi.calculo}" required="true"
+									disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{tributosBean.tipoCalculos}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.valorcalculo']}"
+									for="valorCalculoIPI" />
+								<p:inputText value="#{tributosBean.ipi.valor}"
+									readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									id="valorCalculoIPI" immediate="true" />
+							</div>
+
+						</div>
+
+					</p:tab>
+					<p:tab title="#{label['label.pis']}" id="tabPis"
+						rendered="#{tributosBean.tributos.st eq 'false'}">
+
+						<div class="box-body row">
+							<div class="form-group col-md-6">
+								<p:outputLabel value="#{label['label.pis.des']}"
+									for="sitTribPis" />
+								<p:selectOneMenu id="sitTribPis" filter="true"
+									value="#{tributosBean.pis.cstPis}" required="true"
+									disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{tributosBean.CSTpis}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.tipocalculo']}"
+									for="tipoCalculoPis" />
+								<!-- 								<p:inputText value="#{tributosBean.pis.calculo}" -->
+								<!-- 									readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}" -->
+								<!-- 									id="tipoCalculoPis" /> -->
+								<p:selectOneMenu id="tipoCalculoPis" filter="true"
+									value="#{tributosBean.pis.calculo}" required="true"
+									disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{tributosBean.tipoCalculos}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.valorcalculo']}"
+									for="valorCalculoPis" />
+								<p:inputNumber value="#{tributosBean.pis.valor}"
+									decimalPlaces="2" emptyValue="zero"
+									readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									id="valorCalculoPis" />
+							</div>
+
+						</div>
+					</p:tab>
+					<p:tab title="#{label['label.pisst']}" id="tabPisST"
+						rendered="#{tributosBean.tributos.st eq 'true'}">
+
+						<div class="box-body row">
+							<div class="form-group col-md-6">
+								<p:outputLabel value="#{label['label.pisst.des']}"
+									for="sitTribPisSt" />
+								<p:selectOneMenu id="sitTribPisSt" filter="true"
+									value="#{tributosBean.pisSt.cstPisSt}" required="true"
+									disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{tributosBean.CSTpis}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.tipocalculo']}"
+									for="tipoCalculoPisST" />
+								<!-- 								<p:inputText value="#{tributosBean.pisSt.calculo}" -->
+								<!-- 									readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}" -->
+								<!-- 									id="tipoCalculoPisST" /> -->
+								<p:selectOneMenu id="tipoCalculoPisST" filter="true"
+									value="#{tributosBean.pisSt.calculo}" required="true"
+									disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{tributosBean.tipoCalculos}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.valorcalculo']}"
+									for="valorCalculoPisST" />
+								<p:inputNumber value="#{tributosBean.pisSt.valor}"
+									decimalPlaces="2" emptyValue="zero"
+									readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									id="valorCalculoPisST" />
+							</div>
+
+						</div>
+
+					</p:tab>
+					<p:tab title="#{label['label.cofins']}" id="tabCofins"
+						rendered="#{tributosBean.tributos.st eq 'false'}">
+
+						<div class="box-body row">
+							<div class="form-group col-md-6">
+								<p:outputLabel value="#{label['label.cofins.des']}"
+									for="sitTribCofins" />
+								<p:selectOneMenu id="sitTribCofins" filter="true"
+									value="#{tributosBean.cofins.cstCofins}" required="true"
+									disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{tributosBean.CSTCOFINS}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.tipocalculo']}"
+									for="tipoCalculoCofins" />
+								<!-- 								<p:inputText value="#{tributosBean.cofins.calculo}" -->
+								<!-- 									readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}" -->
+								<!-- 									id="tipoCalculoCofins" /> -->
+								<p:selectOneMenu id="tipoCalculoCofins" filter="true"
+									value="#{tributosBean.cofins.calculo}" required="true"
+									disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{tributosBean.tipoCalculos}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.valorcalculo']}"
+									for="valorCalculoCofins" />
+								<p:inputNumber value="#{tributosBean.cofins.valor}"
+									decimalPlaces="2" emptyValue="zero"
+									readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									id="valorCalculoCofins" />
+							</div>
+
+						</div>
+
+					</p:tab>
+					<p:tab title="#{label['label.cofinsst']}" id="tabCofinsST"
+						rendered="#{tributosBean.tributos.st eq 'true'}">
+
+						<div class="box-body row">
+							<div class="form-group col-md-6">
+								<p:outputLabel value="#{label['label.cofinsst.des']}"
+									for="sitTribCofinsSt" />
+								<p:selectOneMenu id="sitTribCofinsSt" filter="true"
+									value="#{tributosBean.cofinsSt.cstCofinsSt}" required="true"
+									disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{tributosBean.CSTCOFINS}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.tipocalculo']}"
+									for="tipoCalculoCofinsST" />
+								<!-- 								<p:inputText value="#{tributosBean.cofinsSt.calculo}" -->
+								<!-- 									readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}" -->
+								<!-- 									id="tipoCalculoCofinsST" /> -->
+								<p:selectOneMenu id="tipoCalculoCofinsST" filter="true"
+									value="#{tributosBean.cofinsSt.calculo}" required="true"
+									disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									converter="omnifaces.GenericEnumConverter" style="width:100%"
+									immediate="true">
+									<f:selectItem itemValue="#{null}" noSelectionOption="true"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{tributosBean.tipoCalculos}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.valorcalculo']}"
+									for="valorCalculoCofinsST" />
+								<p:inputNumber value="#{tributosBean.cofinsSt.valor}"
+									decimalPlaces="0" emptyValue="zero"
+									readonly="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+									id="valorCalculoCofinsST" />
+							</div>
+
+						</div>
+
+					</p:tab>
+				</p:tabView>
+			</div>
+
+			<div class="box-footer align-right">
+				<p:commandButton update="empresaForm" process="empresaForm"
+					value="#{menu['save']}" action="#{tributosBean.doSalvar()}"
+					onstart="PF('formBlock').block()"
+					styleClass="btn btn-flat btn-success"
+					disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+					oncomplete="PF('formBlock').unblock()"
+					rendered="#{tributosBean.viewState eq 'ADDING'}" icon="fa fa-hdd-o" />
+
+				<p:commandButton process="empresaForm" value="#{menu['update']}"
+					action="#{tributosBean.doSalvar()}"
+					onstart="PF('formBlock').block()"
+					update="empresaForm pageDescription"
+					styleClass="btn btn-flat btn-warning"
+					disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+					oncomplete="PF('formBlock').unblock()"
+					rendered="#{tributosBean.viewState eq 'EDITING'}" />
+
+				<p:commandButton process="empresaForm" value="#{menu['delete']}"
+					action="#{tributosBean.doExcluir()}" immediate="true"
+					styleClass="btn btn-flat btn-danger"
+					disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_DELETE) eq 'false'}"
+					rendered="#{tributosBean.viewState eq 'EDITING'}">
+					<p:confirm header="Atenção" message="Excluir? "
+						icon="ui-icon-alert" />
+				</p:commandButton>
+
+				<p:confirmDialog global="true">
+					<p:commandButton value="#{menu.yes}"
+						styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
+					<p:commandButton value="#{menu.no}"
+						styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+				</p:confirmDialog>
+
+			</div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="resources/nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+		<h:form id="testeEnvio" prependId="false">
+			<div class="box">
+				<div class="box-body ">
+					<div class="align-left col-md-2">
+						<p:commandButton actionListener="#{tributosBean.telaCfop()}"
+							value="#{label['label.cfop.insert']}"
+							styleClass="btn btn-flat btn-info" update="popu"
+							disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+							icon="fa fa-plus-square " />
+						<!--  style="width:15px;height:15px" /> -->
+					</div>
+					<div class="align-right col-md-10">
+						<p:spacer width="10" />
+						<p:commandButton immediate="true" value="#{menu['back']}"
+							action="#{tributosBean.toListTributos}"
+							styleClass="btn btn-flat btn-default"
+							icon="fa fa-arrow-circle-o-left" />
+					</div>
+
+				</div>
+			</div>
+		</h:form>
+	</ui:define>
+	<ui:define name="popups">
+		<h:form prependId="false" id="popu">
+			<ui:include src="/main/tributos/CFOP/dialogCFOP.xhtml" />
+			<!-- 			<ui:include src="/main/tributos/NCM/dialogNCM.xhtml" /> -->
+		</h:form>
+	</ui:define>
+</ui:composition>

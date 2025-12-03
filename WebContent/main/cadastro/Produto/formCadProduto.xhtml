@@ -1,0 +1,823 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="Cadastros" />
+	<ui:param name="activeSubMenu" value="Produto" />
+
+	<f:metadata>
+		<f:viewAction action="#{produtoBean.initializeForm(param.produtoID)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['produto.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{produtoBean.viewState eq 'ADDING'}"
+			value="#{messages['produto.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{produtoBean.viewState eq 'EDITING'}"
+			value="#{messages['produto.page-description-editing']}">
+			<f:param value="#{produtoBean.produto.descricao}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li><a href="formListProduto.xhtml">#{breadcrumb['entries.product']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row" id="men">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['entries']}"></p:outputLabel>
+					</h2>
+				</div>
+				<p:tabView prependId="false" id="tabMestre">
+					<p:tab title="Cadastro" id="cadastroForm">
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel for="tipoControleEstoque"
+										value="#{label['label.produto.tipoEstoque']}" />
+									<p:selectOneMenu id="tipoControleEstoque"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}"
+										value="#{produtoBean.produto.tipoEstoque}"
+										converter="omnifaces.GenericEnumConverter">
+										<f:selectItems value="#{produtoBean.tipoControleEstoque}"
+											var="tipoControle" />
+										<p:ajax event="change"
+											listener="#{produtoBean.setaTipoControleEstoque}"
+											partialSubmit="false" immediate="false" update="@form"
+											process="empresaForm" />
+									</p:selectOneMenu>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.fabricacaoPropria']}: "
+										for="fabricaPropria" />
+									<p:selectBooleanButton id="fabricaPropria"
+										value="#{produtoBean.produto.fabricado}"
+										onLabel="#{label['label.yes']}"
+										offLabel="#{label['label.no']}"
+										styleClass="btn btn-flat btn-primary form-control"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}">
+										<p:ajax update="empresaForm testeEnvio" event="change" />
+									</p:selectBooleanButton>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.ref']}" for="ref" />
+									<p:inputText value="#{produtoBean.produto.referencia}"
+										styleClass="form-control" id="ref" />
+								</div>
+
+<!-- 								<div class="form-group col-md-2"> -->
+<!-- 									<p:outputLabel for="finalidade" -->
+<!-- 										value="#{label['label.finalidade']}" /> -->
+<!-- 									<p:selectOneMenu id="finalidade" -->
+<!-- 										disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}" -->
+<!-- 										value="#{produtoBean.produto.finalidade}" -->
+<!-- 										converter="omnifaces.GenericEnumConverter" styleClass="form-"> -->
+<!-- 										<f:selectItem itemValue="#{null}" noSelectionOption="true" -->
+<!-- 											itemLabel="#{messages['cliente.form.select-one']}" /> -->
+<!-- 										<f:selectItems value="#{produtoBean.finalidadeType}" /> -->
+<!-- 									</p:selectOneMenu> -->
+<!-- 								</div> -->
+
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.ncm']}: " for="ncm">
+										<p:commandButton
+											actionListener="#{produtoBean.telaDepartamento()}"
+											styleClass="btn btn-flat btn-info"
+											disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}"
+											icon="fa fa-plus-square " style="width:15px;height:15px" />
+									</p:outputLabel>
+									<p:autoComplete id="ncm" dropdown="true" forceSelection="true"
+										value="#{produtoBean.produto.ncm}" scrollHeight="300"
+										completeMethod="#{produtoBean.completaNcm}" var="ncm"
+										styleClass="ui-autocomplete" itemLabel="#{ncm.ncm}"
+										itemValue="#{ncm}" minQueryLength="1">
+										<o:converter converterId="omnifaces.ListConverter"
+											list="#{produtoBean.listaNcm()}" />
+										<p:column>
+											<h:outputText value="#{ncm.ncm}" style="font-weight: bold" />
+										</p:column>
+
+										<p:column>
+											<h:outputText value="#{ncm.descricao}" />
+										</p:column>
+									</p:autoComplete>
+
+								</div>
+							</div>
+							<div class="row">
+
+								<div class="form-group col-md-5">
+									<p:outputLabel value="#{label['label.descricao']}: " for="desc" />
+									<p:inputText value="#{produtoBean.produto.descricao}" id="desc"
+										styleClass="form-control" />
+								</div>
+
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.dep']}: " for="depar">
+										<p:commandButton
+											actionListener="#{produtoBean.telaDepartamento()}"
+											styleClass="btn btn-flat btn-info"
+											disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}"
+											icon="fa fa-plus-square " style="width:15px;height:15px" />
+									</p:outputLabel>
+									<p:autoComplete id="depar" dropdown="false"
+										value="#{produtoBean.produto.departamento}"
+										completeMethod="#{produtoBean.completaDepartamento}"
+										var="departa" itemLabel="#{departa.departamento}"
+										itemValue="#{departa}" minQueryLength="1">
+										<o:converter converterId="omnifaces.ListConverter"
+											list="#{produtoBean.listaDepartamento()}" />
+									</p:autoComplete>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.secao']}: " for="secaopro">
+										<p:commandButton actionListener="#{produtoBean.telaSecao}"
+											styleClass="btn btn-flat btn-info"
+											disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}"
+											icon="fa fa-plus-square " style="width:15px;height:15px" />
+									</p:outputLabel>
+									<p:autoComplete id="secaopro" dropdown="false"
+										value="#{produtoBean.produto.secao}"
+										completeMethod="#{produtoBean.completaSecao}" var="secao"
+										itemLabel="#{secao.secao}" itemValue="#{secao}"
+										minQueryLength="1">
+										<o:converter converterId="omnifaces.ListConverter"
+											list="#{produtoBean.listaSecao()}" />
+									</p:autoComplete>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.subsecao']}: "
+										for="subsecaopro">
+										<p:commandButton
+											actionListener="#{produtoBean.telaSubSecao()}"
+											styleClass="btn btn-flat btn-info"
+											disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}"
+											icon="fa fa-plus-square " style="width:15px;height:15px" />
+									</p:outputLabel>
+									<p:autoComplete id="subsecaopro" dropdown="false"
+										value="#{produtoBean.produto.subSecao}"
+										completeMethod="#{produtoBean.completaSubSecao}"
+										var="subSecao" itemLabel="#{subSecao.subSecao}"
+										itemValue="#{subSecao}" minQueryLength="1">
+										<o:converter converterId="omnifaces.ListConverter"
+											list="#{produtoBean.listaSubSecao()}" />
+									</p:autoComplete>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.fabricante']}: "
+										for="fabricante">
+										<p:commandButton
+											actionListener="#{produtoBean.telaFabricante()}"
+											styleClass="btn btn-flat btn-info"
+											disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}"
+											icon="fa fa-plus-square " style="width:15px;height:15px" />
+									</p:outputLabel>
+									<p:autoComplete id="fabricante"
+										value="#{produtoBean.produto.fabricante}"
+										completeMethod="#{produtoBean.completaFabricante}"
+										var="fabrica" itemValue="#{fabrica}"
+										itemLabel="#{fabrica.marca}">
+										<o:converter converterId="omnifaces.ListConverter"
+											list="#{produtoBean.listaFabricante()}" />
+									</p:autoComplete>
+								</div>
+
+								<div class="form-group col-md-2">
+									<p:outputLabel for="tipoMedida"
+										value="#{label['label.tipoMedida']}" />
+									<p:selectOneMenu id="tipoMedida" required="false" filter="true"
+										filterMatchMode="contains"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}"
+										value="#{produtoBean.produto.tipoMedida}"
+										converter="omnifaces.GenericEnumConverter">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['cliente.form.select-one']}" />
+										<f:selectItems value="#{produtoBean.tipoMedidaType}" />
+									</p:selectOneMenu>
+								</div>
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.produto.tributoEspecial']}" />
+								<p:selectBooleanCheckbox
+									value="#{produtoBean.produto.tributacaoEspecial}"
+									immediate="true">
+									<p:ajax update="empresaForm" event="change" />
+								</p:selectBooleanCheckbox>
+							</div>
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.tributos.list']}: "
+									for="tributoEspecial"
+									rendered="#{produtoBean.produto.tributacaoEspecial eq 'true'}" />
+								<p:autoComplete id="tributoEspecial" dropdown="true"
+									value="#{produtoBean.produto.tributoEspecial}"
+									rendered="#{produtoBean.produto.tributacaoEspecial eq 'true'}"
+									completeMethod="#{produtoBean.completaTributos}" var="ncm"
+									itemLabel="#{ncm.descricao}" itemValue="#{ncm}" size="20"
+									minQueryLength="1">
+									<o:converter converterId="omnifaces.ListConverter"
+										list="#{produtoBean.listaTributosAtivos}" />
+								</p:autoComplete>
+							</div>
+							<div class="form-group col-md-3">
+								<p:outputLabel value="#{label['label.tributos.listDev']}: "
+									for="tributoEspecialDev"
+									rendered="#{produtoBean.produto.tributacaoEspecial eq 'true'}" />
+								<p:autoComplete id="tributoEspecialDev" dropdown="true"
+									value="#{produtoBean.produto.tributoEspecialDevolucao}"
+									rendered="#{produtoBean.produto.tributacaoEspecial eq 'true'}"
+									completeMethod="#{produtoBean.completaTributos}" var="ncm"
+									itemLabel="#{ncm.descricao}" itemValue="#{ncm}" size="20"
+									minQueryLength="1">
+									<o:converter converterId="omnifaces.ListConverter"
+										list="#{produtoBean.listaTributosAtivos}" />
+								</p:autoComplete>
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="Fornecedor" rendered="true" id="tabFornecedor">
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-5">
+									<p:outputLabel value="#{label['label.fornecedor']}: "
+										for="fornecedor">
+									</p:outputLabel>
+									<p:autoComplete id="fornecedor" dropdown="true"
+										forceSelection="true" scrollHeight="300"
+										value="#{produtoBean.fornecedor}"
+										onfocus="#{produtoBean.limpaFornecedor()}"
+										completeMethod="#{produtoBean.completaFornecedor}"
+										var="fornece" itemValue="#{fornece}"
+										itemLabel="#{fornece.razaoSocial}">
+										<o:converter converterId="omnifaces.ListConverter"
+											list="#{produtoBean.listaFornecedor()}" />
+									</p:autoComplete>
+									<p:commandButton
+										actionListener="#{produtoBean.addFornecedorList()}"
+										styleClass="btn btn-flat btn-info"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}"
+										icon="fa fa-plus-square " style="width:20px;height:20px"
+										update="fornecedor listaFornecedor" />
+
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.ref.fornecedor']}"
+										for="refFornecedor" />
+									<p:inputText value="#{produtoBean.produto.refFornecedor}"
+										styleClass="form-control" id="refFornecedor" />
+								</div>
+							</div>
+							<div class="row">
+								<p:dataList value="#{produtoBean.listaTemporaria}" var="forn"
+									type="ordered" id="listaFornecedor">
+									<f:facet name="header">
+										#{label['label.fornecedor']}
+									</f:facet>
+								#{forn.id}, #{forn.razaoSocial}
+								<p:commandLink update="listaFornecedor" title="Remove"
+										actionListener="#{produtoBean.removeFornecedorList()}"
+										styleClass="ui-icon ui-icon-circle-close"
+										style="float:left;margin-right:10px">
+										<f:setPropertyActionListener value="#{forn}"
+											target="#{produtoBean.selectFornecedor}" />
+									</p:commandLink>
+								</p:dataList>
+							</div>
+						</div>
+					</p:tab>
+					<!-- 					<p:tab title="Fotos" rendered="true" id="fotos"> -->
+					<!-- 																	Renderizar se usuario tiver acesso a Fotos -->
+					<!-- 										</p:tab> -->
+					<p:tab title="Código de Barras" id="barrasTab">
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.barras.num']}"
+										rendered="#{produtoBean.produto.tipoEstoque eq 'BA'}"
+										for="barrasUnico" />
+									<p:inputText value="#{produtoBean.barrasUni.barras}"
+										id="barrasUnico" size="13" maxlength="13"
+										rendered="#{produtoBean.produto.tipoEstoque eq 'BA'}">
+										<f:validateRegex pattern="^[0-9]{12,13}$" />
+									</p:inputText>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.barras.insert.list']}"
+										for="btnInsereBarras"
+										rendered="#{produtoBean.produto.tipoEstoque eq 'BA'}"
+										style="font-weight:bold" />
+									<p:commandButton
+										actionListener="#{produtoBean.geraListaBarras()}"
+										id="btnInsereBarras" styleClass="btn btn-flat btn-info"
+										rendered="#{produtoBean.produto.tipoEstoque eq 'BA'}"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}"
+										icon="fa fa-plus-square " style="width:60px;height:30px"
+										update="barrasUnico listBarrasUnic" process="barrasTab" />
+								</div>
+								<div class="form-group col-md-5">
+									<p:dataTable id="listBarrasUnic" var="listaB"
+										widgetVar="listaBarrasUnica" editable="true"
+										value="#{produtoBean.produto.listaBarras}"
+										paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+ 							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+										paginator="true" rows="10" lazy="true" rowKey="#{listaB.id}"
+										editMode="cell"
+										rendered="#{produtoBean.produto.tipoEstoque eq 'BA'}"
+										sortBy="#{listaB.barras}" rowsPerPageTemplate="10,20,30">
+
+										<p:ajax event="cellEdit" listener="#{produtoBean.onCellEdit}" />
+										<p:column headerText="ID" rendered="true" style="width:10%">
+											<h:outputLabel value="#{listaB.numReg}" />
+										</p:column>
+										<p:column headerText="Barras" rendered="true"
+											style="width:30%">
+											<p:cellEditor>
+												<f:facet name="output">
+													<h:outputText value="#{listaB.barras}" />
+												</f:facet>
+												<f:facet name="input">
+													<p:inputText value="#{listaB.barras}" maxlength="13"
+														size="13"
+														validatorMessage="#{messages['barras.error.quantidade']}">
+														<f:validateRegex pattern="^[0-9]{12,13}$" />
+													</p:inputText>
+												</f:facet>
+											</p:cellEditor>
+										</p:column>
+
+										<!-- 										<p:column headerText="Barras" rendered="true"> -->
+										<!-- 											<p:outputLabel value="#{listaB.barras}" /> -->
+										<!-- 										</p:column> -->
+
+										<p:column width="15%" styleClass="align-center"
+											headerText="#{menu['actions']}">
+											<p:commandButton icon="fa fa-remove"
+												title="#{menu['delete']}"
+												styleClass="btn btn-flat btn-danger"
+												actionListener="#{produtoBean.excluiBarras(listaB)}"
+												immediate="true" update="listBarrasUnic" process="barrasTab" />
+										</p:column>
+									</p:dataTable>
+								</div>
+							</div>
+							<div class="row">
+								<div class="box-body width-border ">
+									<div class="form-group col-md-6">
+										<p:outputLabel value="#{label['label.barras.tamanho']}"
+											for="tamanhosBarra" rendered="#{produtoBean.tamanhoVisivel}" />
+										<p:pickList id="tamanhosBarra" value="#{produtoBean.tamanhos}"
+											var="itemTamanho" itemValue="#{itemTamanho}"
+											converter="primeFacesPickListConverter"
+											itemLabel="#{itemTamanho.tamanho}" showSourceControls="true"
+											showTargetControls="true" showCheckbox="true"
+											responsive="true" showSourceFilter="true"
+											showTargetFilter="true" filterMatchMode="contains"
+											rendered="#{produtoBean.tamanhoVisivel}">
+
+											<f:facet name="sourceCaption">Tamanhos disponíveis</f:facet>
+											<f:facet name="targetCaption">Tamanhos selecionadas</f:facet>
+
+<!-- 											<p:column> -->
+<!-- 												<h:outputText value="#{itemTamanho.id}" -->
+<!-- 													style="font-weight:bold" /> -->
+<!-- 											</p:column> -->
+											<p:column>
+												<h:outputText value="#{itemTamanho.tamanho}"
+													style="font-weight:bold" />
+											</p:column>
+										</p:pickList>
+									</div>
+									<div class="form-group col-md-6">
+										<p:outputLabel value="#{label['label.barras.cores']}"
+											for="coresBarras" rendered="#{produtoBean.corVisivel}" />
+										<p:pickList id="coresBarras" value="#{produtoBean.cores}"
+											var="itemCor" itemValue="#{itemCor}"
+											converter="primeFacesPickListConverter"
+											itemLabel="#{itemCor.nome}" showSourceControls="true"
+											showTargetControls="true" showCheckbox="true"
+											responsive="true" showSourceFilter="true"
+											showTargetFilter="true" filterMatchMode="contains"
+											rendered="#{produtoBean.corVisivel}">
+
+											<f:facet name="sourceCaption">Cores disponíveis</f:facet>
+											<f:facet name="targetCaption">Cores selecionadas</f:facet>
+
+<!-- 											<p:column> -->
+<!-- 												<h:outputText value="#{itemCor.id}" style="font-weight:bold" /> -->
+<!-- 											</p:column> -->
+											<p:column>
+												<h:outputText value="#{itemCor.nome}"
+													style="font-weight:bold" />
+											</p:column>
+										</p:pickList>
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.barras.insert']}"
+										for="btnGeraBarras"
+										rendered="#{produtoBean.tamanhoVisivel or produtoBean.corVisivel}"
+										style="font-weight:bold" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:commandButton
+										actionListener="#{produtoBean.geraListaBarras()}"
+										id="btnGeraBarras" styleClass="btn btn-flat btn-info"
+										rendered="#{produtoBean.tamanhoVisivel or produtoBean.corVisivel}"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}"
+										icon="fa fa-plus-square " style="width:70px;height:30px"
+										update="listBarras" process="barrasTab" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-8">
+									<p:dataTable id="listBarras" var="lista" widgetVar="listaCores"
+										editable="true" editMode="cell"
+										value="#{produtoBean.produto.listaBarras}"
+										paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+ 							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+										paginator="true" rows="10" lazy="true" rowKey="#{lista.id}"
+										rendered="#{produtoBean.corVisivel or produtoBean.tamanhoVisivel}"
+										sortBy="#{lista.barras}" rowsPerPageTemplate="10,20,30">
+
+										<p:ajax event="cellEdit" listener="#{produtoBean.onCellEdit}" />
+
+										<p:column headerText="ID" rendered="true" style="width:5%">
+											<h:outputLabel value="#{lista.numReg}" />
+										</p:column>
+
+										<p:column headerText="Barras" rendered="true"
+											style="width:30%">
+											<p:cellEditor>
+												<f:facet name="output">
+													<h:outputText value="#{lista.barras}" />
+												</f:facet>
+												<f:facet name="input">
+													<p:inputText value="#{lista.barras}" maxlength="13"
+														size="13"
+														validatorMessage="#{messages['barras.error.quantidade']}">
+														<f:validateRegex pattern="^[0-9]{12,13}$" />
+													</p:inputText>
+												</f:facet>
+											</p:cellEditor>
+										</p:column>
+
+										<p:column sortBy="#{lista.cor}" headerText="Cor">
+											<h:outputText value="#{lista.cor.nome}" />
+										</p:column>
+										<p:column sortBy="#{lista.tamanho}" headerText="Tamanho">
+											<h:outputText value="#{lista.tamanho.tamanho}" />
+										</p:column>
+										<p:column width="15%" styleClass="align-center"
+											headerText="#{menu['actions']}">
+											<p:commandButton icon="fa fa-remove"
+												title="#{menu['delete']}"
+												styleClass="btn btn-flat btn-danger"
+												actionListener="#{produtoBean.excluiBarras(lista)}"
+												immediate="true" update="listBarras" process="barrasTab" />
+										</p:column>
+									</p:dataTable>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.list.clear']}"
+										for="clearButon"
+										rendered="#{produtoBean.produto.tipoEstoque ne 'BA'}" />
+								</div>
+								<div class="form-group col-md-1">
+									<p:commandButton id="clearButon"
+										actionListener="#{produtoBean.limpaGeraBarras()}"
+										styleClass="btn btn-flat btn-info"
+										label="#{label['label.list.clear']}"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}"
+										rendered="#{produtoBean.produto.tipoEstoque ne 'BA'}"
+										icon="fa fa-undo" style="width:70px;height:30px"
+										process="barrasTab" update="listBarras" />
+								</div>
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="Estoque" id="estoqueTab"
+						rendered="#{userSessionBean.hasRole(authorization.ESTOQUE_VIEW) eq 'true'}">
+						<div class="box-body row">
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.produto.totalEstoque']}: "
+									for="totEstoque" />
+								<p:inputNumber value="#{produtoBean.calculaEstoqueTotal()}"
+									id="totEstoque" decimalPlaces="2" readonly="true" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.produto.totalComprado']}: "
+									for="totComprado" />
+								<p:inputNumber value="#{produtoBean.calculaTotalComprado()}"
+									id="totComprado" decimalPlaces="2" readonly="true" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.produto.data1Compra']}: "
+									for="dataCompra" />
+								<p:calendar value="#{produtoBean.retornaPrimeiraCompra()}"
+									id="dataCompra" readonly="true" pattern="dd/MM/yyyy"
+									converter="localDateConverter" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel
+									value="#{label['label.produto.dataUltimaCompra']}: "
+									for="dataUltimaCompra" />
+								<p:calendar value="#{produtoBean.retornaDataUltimaCompra()}"
+									id="dataUltimaCompra" readonly="true" pattern="dd/MM/yyyy"
+									converter="localDateConverter" />
+
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel
+									value="#{label['label.produto.totalUltimaCompra']}: "
+									for="totUltimaCompra" />
+								<p:inputNumber value="#{produtoBean.retornaTotalUltimaCompra()}"
+									id="totUltimaCompra" decimalPlaces="2" readonly="true" />
+							</div>
+						</div>
+						<div class="box-body row">
+
+							<div class="form-group col-md-6">
+								<p:dataTable id="listBarrasEstoque" var="lista"
+									widgetVar="listaBarrasCores" editable="false"
+									value="#{produtoBean.produto.listaBarras}"
+									paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+ 							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+									paginator="true" rows="10" lazy="true" rowKey="#{lista.id}"
+									rendered="#{true}" sortBy="#{lista.barras}"
+									rowsPerPageTemplate="10,20,30">
+
+									<p:column headerText="Barras" rendered="true" style="width:30%">
+										<h:outputText value="#{lista.barras}" />
+									</p:column>
+
+									<p:column sortBy="#{lista.cor}" headerText="Cor">
+										<h:outputText value="#{lista.cor.nome}" />
+									</p:column>
+									<p:column sortBy="#{lista.tamanho}" headerText="Tamanho">
+										<h:outputText value="#{lista.tamanho.tamanho}" />
+									</p:column>
+									<p:column headerText="Quantidade">
+										<h:outputText value="#{lista.totalEstoque}" />
+									</p:column>
+								</p:dataTable>
+							</div>
+
+						</div>
+					</p:tab>
+					<p:tab title="Centro de Custos" id="custosTab"
+						rendered="#{userSessionBean.hasRole(authorization.COST_CENTER_VIEW) eq 'true'}">
+						<!-- 						Renderizar se usuario tiver acesso a Precos -->
+
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.preco.custo']}: "
+										for="custo" />
+									<p:inputNumber value="#{produtoBean.custoProduto.custo}"
+										id="custo" decimalPlaces="4" thousandSeparator="."
+										readonly="#{estoqueGeralBean.calcularCustoMedio() or userSessionBean.hasRole(authorization.COST_CENTER_UPDATE) eq 'false'}"
+										decimalSeparator="," symbol="R$">
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.preco.customedio']}: "
+										for="custoMedio" />
+									<p:inputNumber value="#{produtoBean.custoProduto.custoMedio}"
+										id="custoMedio" decimalPlaces="4" thousandSeparator="."
+										readonly="#{userSessionBean.hasRole(authorization.COST_CENTER_UPDATE) eq 'false'}" decimalSeparator="," symbol="R$">
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.preco.custoAnterior']}: "
+										for="custoAntigo" />
+									<p:inputNumber
+										value="#{produtoBean.custoProduto.custoAnterior}"
+										id="custoAntigo" decimalPlaces="4" thousandSeparator="."
+										readonly="#{userSessionBean.hasRole(authorization.COST_CENTER_UPDATE) eq 'false'}" decimalSeparator="," symbol="R$">
+									</p:inputNumber>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.preco.a']}: " for="preco1" />
+									<p:inputNumber value="#{produtoBean.custoProduto.preco1}"
+										decimalPlaces="4" id="preco1" thousandSeparator="."
+										readonly="#{userSessionBean.hasRole(authorization.COST_CENTER_UPDATE) eq 'false'}"
+										decimalSeparator="," symbol="R$">
+										<p:ajax event="change"
+											listener="#{produtoBean.calculaMargem()}" update="margemA"
+											process="custosTab" />
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.preco.b']}: " for="preco2" />
+									<p:inputNumber value="#{produtoBean.custoProduto.preco2}"
+										decimalPlaces="4" id="preco2" thousandSeparator="."
+										readonly="#{userSessionBean.hasRole(authorization.COST_CENTER_UPDATE) eq 'false'}"
+										decimalSeparator="," symbol="R$">
+										<p:ajax event="change"
+											listener="#{produtoBean.calculaMargem()}" update="margemB"
+											process="custosTab" />
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.preco.c']}: " for="preco3" />
+									<p:inputNumber value="#{produtoBean.custoProduto.preco3}"
+									readonly="#{userSessionBean.hasRole(authorization.COST_CENTER_UPDATE) eq 'false'}"
+										decimalPlaces="4" id="preco3" thousandSeparator="."
+										decimalSeparator="," symbol="R$">
+										<p:ajax event="change"
+											listener="#{produtoBean.calculaMargem()}" update="margemC"
+											process="custosTab" />
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.preco.d']}: " for="preco4" />
+									<p:inputNumber value="#{produtoBean.custoProduto.preco4}"
+										decimalPlaces="4" id="preco4" thousandSeparator="."
+										readonly="#{userSessionBean.hasRole(authorization.COST_CENTER_UPDATE) eq 'false'}"
+										decimalSeparator="," symbol="R$">
+										<p:ajax event="change"
+											listener="#{produtoBean.calculaMargem()}" update="margemD"
+											process="custosTab" />
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.preco.e']}: " for="preco5" />
+									<p:inputNumber value="#{produtoBean.custoProduto.preco5}"
+										decimalPlaces="4" id="preco5" thousandSeparator="."
+										readonly="#{userSessionBean.hasRole(authorization.COST_CENTER_UPDATE) eq 'false'}"
+										decimalSeparator="," symbol="R$">
+										<p:ajax event="change"
+											listener="#{produtoBean.calculaMargem()}" update="margemE"
+											process="custosTab" />
+									</p:inputNumber>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.margem.a']}: "
+										for="margemA" />
+									<p:inputNumber value="#{produtoBean.margemA}" decimalPlaces="2"
+										id="margemA" thousandSeparator="." symbol="%"
+										readonly="#{userSessionBean.hasRole(authorization.COST_CENTER_UPDATE) eq 'false'}"
+										symbolPosition="left" decimalSeparator=",">
+										<p:ajax event="change"
+											listener="#{produtoBean.calculaVendaA()}" update="preco1"
+											process="custosTab" />
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.margem.b']}: "
+										for="margemB" />
+									<p:inputNumber value="#{produtoBean.margemB}" decimalPlaces="2"
+										id="margemB" thousandSeparator="." symbol="%"
+										readonly="#{userSessionBean.hasRole(authorization.COST_CENTER_UPDATE) eq 'false'}"
+										symbolPosition="left" decimalSeparator=",">
+										<p:ajax event="change"
+											listener="#{produtoBean.calculaVendaB()}" update="preco2"
+											process="custosTab" />
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.margem.c']}: "
+										for="margemC" />
+									<p:inputNumber value="#{produtoBean.margemC}" decimalPlaces="2"
+										id="margemC" thousandSeparator="." symbol="%"
+										readonly="#{userSessionBean.hasRole(authorization.COST_CENTER_UPDATE) eq 'false'}"
+										symbolPosition="left" decimalSeparator=",">
+										<p:ajax event="change"
+											listener="#{produtoBean.calculaVendaC()}" update="preco3"
+											process="custosTab" />
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.margem.d']}: "
+										for="margemD" />
+									<p:inputNumber value="#{produtoBean.margemD}" decimalPlaces="2"
+										id="margemD" thousandSeparator="." symbol="%"
+										readonly="#{userSessionBean.hasRole(authorization.COST_CENTER_UPDATE) eq 'false'}"
+										symbolPosition="left" decimalSeparator=",">
+										<p:ajax event="change"
+											listener="#{produtoBean.calculaVendaD()}" update="preco4"
+											process="custosTab" />
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.margem.e']}: "
+										for="margemE" />
+									<p:inputNumber value="#{produtoBean.margemE}" decimalPlaces="2"
+										id="margemE" thousandSeparator="." symbol="%"
+										readonly="#{userSessionBean.hasRole(authorization.COST_CENTER_UPDATE) eq 'false'}"
+										symbolPosition="left" decimalSeparator=",">
+										<p:ajax event="change"
+											listener="#{produtoBean.calculaVendaE()}" update="preco5"
+											process="custosTab" />
+									</p:inputNumber>
+								</div>
+							</div>
+						</div>
+					</p:tab>
+
+				</p:tabView>
+			</div>
+
+			<div class="box-footer align-right">
+				<p:commandButton update="empresaForm" process="empresaForm"
+					value="#{menu['save']}" action="#{produtoBean.doSalvar()}"
+					onstart="PF('formBlock').block()"
+					styleClass="btn btn-flat btn-success"
+					disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}"
+					oncomplete="PF('formBlock').unblock()"
+					rendered="#{produtoBean.viewState eq 'ADDING'}" icon="fa fa-hdd-o" />
+
+				<p:commandButton process="empresaForm" value="#{menu['update']}"
+					action="#{produtoBean.doSalvar()}"
+					onstart="PF('formBlock').block()"
+					update="empresaForm pageDescription"
+					disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false' or userSessionBean.hasRole(authorization.COST_CENTER_UPDATE) eq 'false'}"
+					styleClass="btn btn-flat btn-warning"
+					oncomplete="PF('formBlock').unblock()"
+					rendered="#{produtoBean.viewState eq 'EDITING'}" />
+
+				<p:commandButton process="empresaForm" value="#{menu['delete']}"
+					action="#{produtoBean.doExcluir()}" immediate="true"
+					styleClass="btn btn-flat btn-danger"
+					disabled="#{userSessionBean.hasRole(authorization.PRODUTO_DELETE) eq 'false'}"
+					rendered="#{produtoBean.viewState eq 'EDITING'}">
+					<p:confirm header="Atenção" message="Excluir? "
+						icon="ui-icon-alert" />
+				</p:commandButton>
+
+				<p:confirmDialog global="true">
+					<p:commandButton value="#{menu.yes}"
+						styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
+					<p:commandButton value="#{menu.no}"
+						styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+				</p:confirmDialog>
+
+			</div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="resources/nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+		<h:form id="testeEnvio" prependId="false">
+			<div class="box">
+				<div class="box-body ">
+					<div class="align-left col-md-10"></div>
+
+					<div class="align-right col-md-2">
+						<p:spacer width="10" />
+						<p:commandButton immediate="true" value="#{menu['back']}"
+							action="#{produtoBean.toListProduto()}"
+							styleClass="btn btn-flat btn-default"
+							icon="fa fa-arrow-circle-o-left" />
+					</div>
+
+				</div>
+			</div>
+		</h:form>
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="popus">
+			<ui:include
+				src="/main/tools/cadastro/Departamento/dialogDepartamento.xhtml" />
+			<ui:include src="/main/tools/cadastro/Secao/dialogSecao.xhtml" />
+			<ui:include src="/main/tools/cadastro/SubSecao/dialogSubSecao.xhtml" />
+			<ui:include
+				src="/main/tools/cadastro/Fabricante/dialogFabricante.xhtml" />
+		</h:form>
+	</ui:define>
+</ui:composition>

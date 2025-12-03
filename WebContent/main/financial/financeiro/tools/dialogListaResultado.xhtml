@@ -1,0 +1,117 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="listaResultadoDialog"
+	width="70%" modal="true" resizable="false" closeOnEscape="true"
+	widgetVar="dialogListaResultado"
+	header="#{messages['nfe.page-title.search']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-2">
+				<p:outputLabel value="#{messages['nfe.page-serch-client']}" />
+			</h2>
+		</div>
+		<div class="box-body row">
+			<div class="form-group col-sm-12">
+				<p:dataTable id="nfeCliente" var="lista" widgetVar="listaNfe"
+					value="#{agendaBean.listaCliente}"
+					paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true" rows="10" selection="#{agendaBean.cliente}"
+					selectionMode="single" lazy="false" rowKey="#{lista.id}"
+					sortBy="#{lista.razaoSocial}" rowsPerPageTemplate="10,20,30"
+					rendered="#{agendaBean.tipoPesquisa eq 'CLI'}">
+
+					<p:ajax event="rowSelect" listener="#{agendaBean.onRowSelectPesquisa}"
+						oncomplete="PF('dialogListaResultado').hide()" process="formPopup"
+						update="nomeRazao" />
+
+					<p:column headerText="#{label['label.cnpj']}" rendered="true">
+						<h:outputLabel value="#{lista.cnpj}" />
+					</p:column>
+
+					<p:column headerText="#{label['label.cpf']}" rendered="true">
+						<h:outputLabel value="#{lista.cpf}" />
+					</p:column>
+
+					<p:column sortBy="#{lista.razaoSocial}"
+						headerText="#{label['label.razao']}" style="width:35%">
+						<h:outputText value="#{lista.razaoSocial}" />
+					</p:column>
+
+					<p:column sortBy="#{lista.nomeFantasia}"
+						headerText="#{label['label.fantasia']}" style="width:35%">
+						<h:outputText value="#{lista.nomeFantasia}" />
+					</p:column>
+
+				</p:dataTable>
+				<p:dataTable id="nfeFornecedor" var="lista" widgetVar="listaNfe"
+					value="#{agendaBean.listaFornecedor}"
+					paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true" rows="10" selection="#{agendaBean.fornecedor}"
+					selectionMode="single" lazy="false" rowKey="#{lista.id}"
+					sortBy="#{lista.razaoSocial}" rowsPerPageTemplate="10,20,30"
+					rendered="#{agendaBean.tipoPesquisa eq 'FOR'}">
+
+					<p:ajax event="rowSelect" listener="#{agendaBean.onRowSelectPesquisa}" process="formPopup"
+						oncomplete="PF('dialogListaResultado').hide()"
+						update="nomeRazao" />
+
+					<p:column headerText="#{label['label.cnpj']}" rendered="true">
+						<h:outputText value="#{lista.cnpj}" />
+					</p:column>
+
+					<p:column headerText="#{label['label.cpf']}" rendered="true">
+						<h:outputText value="#{lista.cpf}" />
+					</p:column>
+
+					<p:column sortBy="#{lista.razaoSocial}"
+						headerText="#{label['label.razao']}" style="width:35%">
+						<h:outputText value="#{lista.razaoSocial}" />
+					</p:column>
+
+					<p:column sortBy="#{lista.nomeFantasia}"
+						headerText="#{label['label.fantasia']}" style="width:35%">
+						<h:outputText value="#{lista.nomeFantasia}" />
+					</p:column>
+
+				</p:dataTable>
+				<p:dataTable id="nfeColaborador" var="lista" widgetVar="listaNfe"
+					value="#{agendaBean.listaColaborador}"
+					paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true" rows="10" selection="#{agendaBean.colaborador}"
+					selectionMode="single" lazy="false" rowKey="#{lista.id}"
+					sortBy="#{lista.nome}" rowsPerPageTemplate="10,20,30"
+					rendered="#{agendaBean.tipoPesquisa eq 'COL'}">
+
+					<p:ajax event="rowSelect" listener="#{agendaBean.onRowSelectPesquisa}" process="formPopup"
+						oncomplete="PF('dialogListaResultado').hide()"
+						update="nomeRazao" />
+
+					<p:column sortBy="#{lista.nome}"
+						headerText="#{label['label.razao']}" style="width:40%">
+						<h:outputText value="#{lista.nome}" />
+					</p:column>
+
+				</p:dataTable>
+			</div>
+		</div>
+		<div class="box-footer align-right">
+
+			<!-- 			<p:commandButton actionListener="#{secaoBean.doSalvar()}" -->
+			<!-- 				process="formPopup" style="align-left" -->
+			<!-- 				oncomplete="PF('dialogSecao').hide()" -->
+			<!-- 				update="formPopup" -->
+			<!-- 				value="#{label['label.save']}" styleClass="btn btn-flat btn-seach" -->
+			<!-- 				icon="fa fa-search-plus" /> -->
+
+		</div>
+	</div>
+
+
+</p:dialog>
+

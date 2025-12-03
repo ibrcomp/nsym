@@ -1,0 +1,209 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:hh="http://xmlns.jcp.org/jsf/html"
+	xmlns:ff="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="FABRICA" />
+	<ui:param name="activeSubmenu" value="Producao" />
+
+	<f:metadata>
+		<f:viewAction action="#{oSBean.initializeListing(param.opID)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['fabrica.os.list.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{oSBean.viewState eq 'LISTING'}"
+			value="#{messages['fabrica.os.page-description-listing']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{oSBean.viewState eq 'EDITING'}"
+			value="#{messages['fabrica.os.page-description-editing']}">
+			<f:param value="#{OSbean.os.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries.fabrica']}</a></li>
+		<li><a href="formListOS.xhtml">#{breadcrumb['entries.list.os']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['entries.list.os']}"></p:outputLabel>
+					</h2>
+				</div>
+
+				<div class="box-body">
+					<div class="row">
+						<div class="navbar-form">
+							<p:toolbar id="navegador">
+								<f:facet name="left">
+									<p:commandButton update="empresaForm" process="empresaForm"
+										value="#{menu['new']}" action="#{oSBean.newOS}" 
+										onstart="PF('formBlock').block()"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUCAO_INSERT) eq 'false'}"
+										styleClass="btn btn-flat btn-success"
+										oncomplete="PF('formBlock').unblock()" rendered="true" />
+									<p:commandButton process="empresaForm" value="#{menu['view']}"
+										action="#{oSBean.changeToEditOS(oSBean.os.id)}" 
+										onstart="PF('formBlock').block()"
+										update="empresaForm pageDescription"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUCAO_VIEW) eq 'false'}"
+										styleClass="btn btn-flat btn-success"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{oSBean.viewState eq 'EDITING'}" />
+
+								</f:facet>
+								<f:facet name="right">
+									<p:commandButton immediate="true" value="#{menu['back']}"
+										action="#{userBean.toDashboard}"
+										styleClass="btn btn-flat btn-default" />
+								</f:facet>
+							</p:toolbar>
+						</div>
+						<div class="form-group col-md-12">
+							<p:dataTable id="ordemDeServico" var="lista" widgetVar="listaOS"
+								value="#{oSBean.listaOSModel}"
+								paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+								paginator="true" rows="10" selection="#{oSBean.os}" 
+								selectionMode="single" lazy="false" rowKey="#{lista.id}" 
+								sortBy="#{lista.prestador}" rowsPerPageTemplate="5,10,15">
+
+								<p:ajax event="rowSelect"
+									listener="#{oSBean.onRowSelectOS}" process="empresaForm"
+									update="navegador" />
+
+								<p:column headerText="#{label['label.id']}"
+									rendered="true" style="width:10%" filterBy="#{lista.id}" 
+									sortBy="#{lista.id}">
+									<p:outputLabel value="#{lista.id}" />
+								</p:column>
+								<p:column headerText="#{label['label.list.refOP']}" 
+									rendered="true" style="width:10%" filterBy="#{lista.op.ref}">  
+									<h:outputLabel value="#{lista.op.ref}" />
+								</p:column>
+
+								
+								<p:column headerText="#{label['label.fabrica.servico']}"	style="width:30%">
+									<h:outputLabel value="#{lista.servico.descricao}" />  - 
+								</p:column>
+
+								<p:column headerText="#{label['label.fabrica.prevRet']}"
+									rendered="true" style="width:10%">
+									<h:outputLabel value="#{lista.previsaoRetorno}" />-
+									<h:outputLabel value="#{lista.dataRetorno}" />
+								</p:column>
+								
+								<p:column sortBy="#{lista.etapa}"
+									headerText="#{label['label.fabrica.etapa']}">
+									
+									<h:outputText value="#{lista.etapa.descricao}" />
+								</p:column>
+								
+								<p:column sortBy="#{lista.etapa}"
+									headerText="#{label['label.status.op']}">
+									
+									<h:outputText value="#{lista.andamento}" />
+								</p:column>
+								
+								<p:column headerText="#{label['label.fabrica.andamento']}"
+									sortBy="#{lista.andamento}" style="width:10%">
+									<h:outputText value="#{lista.andamento.description}" />
+								</p:column>
+								
+								<p:column sortBy="#{lista.fiscalStatus}" exportable="false" styleClass="#{lista.fiscalStatus == 'NE' ? 'ca' : 
+									lista.fiscalStatus == 'ES'? 'transf' : lista.fiscalStatus == 'ED' ? 'ee' : lista.fiscalStatus == 'GA' ? 'sa' : null}"
+									headerText="#{label['label.status.fiscal']}" style="width:10%">
+									<h:outputText value="#{lista.fiscalStatus.toString()}" /> 
+								</p:column>
+
+								<p:column headerText="#{label['label.list.Action']}"
+									style="width:20%">
+									
+									<p:commandButton process="produtos" icon="fa fa-list-check"
+										title="#{menu['fichaTecnica']}"
+										styleClass="btn btn-flat btn-info"
+										action="#{fabricaBean.toListFichaTecnica(lista.id)}"
+										update="empresaForm" />
+										
+									<p:commandButton process="produtos" icon="fa fa-forward"
+										title="#{label['label.op.nextEtapa']}"
+										styleClass="btn btn-flat btn-warning"
+										action="#{fabricaBean.nextEtapa(lista)}"
+										update="empresaForm" />
+										
+<!-- 										criar função de retorno dos produtos da Ordem de serviço -->
+									<p:commandButton process="produtos" icon="fa fa-forward"
+										title="#{label['label.list.retornoOS']}"
+										styleClass="btn btn-flat btn-warning"
+										action="#{oSBean.retornoOS(lista)}"
+										update="empresaForm" />
+										
+<!-- 										criar funçao em NFEBean que receba uma OS para emitir nfe de remessa -->
+									<p:commandLink process="empresaForm" title="#{menu['nfe']}"
+										styleClass="btn btn-flat"
+										disabled="#{lista.andamento ne 'REC' or lista.fiscalStatus ne 'NE'}"
+ 										action="#{nfeBean.emitirNFePedido(lista)}" 
+										update="empresaForm">
+										<p:graphicImage name="/nsym/img/nfe.png" width="25"
+											style="right:0;" />
+									</p:commandLink>
+									
+<!-- 									criar função para gerar o contas a pagar do serviço -->
+									<p:commandButton process="empresaForm" title="#{menu['financial']}"
+										styleClass="btn btn-flat btn-primary"
+										disabled="#{lista.financeiroCriado ne 'false' or lista.andamento ne 'FIM' }"
+										icon="fa fa-hand-holding-usd"
+										update="messages"
+										actionListener="#{recebimentoBean.geraFinanceiroNFEEntrada(lista)}" />
+									
+									<p:commandButton process="empresaForm" icon="fa fa-remove"
+										title="#{menu['delete']}" styleClass="btn btn-flat btn-danger"
+										actionListener="#{fabricaBean.toExcluirOP(lista)}"										
+										update="produtos">
+
+										<p:confirm header="Atenção" message="Excluir? "
+											icon="ui-icon-alert" />
+									</p:commandButton>
+
+									<p:confirmDialog global="true">
+										<p:commandButton value="#{menu.yes}"
+											styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
+										<p:commandButton value="#{menu.no}"
+											styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+									</p:confirmDialog>
+								</p:column>
+							</p:dataTable>
+						</div>
+					</div>
+				</div>
+			</div>
+		</h:form>
+
+		<pe:blockUI target="empresaForm" widgetVar="formBlock">
+			<p:graphicImage width="32" height="32" library="nsym"
+				name="img/loading.gif" />
+		</pe:blockUI>
+	</ui:define>
+</ui:composition>

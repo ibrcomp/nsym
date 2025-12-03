@@ -1,0 +1,6 @@
+eclipse.preferences.version=1
+org.jboss.tools.cdi.deltaspike.core.validator.problem.ambiguousAuthorizer=warning
+org.jboss.tools.cdi.deltaspike.core.validator.problem.invalidAuthorizer=error
+org.jboss.tools.cdi.deltaspike.core.validator.problem.invalidHandlerType=warning
+org.jboss.tools.cdi.deltaspike.core.validator.problem.notAHandlerBean=warning
+org.jboss.tools.cdi.deltaspike.core.validator.problem.unresolvedAuthorizer=warning

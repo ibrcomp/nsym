@@ -1,0 +1,115 @@
+<p:dialog xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:o="http://omnifaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:f="http://xmlns.jcp.org/jsf/core" id="ConfirmTransferenciaDialog"
+	width="50%" modal="true" resizable="false" closeOnEscape="true" closable="true"
+	widgetVar="dialogConfirmTransferencia"
+	header="#{messages['caixaRecebimento.Transfere.page.title']}">
+
+	<div class="box">
+		<div class="box-header with-border">
+			<h2 class="box-title col-sm-12">
+				<p:outputLabel
+					value="#{messages['caixa.dialog.box-title.transfer']}" />
+			</h2>
+		</div>
+		<div class="box-body ">
+			<div class="row">
+				<div class="navbar-form">
+					<p:toolbar>
+						<f:facet name="left">
+							<div class="form-group col-md-4">
+								<p:commandButton
+									value="#{label['label.estoque.confirmOperation']}"
+									process="formTransf"
+									action="#{caixaBean.confirmaRecebimentoTransferencia()}" 
+									id="buttonConfirmTranf" onstart="PF('formBlockList').block()"
+									oncomplete="PF('formBlockList').unblock()" 
+									onsuccess="PF('dialogConfirmTransferencia').hide()"
+									styleClass="btn btn-flat btn-warning" icon="fa fa-wallet">
+								</p:commandButton>
+							</div>
+						</f:facet>
+						<f:facet name="right">
+							<p:commandButton value="#{menu['back']}"
+								onclick="PF('dialogConfirmTransferencia').hide()"
+								styleClass="btn btn-flat btn-primary" />
+						</f:facet>
+					</p:toolbar>
+				</div>
+			</div>
+			<div class="row">
+				<p:messages id="messagesDialogTranfer" closable="true" />
+				<p:focus context="formTransf" for="idTransfDataEnt" />
+				<div class="form-group col-md-12">
+
+					<div class="form-group col-md-4">
+						<p:outputLabel value="#{label['label.start']}  " for="idAgEmissao" />
+						<p:calendar value="#{caixaBean.dataInicial}" id="idTransfEmissao"
+							pattern="dd/MM/yyyy" converter="localDateConverter" />
+					</div>
+					<div class="form-group col-md-4">
+						<p:outputLabel value="#{label['label.finish']}  "
+							for="idAgDataEnt" />
+						<p:calendar value="#{caixaBean.dataFinal}" id="idTransfDataEnt"
+							pattern="dd/MM/yyyy" converter="localDateConverter" />
+					</div>
+					<div class="form-group col-md-4">
+						<p:commandButton value="#{label['label.search']}"
+							process="formTransf"
+							actionListener="#{caixaBean.geraListaTransferencia()}"
+							update="listaTransferenciaDT" id="buttonPesquisaTransf"
+							onstart="PF('formBlockList').block()"
+							oncomplete="PF('formBlockList').unblock()"
+							style="width:50%;margin:5px" styleClass="btn btn-flat btn-info"
+							icon="fa fa-search" />
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="form-group col-md-12">
+					<p:dataTable id="listaTransferenciaDT" var="lista"
+						widgetVar="listaAgPedidosTeste" value="#{caixaBean.listaTransferencia}" 
+						paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+						paginator="true" rows="10" selection="#{caixaBean.pedido}"
+						selectionMode="single" lazy="true" rowKey="#{lista.id}">
+
+						<p:ajax event="rowSelect"
+							listener="#{caixaBean.onRowSelectPedidoDev}" process="@form" />
+
+						<p:column headerText="#{label['label.id']}"
+							style="width:20%">
+							<p:outputLabel value="#{lista.id}" />
+						</p:column>
+
+						<p:column headerText="#{label['label.dataEmissao']}"
+							style="width:20%" rendered="true" sortBy="#{lista.dataEmissao}">
+							<h:outputLabel value="#{lista.dataEmissao.toString()}" />
+						</p:column>
+						<p:column headerText="#{label['label.caixa.tranfer.destino']}"
+							style="width:20%" rendered="true" >
+							<h:outputLabel value="#{lista.destinoTransferencia.retornaRazao()}" />
+						</p:column>
+
+						<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+							style="width:20%">
+							<p:outputLabel value="#{lista.valorTotalProdutos}">
+								<f:convertNumber type="currency" currencySymbol="R$"
+									maxFractionDigits="2" currencyCode="BRL" />
+							</p:outputLabel>
+						</p:column>
+					</p:dataTable>
+				</div>
+			</div>
+		</div>
+	</div>
+	<pe:blockUI target="listaTransferenciaDT" widgetVar="formBlockList">
+		<p:graphicImage width="32" height="32" library="nsym"
+			name="img/loading.gif" />
+	</pe:blockUI>
+</p:dialog>
+

@@ -1,0 +1,196 @@
+<!--
+  Copyright (C) 2015 Arthur Gregorio, AG.Software
+ 
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+ 
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+ 
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:p="http://primefaces.org/ui"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:wb="http://xmlns.jcp.org/jsf/composite/webbudget/ui"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeSubmenu" value="fixed" />
+	<ui:param name="activeMenu" value="movements" />
+
+	<f:metadata>
+		<f:viewAction
+			action="#{fixedMovementBean.initializeForm(param.fixedMovementId, param.viewState)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['fixed-movement.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{fixedMovementBean.viewState eq 'ADDING'}"
+			value="#{messages['fixed-movement.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{fixedMovementBean.viewState eq 'EDITING'}"
+			value="#{messages['fixed-movement.page-description-editing']}">
+			<f:param value="#{fixedMovementBean.fixedMovement.identification}" />
+		</o:outputFormat>
+		<o:outputFormat
+			rendered="#{fixedMovementBean.viewState eq 'DETAILING'}"
+			value="#{messages['fixed-movement.page-description-detailing']}">
+			<f:param value="#{fixedMovementBean.fixedMovement.identification}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['financial']}</a></li>
+		<li><a href="#">#{breadcrumb['financial.movement']}</a></li>
+		<li><a href="listFixedMovements.xhtml">#{breadcrumb['financial.movement.fixed']}</a></li>
+		<li jsf:rendered="#{fixedMovementBean.viewState eq 'ADDING'}"
+			class="active"><a href="#">#{breadcrumb['including']}</a></li>
+		<li jsf:rendered="#{fixedMovementBean.viewState eq 'EDITING'}"
+			class="active"><a href="#">#{breadcrumb['editing']}</a></li>
+		<li jsf:rendered="#{fixedMovementBean.viewState eq 'DETAILING'}"
+			class="active"><a href="#">#{breadcrumb['detailing']}</a></li>
+	</ui:define>
+
+	<ui:define name="content">
+
+		<h:form id="fixedMovementForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="box-header with-border">
+					<h3 class="box-title">
+						<p:selectBooleanCheckbox
+							value="#{fixedMovementBean.fixedMovement.autoLaunch}"
+							itemLabel="#{messages['fixed-movement.form.auto-launch']}" />
+					</h3>
+				</div>
+
+				<div class="box-body row">
+					<div class="col-sm-6">
+						<div class="row">
+							<div class="col-sm-6 form-group">
+								<p:outputLabel for="inStatus"
+									value="#{messages['fixed-movement.form.status-type']}: " />
+								<p:selectOneMenu id="inStatus"
+									converter="omnifaces.GenericEnumConverter"
+									value="#{fixedMovementBean.fixedMovement.fixedMovementStatusType}">
+									<f:selectItems var="statusType" itemValue="#{statusType}"
+										itemLabel="#{enums[statusType]}"
+										value="#{fixedMovementBean.availableFixedMovementStatusTypes}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="col-sm-6 form-group">
+								<p:outputLabel for="inIdentification"
+									value="#{messages['fixed-movement.form.identification']}: " />
+								<p:inputText id="inIdentification" maxlength="45"
+									styleClass="form-control"
+									value="#{fixedMovementBean.fixedMovement.identification}" />
+							</div>
+							<div class="col-sm-3 form-group">
+								<p:outputLabel for="inStartDate"
+									value="#{messages['fixed-movement.form.start-date']}: " />
+								<p:calendar id="inStartDate" mask="true" pattern="dd/MM/yyyy"
+									converter="localDateConverter"
+									value="#{fixedMovementBean.fixedMovement.startDate}" />
+							</div>
+							<div class="col-sm-3 form-group">
+								<p:outputLabel for="inValue"
+									value="#{messages['fixed-movement.form.value']}: " />
+								<p:inputNumber id="inValue" symbol="R$ " decimalPlaces="2"
+									decimalSeparator="," thousandSeparator="."
+									value="#{fixedMovementBean.fixedMovement.value}"
+									disabled="#{not empty fixedMovementBean.fixedMovement.apportionments}">
+									<f:converter converterId="javax.faces.BigDecimal" />
+								</p:inputNumber>
+							</div>
+							<div class="col-sm-6 form-group">
+								<p:outputLabel for="inQuotes"
+									value="#{messages['fixed-movement.form.quotes']}: " />
+								<div class="row">
+									<div class="col-sm-6">
+										<p:inputText id="inQuotes" maxlength="3"
+											styleClass="form-control"
+											value="#{fixedMovementBean.fixedMovement.quotes}"
+											disabled="#{fixedMovementBean.viewState ne 'ADDING' 
+                                                                 or fixedMovementBean.fixedMovement.undetermined}">
+											<p:keyFilter mask="num" />
+										</p:inputText>
+									</div>
+									<div style="padding-top: 5px;" class="col-sm-6">
+										<p:selectBooleanCheckbox id="inUndetermined"
+											disabled="#{fixedMovementBean.viewState ne 'ADDING'}"
+											value="#{fixedMovementBean.fixedMovement.undetermined}"
+											itemLabel="#{messages['fixed-movement.form.undetermined']}">
+											<p:ajax event="change" process="@this"
+												listener="#{fixedMovementBean.onInstallmentChange()}" />
+										</p:selectBooleanCheckbox>
+									</div>
+								</div>
+							</div>
+							<div class="col-sm-12 form-group">
+								<p:outputLabel for="inDescription"
+									value="#{messages['fixed-movement.form.description']}: " />
+								<p:inputTextarea id="inDescription" maxlength="255"
+									autoResize="false" styleClass="form-control"
+									value="#{fixedMovementBean.fixedMovement.description}" />
+							</div>
+						</div>
+					</div>
+					<div class="col-sm-6">
+						<wb:apportionmentBox id="apportionmentBox"
+							baseBean="#{fixedMovementBean}"
+							disabled="#{fixedMovementBean.viewState ne 'ADDING'}"
+							showDialogAction="#{fixedMovementBean.showApportionmentDialog()}"
+							apportionmentsList="#{fixedMovementBean.fixedMovement.apportionments}" />
+					</div>
+				</div>
+
+				<div class="box-footer align-right">
+					<p:commandButton value="#{menu['save']}" update="fixedMovementForm"
+						process="fixedMovementForm" styleClass="btn btn-flat btn-success"
+						action="#{fixedMovementBean.doSave()}"
+						rendered="#{fixedMovementBean.viewState eq 'ADDING'}" />
+					<p:commandButton value="#{menu['update']}"
+						update="fixedMovementForm" process="fixedMovementForm"
+						styleClass="btn btn-flat btn-success"
+						action="#{fixedMovementBean.doUpdate()}"
+						rendered="#{fixedMovementBean.viewState eq 'EDITING'}" />
+					<div style="display: inline-block"
+						jsf:rendered="#{fixedMovementBean.viewState ne 'ADDING'}">
+						<p:spacer width="10" />
+						<p:commandButton value="#{menu['launches']}"
+							styleClass="btn btn-flat btn-warning"
+							action="#{fixedMovementBean.showLaunchesDialog()}"
+							rendered="#{userSessionBean.hasRole(authorization.FIXED_MOVEMENT_LAUNCHES)}" />
+					</div>
+					<p:spacer width="10" />
+					<p:commandButton immediate="true" value="#{menu['back']}"
+						styleClass="btn btn-flat btn-default"
+						action="#{fixedMovementBean.doCancel()}" />
+				</div>
+			</div>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="popups">
+		<ui:include src="dialogLaunches.xhtml" />
+		<ui:include src="dialogApportionment.xhtml" />
+	</ui:define>
+</ui:composition>

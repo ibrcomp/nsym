@@ -1,0 +1,154 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="FABRICA" />
+	<ui:param name="activeSubmenu" value="CORTADOR" />
+	<f:metadata>
+		<f:viewAction action="#{fabricaBean.initializeFormCortador(param.idCortador)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+       #{breadcrumb['entries.cortador']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{fabricaBean.viewState eq 'ADDING'}"
+			value="#{messages['fabrica.cortador.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{fabricaBean.viewState eq 'EDITING'}"
+			value="#{messages['fabrica.cortador.page-description-editing']}">
+			<f:param value="#{fabricaBean.cortador.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries.fabrica']}</a></li>
+		<li><a href="formCadModelos.xhtml">#{breadcrumb['entries.cortador']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['entries.cortador']}"></p:outputLabel>
+					</h2>
+				</div>
+				<div class="box-body ">
+				<p:focus for="nome" context="empresaForm" />
+					<div class="form-group col-md-12">
+						<div class="row">
+							<p:toolbar id="navegador">
+								<f:facet name="left">
+									<p:commandButton update="empresaForm" process="empresaForm"
+										value="#{menu['save']}" action="#{fabricaBean.doSalvarCortador()}"
+										onstart="PF('formBlock').block()"
+										disabled="#{userSessionBean.hasRole(authorization.CORTADOR_INSERT) eq 'false'}"
+										styleClass="btn btn-flat btn-success"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{fabricaBean.viewState eq 'ADDING'}"
+										icon="fa fa-hdd-o" />
+
+									<p:commandButton process="empresaForm"
+										value="#{menu['update']}" action="#{fabricaBean.doSalvarCortador()}"
+										onstart="PF('formBlock').block()"
+										update="empresaForm pageDescription"
+										styleClass="btn btn-flat btn-warning"
+										disabled="#{userSessionBean.hasRole(authorization.CORTADOR_EDIT) eq 'false'}"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{fabricaBean.viewState eq 'EDITING'}" />
+
+								</f:facet>
+								<f:facet name="right">
+									<p:commandButton process="empresaForm"
+										value="#{menu['delete']}"
+										action="#{fabricaBean.doExcluirCortador()}"
+										onstart="PF('formBlock').block()"
+										update="empresaForm pageDescription"
+										styleClass="btn btn-flat btn-danger"
+										disabled="#{userSessionBean.hasRole(authorization.CORTADOR_DELETE) eq 'false'}"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{fabricaBean.viewState eq 'EDITING'}">
+										<p:confirm header="Atenção" message="Excluir? "
+											icon="ui-icon-alert" />
+									</p:commandButton>
+
+									<p:confirmDialog global="true">
+										<p:commandButton value="#{menu.yes}"
+											styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
+										<p:commandButton value="#{menu.no}"
+											styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+									</p:confirmDialog>
+									<p:commandButton immediate="true" value="#{menu['back']}"
+										action="#{fabricaBean.toListCortador()}"
+										styleClass="btn btn-flat btn-default" />
+								</f:facet>
+							</p:toolbar>
+						</div>
+					</div>
+					<div class="col-md-12">
+						<div class="row">
+							<div class="form-group col-md-6">
+								<p:outputLabel value="#{label['label.nome']}: "
+									for="nome" />
+								<p:inputText value="#{fabricaBean.cortador.nome}"
+									id="nome" required="true" immediate="true"
+									readonly="#{userSessionBean.hasRole(authorization.CORTADOR_INSERT) eq 'false'}"
+									requiredMessage="#{validation['cortador.name.isempty']}"
+									maxlength="100" styleClass="form-control" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.list.preco1']}: " for="preco1" />
+								<br />
+								<p:inputNumber value="#{fabricaBean.cortador.valorCorte}" size="10"
+											rendered="#{userSessionBean.hasRole(authorization.CORTADOR_INSERT) eq 'true'}"
+											decimalPlaces="2" id="preco1" thousandSeparator="."
+											decimalSeparator="," symbol="R$" />
+							</div>
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.porPeca']}: "
+									for="peca" />
+									<br />
+								<p:selectBooleanCheckbox value="#{fabricaBean.cortador.porPeca}" id="peca"
+								disabled="#{userSessionBean.hasRole(authorization.CORTADOR_INSERT) eq 'false'}"/>
+							</div>
+						</div>
+						<div class="row">
+							<div class="form-group col-md-4">
+								<p:outputLabel value="#{label['label.obs']}: " for="obs" />
+								<p:inputTextarea value="#{fabricaBean.cortador.obs}" id="obs"
+									required="false" immediate="true" rows="5" cols="100"
+									readonly="#{userSessionBean.hasRole(authorization.CORTADOR_INSERT) eq 'false'}"
+									maxlength="500"  styleClass="form-control" />
+							</div>
+							#{messages['fabrica.cortador.info.valor']}
+						</div>
+					</div>
+				</div>
+			</div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="resources/nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+	</ui:define>
+	<ui:define name="popups">
+	</ui:define>
+</ui:composition>

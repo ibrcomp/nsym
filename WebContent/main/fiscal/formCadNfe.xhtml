@@ -1,0 +1,1021 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml"
+	xmlns:stella="http://stella.caelum.com.br/faces2">
+
+	<ui:param name="activeMenu" value="Nfe" />
+
+	<f:metadata>
+		<f:viewAction action="#{nfeBean.initializeForm(param.nfeID)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['nfe.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{nfeBean.viewState eq 'ADDING'}"
+			value="#{messages['nfe.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{nfeBean.viewState eq 'EDITING'}"
+			value="#{messages['nfe.page-description-editing']}">
+			<f:param value="#{nfeBean.nfe.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li><a href="formListNfe.xhtml">#{breadcrumb['entries.nfe']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<p:remoteCommand name="insere"
+				actionListener="#{nfeBean.localizaProduto()}"
+				update="idRefItem idItemQuant labelRef labelDesc labelPreco labelQuant listaItensProduto baseIcms valorIcms baseIcmsSt valorIcmsSt valorTotalProduto valorFrete valorSeguro valorDesconto valorOutros valorTotalIpi valorTotalNota"
+				immediate="true" />
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel value="#{breadcrumb['entries']}"></p:outputLabel>
+					</h2>
+				</div>
+				<p:tabView prependId="false" id="tabViewPrincipal">
+					<p:tab title="#{label['label.nfe.destinatario']}" id="tabPrincipal">
+						<p:focus context="tabPrincipal" for="descricao" />
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.nfe.naturezaoperacao']}: "
+										for="descricao" style="width:100%" />
+									<p:autoComplete value="#{nfeBean.nfe.natOperacao}"
+										id="descricao" required="true" immediate="true"
+										onkeypress="keyExec(event,'enter','document.form.tpOperacao.focus()')"
+										readonly="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+										completeMethod="#{nfeBean.completaNatOperacao}" var="ncm"
+										itemLabel="#{ncm.descricao}" itemValue="#{ncm}"
+										minQueryLength="1" label="descricao" style="width:100%"
+										autoHighlight="true" size="50">
+										<o:converter converterId="omnifaces.ListConverter"
+											list="#{nfeBean.pegaListaNaturezaOperacao()}" />
+									</p:autoComplete>
+								</div>
+								<div class="form-group col-md-1">
+									<p:outputLabel value="#{label['label.nfe.tipoOperacao']}"
+										for="tpOperacao" />
+									<p:selectBooleanCheckbox value="#{nfeBean.nfe.tipoOperacao}"
+										onkeypress="setaFoco(this)" id="tpOperacao" style="width:50%" />
+								</div>
+								<div class="form-group col-md-1">
+									<p:outputLabel value="#{label['label.nfe.import']}"
+										for="import" />
+									<p:selectBooleanCheckbox value="#{nfeBean.nfe.importacao}"
+										onkeypress="setaFoco(this)" id="import" style="width:50%">
+										<p:ajax update="tabViewPrincipal" />
+									</p:selectBooleanCheckbox>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Informe a DI: "
+										for="numeroDI" rendered="#{nfeBean.nfe.importacao}" >
+									</p:outputLabel>
+									<p:inputText value="#{nfeBean.numeroDI}" id="numeroDI"
+										styleClass="form-control" rendered="#{nfeBean.nfe.importacao}" />
+								</div>
+								<div class="form-group col-md-2">
+									<br />
+									<p:commandButton value="Localiza DI"
+										process="tabPrincipal"
+										actionListener="#{nfeBean.localizaDI}"
+										rendered="#{nfeBean.nfe.importacao}"
+										update="listaResultadoDialog tabPrincipal" id="buttonPesquisaDI"
+										style="width:100%;margin:5px"
+										styleClass="btn btn-flat btn-info" icon="fa fa-search" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{nfeBean.di.nnDi}"
+										rendered="#{nfeBean.nfe.importacao}" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.nfe.tipoPesquisa']}"
+										for="pesquisa" />
+									<p:selectOneMenu id="pesquisa" filter="false"
+										value="#{nfeBean.nfe.tipoPesquisa}"
+										disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+										converter="omnifaces.GenericEnumConverter" style="width:100%"
+										onchange="$(function(){PrimeFaces.focus('finalidadeValue');});"
+										immediate="true" required="true">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{nfeBean.tipoPesquisa}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-5">
+									<p:outputLabel value="#{label['label.nfe.destinatario']}: "
+										for="nomeRazao">
+									</p:outputLabel>
+									<p:inputText value="#{nfeBean.destinatario}" id="nomeRazao"
+										onkeypress="setaFoco(this)"
+										placeholder="Digite aqui a Razão/Nome"
+										styleClass="form-control" autocomplete="false" />
+								</div>
+								<div class="form-group col-md-2">
+									<br />
+									<p:commandButton value="#{label['label.nfe.destino.pesquisa']}"
+										process="tabPrincipal"
+										actionListener="#{nfeBean.pesquisaDestinatario()}"
+										update="listaResultadoDialog tabPrincipal" id="buttonPesquisa"
+										style="width:100%;margin:5px"
+										styleClass="btn btn-flat btn-info" icon="fa fa-search" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.nfe.nomeRazao']}"
+										for="idRazao" style="width:100%" />
+									<p:inputText value="#{nfeBean.razao}" id="idRazao"
+										styleClass="form-control" disabled="true" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.cnpj']}" for="idCnpj"
+										style="width:100%" />
+									<p:inputText value="#{nfeBean.cnpj}" id="idCnpj"
+										styleClass="form-control" disabled="true" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.dataEmissao']}"
+										for="idEmissao" />
+									<p:calendar value="#{nfeBean.emissao}" id="idEmissao"
+										pattern="dd/MM/yyyy HH:mm" converter="localDateTimeConverter" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.dataEntradaSaida']}"
+										for="idDataEnt" />
+									<p:calendar value="#{nfeBean.entSai}" id="idDataEnt"
+										pattern="dd/MM/yyyy HH:mm" converter="localDateTimeConverter" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Finalidade" for="finalidadeValue" />
+									<p:selectOneMenu value="#{nfeBean.nfe.finalidadeEmissao}"
+										id="finalidadeValue" filter="true" required="true"
+										rendered="true"
+										disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+										onchange="$(function(){PrimeFaces.focus('nomeRazao');});"
+										converter="omnifaces.GenericEnumConverter" style="width:100%">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{nfeBean.finalidadeNfeValue}" />
+										<p:ajax update="tabPrincipal" event="change"
+											process="tabPrincipal"
+											listener="#{nfeBean.exibeNfeReferenciada()}" />
+									</p:selectOneMenu>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-6">
+									<p:outputLabel value="#{label['label.logradouro']}" for="idEnd"
+										style="width:100%" />
+									<p:inputText value="#{nfeBean.endereco}" id="idEnd"
+										styleClass="form-control" disabled="true" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.bairro']}" for="idBairro"
+										style="width:100%" />
+									<p:inputText value="#{nfeBean.bairro}" id="idBairro"
+										styleClass="form-control" disabled="true" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.municipio']}"
+										for="idMunicipio" style="width:100%" />
+									<p:inputText value="#{nfeBean.municipio}" id="idMunicipio"
+										styleClass="form-control" disabled="true" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.estado']}" for="idUf"
+										style="width:100%" />
+									<p:inputText value="#{nfeBean.uf}" id="idUf"
+										styleClass="form-control" disabled="true" />
+								</div>
+
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="#{label['label.nfe.itens']}" id="tabItens"
+						rendered="#{nfeBean.nfe.importacao eq 'false'}">
+						<div class="box-body">
+							<p:focus context="tabItens" for="idRefItem" />
+							<p:defaultCommand target="insereItem" scope="tabItens" />
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.nfe.item.codigo']}"
+										for="idRefItem">
+										<p:commandButton
+											actionListener="#{nfeBean.telaListaProduto()}"
+											styleClass="btn btn-flat btn-info"
+											disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+											icon="fa fa-search" style="width:20px;height:20px"
+											update="formPopupPesquisaProduto" process="tabItens" />
+									</p:outputLabel>
+									<h:inputText value="#{nfeBean.ref}" id="idRefItem"
+										onkeypress="setaFoco(this)" immediate="true"
+										styleClass="form-control">
+									</h:inputText>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.nfe.item.quantidade']}"
+										for="idItemQuant" />
+									<p:inputNumber value="#{nfeBean.quantidade}" id="idItemQuant"
+										onkeypress="setaFoco(this)" maxValue="9999999.99"
+										emptyValue="0" minValue="0.0" immediate="true"
+										decimalSeparator="," thousandSeparator="." style="width:100%"
+										size="20" decimalPlaces="2">
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-1">
+									<br />
+									<p:commandButton actionListener="#{nfeBean.localizaProduto()}"
+										process="tabItens"
+										oncomplete="$(function(){PrimeFaces.focus('idRefItem');});"
+										update="idRefItem idItemQuant preco1 labelRef labelDesc labelPreco labelQuant listaItensProduto baseIcms valorIcms baseIcmsSt valorIcmsSt valorTotalProduto valorFrete valorSeguro valorDesconto valorOutros valorTotalIpi valorTotalNota"
+										id="insereItem" style="width:100%;margin:5px"
+										styleClass="btn btn-flat btn-warning" icon="fa fa-plus" />
+								</div>
+
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.list.preco1']} "
+										for="preco1" style="width:100%"
+										rendered="#{nfeBean.usuarioAutenticado.config.alteraPrecoNFeAvulso eq 'true'}" />
+									<p:inputNumber value="#{nfeBean.precoVenda}" size="10"
+										rendered="#{nfeBean.usuarioAutenticado.config.alteraPrecoNFeAvulso eq 'true'}"
+										decimalPlaces="2" id="preco1" emptyValue="0"
+										thousandSeparator="." decimalSeparator="," symbol="R$" />
+								</div>
+
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.tabelaPreco']}" />
+									<p:selectOneMenu value="#{nfeBean.tabelaSelecionada}"
+										id="tabelaSelecionada" filter="true" required="true"
+										disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+										onchange="$(function(){PrimeFaces.focus('insereItem');});"
+										converter="omnifaces.GenericEnumConverter" style="width:100%"
+										immediate="true">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{nfeBean.tabelaPreco}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-1">
+									<p:outputLabel value="Desconto por %" for="tDesc" />
+									<p:selectBooleanCheckbox value="#{nfeBean.descontoPercentual}"
+										onkeypress="setaFoco(this)" id="tDesc" style="width:50%">
+									</p:selectBooleanCheckbox>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Desc Val." for="desPerc" />
+									<p:inputNumber value="#{nfeBean.desPercVal}" id="desPerc"
+										maxValue="999.99" minValue="0.00" immediate="true"
+										emptyValue="0" onkeypress="setaFoco(this)"
+										decimalSeparator="," thousandSeparator="." style="width:100%"
+										size="20">
+									</p:inputNumber>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.ref']}" />
+									<br />
+									<p:outputLabel value="#{nfeBean.produto.referencia}"
+										id="labelRef" style="color:blue" />
+								</div>
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.descricao']}" />
+									<br />
+									<p:outputLabel value="#{nfeBean.produto.descricao}"
+										id="labelDesc" style="color:blue" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.nfe.preco']}" />
+									<br />
+									<p:outputLabel value="#{nfeBean.tempValorUnitario}"
+										id="labelPreco" style="color:blue" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.nfe.item.quantidade']}"
+										for="labelQuant" />
+									<br />
+									<p:outputLabel value="#{nfeBean.quantidade}" id="labelQuant"
+										style="color:blue" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-12">
+									<p:dataTable id="listaItensProduto" var="lista"
+										styleClass="todo-list" widgetVar="listaItemNfe"
+										value="#{nfeBean.listaItemModel}"
+										paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+										paginator="true" rows="20" lazy="false" rowKey="#{lista.id}"
+										selectionMode="single" selection="#{nfeBean.itemSelecionado}"
+										sortBy="#{lista.produto.descricao}"
+										rowsPerPageTemplate="20,30">
+
+										<p:column headerText="#{label['label.descricao']}"
+											style="width:25%" rendered="true">
+											<h:outputText value="#{lista.produto.descricao} " />
+										</p:column>
+										<p:column headerText="#{label['label.list.tamanho']}"
+											rendered="true" style="width:7%">
+											<h:outputText value="#{lista.barras.tamanho.tamanho} " />
+										</p:column>
+										<p:column headerText="#{label['label.list.cor']}"
+											rendered="true" style="width:7%">
+											<h:outputText value="#{lista.barras.cor.nome} " />
+										</p:column>
+
+										<p:column headerText="#{label['label.ref']}" rendered="true"
+											style="width:7%">
+											<h:outputText value="#{lista.produto.referencia}" />
+										</p:column>
+										<p:column headerText="#{label['label.nfe.preco']}"
+											rendered="true">
+											<h:outputText value="#{lista.valorUnitario}" />
+										</p:column>
+										<p:column headerText="#{label['label.nfe.item.quantidade']}"
+											style="width:5%" rendered="true">
+											<h:outputText value="#{lista.quantidade}" />
+										</p:column>
+										<p:column headerText="Cfop" rendered="true" style="width:5%">
+											<h:outputText value="#{lista.cfopItem.cfop}" />
+										</p:column>
+										<p:column headerText="CST" rendered="true" style="width:5%">
+											<h:outputText value="#{lista.cst}" />
+										</p:column>
+										<p:column headerText="Base Icms" rendered="true">
+											<h:outputText value="#{lista.baseICMS}" />
+										</p:column>
+										<p:column headerText="Aliq. Icms" rendered="true"
+											style="width:5%">
+											<h:outputText value="#{lista.aliqIcms}" />
+										</p:column>
+										<p:column headerText="Valor Icms" rendered="true">
+											<h:outputText value="#{lista.valorIcms}" />
+										</p:column>
+										<p:column headerText="Aliq Ipi" rendered="true"
+											style="width:5%">
+											<h:outputText value="#{lista.aliqIPI}" />
+										</p:column>
+										<p:column headerText="Valor Ipi" rendered="true">
+											<h:outputText value="#{lista.valorIPI}" />
+										</p:column>
+										<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+											rendered="true">
+											<h:outputText value="#{lista.valorTotal}">
+												<f:convertNumber type="currency" currencySymbol="R$" />
+											</h:outputText>
+										</p:column>
+										<p:column headerText="#{label['label.list.Action']}">
+											<p:commandButton process="listaItensProduto"
+												icon="fa fa-remove" title="#{menu['delete']}"
+												styleClass="btn btn-flat btn-danger"
+												actionListener="#{nfeBean.excluiItem(lista)}"
+												update="listaItensProduto baseIcms valorIcms baseIcmsSt valorIcmsSt valorTotalProduto
+									            valorFrete valorSeguro valorDesconto valorOutros valorTotalIpi valorTotalNota" />
+										</p:column>
+										<p:columnGroup type="footer">
+											<p:row>
+												<h:outputText value="Total Nfe: "
+													style="text-align:right;font-size:18px;font-weight:bold;" />
+												<h:outputText value="#{nfeBean.totalNfe}"
+													style="font-size:18px;color:red;font-weight:bold;">
+													<f:convertNumber type="currency" currencySymbol="R$" />
+												</h:outputText>
+											</p:row>
+										</p:columnGroup>
+									</p:dataTable>
+								</div>
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="#{label['label.nfe.itensImport']}"
+						id="tabItensImport" rendered="#{nfeBean.nfe.importacao eq 'true'}">
+						<div class="box-body">
+							<p:focus context="tabItensImport" for="idRefItemImp" />
+							<p:defaultCommand target="insereItemImport"
+								scope="tabItensImport" />
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.nfe.item.codigo']}"
+										for="idRefItemImp">
+										<p:commandButton
+											actionListener="#{nfeBean.telaListaProduto()}"
+											styleClass="btn btn-flat btn-info"
+											disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+											icon="fa fa-search" style="width:20px;height:20px"
+											update="formPopupPesquisaProduto" process="tabItensImport" />
+									</p:outputLabel>
+									<h:inputText value="#{nfeBean.ref}" id="idRefItemImp"
+										onkeypress="setaFoco(this)" immediate="true"
+										styleClass="form-control">
+									</h:inputText>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.nfe.item.quantidade']}"
+										for="idItemQuantImp" />
+									<p:inputNumber value="#{nfeBean.quantidade}"
+										id="idItemQuantImp" onkeypress="setaFoco(this)" emptyValue="0"
+										maxValue="9999999.99" immediate="true" decimalSeparator=","
+										thousandSeparator="." style="width:100%" decimalPlaces="2"
+										size="20">
+									</p:inputNumber>
+								</div>
+								<div class="form-group col-md-1">
+									<br />
+									<p:commandButton actionListener="#{nfeBean.localizaProduto()}"
+										process="tabItensImport"
+										oncomplete="$(function(){PrimeFaces.focus('idRefItemImp');});"
+										update="idRefItemImp idItemQuantImp labelRefImport labelDescImport labelPrecoImport labelQuantImport listaItensProdutoImport baseIcms valorIcms baseIcmsSt valorIcmsSt valorTotalProduto valorFrete valorSeguro valorDesconto valorOutros valorTotalIpi valorTotalNota"
+										id="insereItemImport" style="width:100%;margin:5px"
+										styleClass="btn btn-flat btn-warning" icon="fa fa-plus" />
+								</div>
+
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.tabelaPreco']}" />
+									<p:selectOneMenu value="#{nfeBean.tabelaSelecionada}"
+										id="tabelaSelecionadaImport" filter="true" required="true"
+										disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+										onchange="$(function(){PrimeFaces.focus('insereItem');});"
+										converter="omnifaces.GenericEnumConverter" style="width:100%"
+										immediate="true">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{nfeBean.tabelaPreco}" />
+									</p:selectOneMenu>
+								</div>
+								<div class="form-group col-md-1">
+									<p:outputLabel value="Desconto por %" for="tDescImport" />
+									<p:selectBooleanCheckbox value="#{nfeBean.descontoPercentual}"
+										onkeypress="setaFoco(this)" id="tDescImport" style="width:50%">
+									</p:selectBooleanCheckbox>
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Desc Val." for="desPercImport" />
+									<p:inputNumber value="#{nfeBean.desPercVal}" id="desPercImport"
+										maxValue="999.99" minValue="0.00" immediate="true"
+										emptyValue="0" onkeypress="setaFoco(this)"
+										decimalSeparator="," thousandSeparator="." style="width:100%"
+										size="20">
+									</p:inputNumber>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.ref']}" />
+									<br />
+									<p:outputLabel value="#{nfeBean.produto.referencia}"
+										id="labelRefImport" style="color:blue" />
+								</div>
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.descricao']}" />
+									<br />
+									<p:outputLabel value="#{nfeBean.produto.descricao}"
+										id="labelDescImport" style="color:blue" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.nfe.preco']}" />
+									<br />
+									<p:outputLabel value="#{nfeBean.tempValorUnitario}"
+										id="labelPrecoImport" style="color:blue" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="#{label['label.nfe.item.quantidade']}"
+										for="labelQuantImport" />
+									<br />
+									<p:outputLabel value="#{nfeBean.quantidade}"
+										id="labelQuantImport" style="color:blue" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-12">
+									<p:dataTable id="listaItensProdutoImport" var="lista"
+										styleClass="todo-list" widgetVar="listaItemNfeImport"
+										value="#{nfeBean.listaItemModel}"
+										paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+										paginator="true" rows="20" lazy="false" rowKey="#{lista.row}"
+										selectionMode="single" selection="#{nfeBean.itemSelecionado}"
+										sortBy="#{lista.produto.descricao}"
+										rowsPerPageTemplate="20,30">
+
+										<p:ajax event="rowSelect"
+											listener="#{nfeBean.onRowSelectItemNfe}"
+											update="listaItensProdutoImport" />
+
+										<p:column headerText="#{label['label.ref']}" rendered="true">
+											<h:outputText value="#{lista.produto.referencia}" />
+										</p:column>
+
+										<p:column headerText="#{label['label.descricao']}"
+											style="width:30%" rendered="true">
+											<h:outputText value="#{lista.produto.descricao}" />
+										</p:column>
+										<p:column headerText="Cfop" rendered="true">
+											<h:outputText value="#{lista.cfopItem.cfop}" />
+										</p:column>
+										<p:column headerText="CST" rendered="true">
+											<h:outputText value="#{lista.cst}" />
+										</p:column>
+										<p:column headerText="#{label['label.nfe.preco']}"
+											rendered="true">
+											<h:outputText value="#{lista.valorUnitario}" />
+										</p:column>
+										<p:column headerText="#{label['label.nfe.item.quantidade']}"
+											rendered="true">
+											<h:outputText value="#{lista.quantidade}" />
+										</p:column>
+
+										<p:column headerText="#{label['label.nfe.item.valorTotal']}"
+											rendered="true">
+											<h:outputText value="#{lista.valorTotal}">
+												<f:convertNumber type="currency" currencySymbol="R$" />
+											</h:outputText>
+										</p:column>
+										<p:column width="15%" styleClass="align-center"
+											headerText="#{menu['actions']}">
+											<p:commandButton icon="fa fa-percent"
+												title="#{label['label.nfe.import.imposto']}"
+												actionListener="#{nfeBean.cadastraImpostos(lista)}"
+												onstart="PF('formBlock').block()"
+												oncomplete="PF('formBlock').unblock()"
+												styleClass="btn btn-flat btn-warning" immediate="true"
+												disabled="#{userSessionBean.hasRole(authorization.TRIBUTOS_INSERT) eq 'false'}"
+												update="listaItensProdutoImport baseIcms valorIcms baseIcmsSt valorIcmsSt valorTotalProduto
+									            valorFrete valorSeguro valorDesconto valorOutros valorTotalIpi valorTotalNota"
+												process="listaItensProdutoImport" />
+											<p:commandButton icon="fa fa-remove"
+												title="#{menu['delete']}"
+												styleClass="btn btn-flat btn-danger"
+												actionListener="#{nfeBean.excluiItem(lista)}"
+												immediate="true"
+												update="listaItensProdutoImport baseIcms valorIcms baseIcmsSt valorIcmsSt valorTotalProduto
+									            valorFrete valorSeguro valorDesconto valorOutros valorTotalIpi valorTotalNota"
+												process="listaItensProdutoImport" />
+										</p:column>
+
+										<p:columnGroup type="footer">
+											<p:row>
+												<h:outputText value="Total Nfe: "
+													style="text-align:right;font-size:18px;font-weight:bold;" />
+												<h:outputText value="#{nfeBean.totalNfe}"
+													style="font-size:18px;color:red;font-weight:bold;">
+													<f:convertNumber type="currency" currencySymbol="R$" />
+												</h:outputText>
+											</p:row>
+										</p:columnGroup>
+									</p:dataTable>
+								</div>
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="#{label['label.nfe.Pagamento']}" id="tabPagamentos"
+						rendered="true">
+						<div class="box-body" />
+						<div class="row">
+							<div class="form-group col-md-2">
+								<p:outputLabel value="#{label['label.nfe.Pagamento']}"
+									for="listaForma"></p:outputLabel>
+								<p:selectOneMenu value="#{nfeBean.formaPag}" id="listaForma"
+									filter="true"
+									disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+									required="true" converter="omnifaces.SelectItemsConverter"
+									style="width:100%">
+									<f:selectItem itemValue="#{null}" noSelectionOption="false"
+										itemLabel="#{messages['filial.form.select-one']}" />
+									<f:selectItems value="#{nfeBean.listaFormasDePagamento}"
+										var="forma" itemLabel="#{forma.descricao}" />
+									<p:ajax update="tabParcelas" event="change"
+										listener="#{nfeBean.preencheParcelamento()}" />
+								</p:selectOneMenu>
+							</div>
+							<div class="form-group col-md-6">
+								<p:dataTable id="tabParcelas" var="parcela"
+									value="#{nfeBean.listaParcelamento}" editable="true">
+									<f:facet name="Header">
+										<p:outputLabel value="#{label['label.pagamento.titulo']}" />
+									</f:facet>
+									<p:column headerText="#{label['label.financial.controle']}"
+										style="width:20%">
+										<p:cellEditor>
+											<f:facet name="output">
+												<p:outputLabel value="#{parcela.controle}" disabled="true" />
+											</f:facet>
+											<f:facet name="input">
+												<h:outputText value="#{parcela.controle}" disabled="true" />
+											</f:facet>
+										</p:cellEditor>
+									</p:column>
+									<p:column headerText="#{label['label.financial.numParcela']}"
+										style="width:10%">
+										<p:cellEditor>
+											<f:facet name="output">
+												<p:outputLabel value="#{parcela.numParcela}" disabled="true" />
+											</f:facet>
+											<f:facet name="input">
+												<h:outputText value="#{parcela.numParcela}" disabled="true" />
+											</f:facet>
+										</p:cellEditor>
+									</p:column>
+									<p:column headerText="#{label['label.pagamento.parcela']}"
+										style="width:25%">
+										<p:cellEditor>
+											<f:facet name="output">
+												<p:inputNumber value="#{parcela.valorParcela}"
+													decimalPlaces="2" symbol="R$" disabled="true" />
+											</f:facet>
+											<f:facet name="input">
+												<p:inputNumber value="#{parcela.valorParcela}" id="vParcela"
+													decimalPlaces="2" symbol="R$" />
+											</f:facet>
+										</p:cellEditor>
+									</p:column>
+									<p:column headerText="#{label['label.financial.vencimento']}"
+										style="width:35%">
+										<p:cellEditor>
+											<f:facet name="output">
+												<p:calendar value="#{parcela.vencimento}"
+													pattern="dd/MM/yyyy" converter="localDateConverter"
+													disabled="true" />
+											</f:facet>
+											<f:facet name="input">
+												<p:calendar value="#{parcela.vencimento}" id="dVencimento"
+													pattern="dd/MM/yyyy" converter="localDateConverter" />
+											</f:facet>
+										</p:cellEditor>
+									</p:column>
+									<p:column style="width:10%">
+										<p:rowEditor />
+									</p:column>
+								</p:dataTable>
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="#{label['label.nfe.impostos']}" id="tabImpostos"
+						rendered="true">
+						<div class="box-body row">
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Base de Cálculo do Icms" for="baseIcms"
+										style="width:100%" />
+									<p:inputText value="#{nfeBean.nfe.baseIcms}" id="baseIcms"
+										styleClass="form-control" disabled="true" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Valor do Icms" for="valorIcms"
+										style="width:100%" />
+									<p:inputText value="#{nfeBean.nfe.valorIcms}" id="valorIcms"
+										styleClass="form-control" disabled="true" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Base de Cálc. Icms Subst."
+										for="baseIcmsSt" style="width:100%" />
+									<p:inputText value="#{nfeBean.nfe.baseIcmsSubstituicao}"
+										styleClass="form-control" id="baseIcmsSt" disabled="true" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Valor do Icms Subst." for="valorIcmsSt"
+										style="width:100%" />
+									<p:inputText value="#{nfeBean.nfe.valorIcmsSubstituicao}"
+										styleClass="form-control" id="valorIcmsSt" disabled="true" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Valor Total dos Produtos"
+										for="valorTotalProduto" style="width:100%" />
+									<p:inputText value="#{nfeBean.nfe.valorTotalProdutos}"
+										styleClass="form-control" id="valorTotalProduto"
+										disabled="true" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Valor do Frete" for="valorFrete"
+										style="width:100%" />
+									<p:inputNumber value="#{nfeBean.valorFrete}" immediate="true"
+										emptyValue="0" id="valorFrete" disabled="false" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Valor do Seguro" for="valorSeguro"
+										style="width:100%" />
+									<p:inputNumber value="#{nfeBean.nfe.valorSeguro}"
+										emptyValue="0" id="valorSeguro" disabled="false" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Desconto" for="valorDesconto"
+										style="width:100%" />
+									<p:inputText value="#{nfeBean.nfe.desconto}"
+										styleClass="form-control" id="valorDesconto" disabled="true" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Outras Despesas Acess." for="valorOutros"
+										style="width:100%" />
+									<p:inputNumber value="#{nfeBean.nfe.outrasDespesas}"
+										emptyValue="0" id="valorOutros" disabled="false" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Valor Total do Ipi" for="valorTotalIpi"
+										style="width:100%" />
+									<p:inputText value="#{nfeBean.nfe.valorTotalIpi}"
+										styleClass="form-control" id="valorTotalIpi" disabled="true" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Valor Total da Nota" for="valorTotalNota"
+										style="width:100%" />
+									<p:inputText value="#{nfeBean.nfe.valorTotalNota}"
+										styleClass="form-control" id="valorTotalNota" disabled="true" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="align-right">
+									<p:commandButton process="tabImpostos"
+										value="#{label['label.nfe.recalcula']}"
+										action="#{nfeBean.preencheTotais()}"
+										styleClass="btn btn-flat btn-warning"
+										disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+										update="tabParcelas baseIcms valorIcms baseIcmsSt valorIcmsSt valorTotalProduto
+									            valorFrete valorSeguro valorDesconto valorOutros valorTotalIpi valorTotalNota"
+										icon="fa fa-hdd-o" />
+								</div>
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="#{label['label.nfe.transportador']}"
+						id="tabTransportador">
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.nfe.tipoFrete']}"
+										for="tipoFrete" />
+									<p:selectOneMenu id="tipoFrete" filter="true"
+										value="#{nfeBean.nfe.tipoFrete}"
+										disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+										converter="omnifaces.GenericEnumConverter" style="width:100%"
+										required="true" immediate="true">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['filial.form.select-one']}" />
+										<f:selectItems value="#{nfeBean.tipoFrete}" />
+									</p:selectOneMenu>
+
+									<p:outputLabel value="#{label['label.nfe.clienteRetira']}"
+										for="tpClienteRetira" />
+									<p:selectBooleanButton onLabel="#{label['label.yes']}"
+										offLabel="#{label['label.no']}" onIcon="ui-icon-check"
+										offIcon="ui-icon-close" value="#{nfeBean.nfe.clienteRetira}"
+										id="tpClienteRetira" style="width:60px;margin:5px"
+										styleClass="btn btn-flat btn-info">
+										<p:ajax
+											update="nomeTransportadora cnpjTransportadora inscTransportadora"
+											listener="#{nfeBean.clienteRetira}" />
+									</p:selectBooleanButton>
+								</div>
+							</div>
+							<div class="box row">
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.nfe.transporte']}: "
+										for="nomeRazaoTransportadora">
+									</p:outputLabel>
+									<p:inputText value="#{nfeBean.nomeTransportadora}"
+										required="false" placeholder="Digite Razão/Nome"
+										id="nomeRazaoTransportadora" styleClass="form-control"
+										rendered="#{nfeBean.nfe.clienteRetira eq 'false'}"
+										autocomplete="false" />
+								</div>
+								<div class="form-group col-md-2">
+									<br />
+									<p:commandButton
+										value="#{label['label.nfe.transporte.pesquisa']}"
+										actionListener="#{nfeBean.pesquisaTransporte()}"
+										process="tabTransportador" style="width:100%;margin:5px"
+										styleClass="btn btn-flat btn-info" icon="fa fa-search"
+										rendered="#{nfeBean.nfe.clienteRetira eq 'false'}"
+										id="botaoPesquisaTransp"
+										update="listaTransporteDialog nfeTransporte tabTransportador" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Placa veículo" for="placa"
+										style="width:100%" />
+									<p:inputText value="#{nfeBean.transp.placa}" maxlength="7"
+										styleClass="form-control" id="placa" disabled="false" />
+								</div>
+								<div class="form-group col-md-2">
+
+									<p:outputLabel value="Uf Placa" for="ufPlaca"
+										style="width:100%" />
+									<p:selectOneMenu id="ufPlaca" value="#{nfeBean.transp.ufPlaca}"
+										converter="omnifaces.GenericEnumConverter"
+										styleClass="form-group">
+										<f:selectItem itemValue="#{null}" noSelectionOption="true"
+											itemLabel="#{messages['cliente.form.select-one']}" />
+										<f:selectItems value="#{nfeBean.listaUf}" />
+									</p:selectOneMenu>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-6">
+									<p:outputLabel
+										value="#{label['label.razao']}/#{label['label.nome']}: "
+										for="nomeTransportadora" style="width:100%" />
+									<p:inputText value="#{nfeBean.transporte.razaoSocial}"
+										required="true" styleClass="form-control"
+										id="nomeTransportadora" disabled="true" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Cnpj: " for="cnpjTransportadora"
+										style="width:100%" />
+									<p:inputText value="#{nfeBean.transporte.cnpj}"
+										styleClass="form-control" id="cnpjTransportadora"
+										disabled="true" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Insc: " for="inscTransportadora"
+										style="width:100%" />
+									<p:inputText value="#{nfeBean.transporte.inscEstadual}"
+										styleClass="form-control" id="inscTransportadora"
+										disabled="true" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Quantidade: " for="volume" />
+									<p:inputText value="#{nfeBean.transp.quantidade}" id="volume"
+										required="true" styleClass="from-control" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Especie: " for="especie" />
+									<p:inputText value="#{nfeBean.transp.especie}" id="especie"
+										required="true" styleClass="from-control" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Marca: " for="marcaTransp" />
+									<p:inputText value="#{nfeBean.transp.marca}" id="marcaTransp"
+										styleClass="from-control" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Peso Bruto: " for="pesoBruto" />
+									<p:inputText value="#{nfeBean.transp.pesoBruto}" id="pesoBruto"
+										required="true" styleClass="from-control" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Peso Liquido: " for="pesoLiquido" />
+									<p:inputText value="#{nfeBean.transp.pesoLiquido}"
+										required="true" id="pesoLiquido" styleClass="from-control" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Vagão: " for="vagao" />
+									<p:inputText value="#{nfeBean.transp.vagao}" id="vagao"
+										styleClass="from-control" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Balsa: " for="balsa" />
+									<p:inputText value="#{nfeBean.transp.balsa}" id="balsa"
+										styleClass="from-control" />
+								</div>
+								<div class="form-group col-md-2">
+									<p:outputLabel value="Insira o Lacre: " for="lacreCad" />
+									<p:inputText id="lacreCad" value="#{nfeBean.lacreTemp.lacre}"
+										size="18" />
+									<p:commandButton actionListener="#{nfeBean.addLacreToList()}"
+										styleClass="btn btn-flat btn-info"
+										disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+										icon="fa fa-plus-square " style="width:20px;height:20px"
+										update="lacreCad listaLacres" />
+								</div>
+								<div class="form-group col-md-4">
+									<p:dataList value="#{nfeBean.listaTemporariaLacres}" var="lac"
+										type="ordered" id="listaLacres">
+										<f:facet name="header">
+											#{label['label.list.Lacre']}
+										</f:facet>
+											#{lac.id}, #{lac.lacre}
+										<p:commandLink update="listaLacres" title="Remove"
+											actionListener="#{nfeBean.removeLacreFromList()}"
+											styleClass="ui-icon ui-icon-circle-close"
+											style="float:left;margin-right:10px">
+											<f:setPropertyActionListener value="#{lac}"
+												target="#{nfeBean.lacre}" />
+										</p:commandLink>
+									</p:dataList>
+								</div>
+							</div>
+						</div>
+					</p:tab>
+					<p:tab title="#{label['label.nfe.adicionais']}" id="tabAdicionais"
+						rendered="true">
+						<div class="box-body">
+							<div class="row">
+								<div class="form-group col-md-10">
+									<p:outputLabel style="color:red;">Obs: Ao preencher o campo observação não mude de linha 
+								pressionando ENTER! continue digitando normalmente</p:outputLabel>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-3">
+									<p:outputLabel value="#{label['label.obs']}" for="obsNfe" />
+									<p:inputTextarea rows="5" cols="100" counter="display"
+										maxlength="500" immediate="true"
+										counterTemplate="{0} caracteres restantes"
+										value="#{nfeBean.nfe.dadosAdicionais}" id="obsNfe"
+										autoResize="false" />
+									<p:outputLabel id="display" />
+								</div>
+							</div>
+						</div>
+					</p:tab>
+				</p:tabView>
+			</div>
+
+			<div class="box-footer">
+				<div class="align-left">
+					<div class="form-group col-md-3">
+						<p:outputLabel value="Resposta Sefaz" for="respSefaz" />
+						<p:inputTextarea rows="2" cols="100" maxlength="150"
+							immediate="true" disabled="true" styleClass="form-control"
+							counterTemplate="{0} caracteres restantes"
+							value="#{nfeBean.respostaAcbrLocal}" id="respSefaz"
+							autoResize="false" />
+					</div>
+				</div>
+				<div class="align-right">
+					<p:commandButton process="empresaForm" value="#{menu['save']}"
+						action="#{nfeBean.doSalvar()}" onstart="PF('formBlock').block()"
+						styleClass="btn btn-flat btn-success"
+						disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+						update="empresaForm" oncomplete="PF('formBlock').unblock()"
+						rendered="#{nfeBean.viewState eq 'ADDING'}" icon="fa fa-hdd-o" />
+
+					<p:commandButton process="empresaForm" value="#{menu['update']}"
+						action="#{nfeBean.doSalvar()}" onstart="PF('formBlock').block()"
+						update="empresaForm pageDescription"
+						styleClass="btn btn-flat btn-warning"
+						disabled="#{userSessionBean.hasRole(authorization.NFE_INSERT) eq 'false'}"
+						oncomplete="PF('formBlock').unblock()"
+						rendered="#{nfeBean.viewState eq 'EDITING'}" />
+				</div>
+			</div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+		<h:form id="testeEnvio" prependId="false">
+			<div class="box">
+				<div class="box-body ">
+
+
+					<div class="align-right col-md-12">
+						<p:spacer width="10" />
+						<p:commandButton immediate="true" value="#{menu['back']}"
+							action="#{nfeBean.toListNfe}"
+							styleClass="btn btn-flat btn-default"
+							disabled="#{nfeBean.nfe.id eq null}"
+							icon="fa fa-arrow-circle-o-left" />
+					</div>
+
+				</div>
+			</div>
+		</h:form>
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="formPopup" prependId="false">
+			<ui:include src="/main/fiscal/dialogListaResultado.xhtml" />
+			<ui:include src="/main/fiscal/dialogListaTransporte.xhtml" />
+		</h:form>
+		<h:form id="formPopupReferenciada" prependId="false">
+			<ui:include src="/main/fiscal/tools/dialogNfeReferenciada.xhtml" />
+		</h:form>
+		<h:form id="formPopupPesquisaProduto" prependId="false">
+			<ui:include src="/main/fiscal/tools/dialogPesquisaProduto.xhtml" />
+		</h:form>
+		<h:form id="formPopupCadastraImposto" prependId="false">
+			<ui:include src="/main/fiscal/tools/dialogImpostosImportacao.xhtml" />
+		</h:form>
+		<h:form id="formPopupPesquisaBarras" prependId="false">
+			<ui:include src="/main/fiscal/tools/dialogPesquisaBarras.xhtml" />
+		</h:form>
+	</ui:define>
+</ui:composition>

@@ -1,0 +1,341 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:o="http://omnifaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pe="http://primefaces.org/ui/extensions"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:pt="http://java.sun.com/jsf/passthrough"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="FABRICA" />
+	<ui:param name="activeSubmenu" value="Producao" />
+	<f:metadata>
+		<f:viewAction action="#{fabricaBean.initializeFichaTecnica(param.opID,param.fichaID)}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+       #{breadcrumb['entries.fabrica.op']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+		<h:outputText rendered="#{fabricaBean.viewState eq 'ADDING'}"
+			value="#{messages['fabrica.producao.page-description-including']}" />
+		<o:outputFormat id="pageDescription"
+			rendered="#{fabricaBean.viewState eq 'EDITING'}"
+			value="#{messages['fabrica.producao.page-description-editing']}">
+			<f:param value="#{fabricaBean.producao.id}" />
+		</o:outputFormat>
+	</ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries.fabrica']}</a></li>
+		<li><a href="formCadProducao.xhtml">#{breadcrumb['entries.producao']}</a></li>
+
+	</ui:define>
+
+	<ui:define name="content">
+		<h:form id="empresaForm" prependId="false">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+				</div>
+			</div>
+			<div class="box">
+				<div class="box-header with-border">
+					<h2 class="box-title">
+						<p:outputLabel
+							value="#{breadcrumb['entries.producao.fichaTecnica']}">- OP: #{fabricaBean.producao.id}</p:outputLabel>
+					</h2>
+				</div>
+				<div class="box-body ">
+					<!-- 				<p:focus for="selectModelo" context="empresaForm" /> -->
+					<p:defaultCommand target="buttonSave" />
+					<div class="form-group col-md-12">
+						<div class="row">
+							<p:toolbar id="navegador">
+								<f:facet name="left">
+									<p:commandButton update="empresaForm" process="empresaForm"
+										id="buttonSave" value="#{menu['save']}"
+										action="#{fabricaBean.doSalvarFicha()}"
+										onstart="PF('formBlock').block()"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUCAO_INSERT) eq 'false'}"
+										styleClass="btn btn-flat btn-success"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{fabricaBean.viewState eq 'ADDING'}"
+										icon="fa fa-hdd-o" />
+
+									<p:commandButton process="empresaForm"
+										value="#{menu['update']}"
+										action="#{fabricaBean.doSalvarFicha()}"
+										onstart="PF('formBlock').block()"
+										update="empresaForm pageDescription"
+										styleClass="btn btn-flat btn-warning"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUCAO_EDIT) eq 'false'}"
+										oncomplete="PF('formBlock').unblock()"
+										rendered="#{fabricaBean.viewState eq 'EDITING'}" />
+
+								</f:facet>
+								<f:facet name="right">
+									<p:commandButton immediate="true" value="#{menu['back']}"
+										action="#{fabricaBean.toListOP()}"
+										styleClass="btn btn-flat btn-default" />
+								</f:facet>
+							</p:toolbar>
+						</div>
+					</div>
+					<div class="col-md-12">
+						<div class="col-md-6">
+							<div class="row">
+								<div class="form-group col-md-12">
+									<p:outputLabel value="#{label['label.op.fichaTecnica.modelo']}"
+										for="inputModelo" />
+									<p:inputText value="#{fabricaBean.modelo.descricao}"
+										readonly="true" styleClass="form-control" id="inputModelo" />
+								</div>
+								<div class="form-group col-md-4">
+									<p:outputLabel value="#{label['label.op.quant']}"
+										for="labelEstimativa" />
+									<p:inputText value="#{fabricaBean.producao.estimativa}"
+										readonly="true" styleClass="form-control" id="labelEstimativa" />
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="row">
+								<h:form id="formLabel" prependId="false">
+									<div class="box-body  box-warning with-border">
+										<div class="form-group col-md-2">
+											<p:outputLabel value="#{label['label.list.barras']}" />
+											<br />
+											<p:outputLabel value="#{fabricaBean.itemFicha.barras.barras}"
+												id="labelRef" style="color:blue" />
+										</div>
+										<div class="form-group col-md-4">
+											<p:outputLabel value="#{label['label.descricao']}" />
+											<br />
+											<p:outputLabel value="#{fabricaBean.itemFicha.produto.descricao}"
+												id="labelDesc" style="color:blue" />
+										</div>
+										<div class="form-group col-md-2">
+											<p:outputLabel value="#{label['label.nfe.item.quantidade']}"
+												for="labelQuant" />
+											<br />
+											<p:outputLabel value="#{fabricaBean.itemFicha.quantidade}"
+												id="labelQuant" style="color:blue" />
+										</div>
+									</div>
+								</h:form>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-12">
+						<div class="col-md-6">
+							<div class="box box-success box-body">
+								<div class="row">
+									<div class="form-group col-md-12">
+										<p:outputLabel value="#{messages['fabrica.op.ficha.item']}"
+											for="selectMaterial" />
+										<p:selectOneMenu value="#{fabricaBean.materialModelo}"
+											filter="true" filterMatchMode="contains" id="selectMaterial"
+											required="true"
+											rendered="#{fabricaBean.viewState eq 'ADDING'}"
+											disabled="#{userSessionBean.hasRole(authorization.FABRICA_INSERT ) eq 'false'}"
+											converter="omnifaces.SelectItemsConverter" style="width:100%">
+											<f:selectItem itemValue="#{null}" noSelectionOption="true"
+												itemLabel="#{messages['filial.form.select-one']}" />
+											<f:selectItems
+												value="#{fabricaBean.listaDeMateriaisParaFichaTecnica}"
+												itemLabel="#{item.produto.descricao}" var="item" />
+											<p:ajax event="change" update="inputModelo" />
+										</p:selectOneMenu>
+										<p:inputText
+											value="#{fabricaBean.ficha.materiaPrima.descricao}"
+											rendered="#{fabricaBean.viewState eq 'EDITING'}"
+											id="inputMaterial" readonly="true" styleClass="form-control" />
+									</div>
+									<div class="form-group col-md-4">
+										<p:outputLabel for="qFolhaF"
+											value="#{label['label.fabrica.fichaTecnica.qFolha']}" />
+										<p:inputNumber id="qFolhaF"
+											value="#{fabricaBean.ficha.numFolhas}" emptyValue="zero"
+											onblur="#{fabricaBean.geraTotalGrade()}">
+											<p:ajax update="totCorte"
+												listener="#{fabricaBean.geraTotalCorte()}" />
+										</p:inputNumber>
+									</div>
+									<div class="form-group col-md-4">
+										<p:outputLabel for="qComprF"
+											value="#{label['label.fabrica.fichaTecnica.qCompr']}" />
+										<p:inputNumber id="qComprF"
+											value="#{fabricaBean.ficha.comprimento}" emptyValue="zero" />
+									</div>
+									<div class="form-group col-md-4">
+										<p:outputLabel for="largF"
+											value="#{label['label.fabrica.fichaTecnica.larg']}" />
+										<p:inputNumber id="largF" value="#{fabricaBean.ficha.largura}"
+											emptyValue="zero" />
+									</div>
+									<div class="form-group col-md-4">
+										<p:outputLabel for="totCorte"
+											value="#{label['label.op.fichaTecnica.totalCortado']}" />
+										<p:inputNumber id="totCorte"
+											value="#{fabricaBean.ficha.totalCorte}" emptyValue="zero"
+											readonly="true" />
+									</div>
+
+								</div>
+							</div>
+							<div class="box box-success box-body">
+								<div class="row">
+									<div class="form-group col-md-12">
+										<p:outputLabel
+											value="#{messages['fabrica.producao.list.grade']}" />
+										<p:dataTable id="listaGradeTable" var="listGrade"
+											styleClass="table" widgetVar="listGradeWidg"
+											value="#{fabricaBean.listaGrade}"
+											paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+											paginator="true" rows="20" lazy="false" rowKey="#{lista.id}"
+											sortBy="#{listGrade.tamanho.tamanho}" editable="false"
+											editMode="cell" rowsPerPageTemplate="20,30">
+											<p:ajax event="cellEdit" listener="#{fabricaBean.onCellEdit}"
+												update="listaGradeTable" />
+											<p:column headerText="#{label['label.list.tamanho']}"
+												rendered="true" style="width:15%">
+												<p:outputLabel value="#{listGrade.tamanho.tamanho}" />
+											</p:column>
+
+											<p:column headerText="#{label['label.nfe.item.quantidade']}"
+												style="width:45%" rendered="true">
+												<p:cellEditor>
+													<f:facet name="output">
+														<h:outputText value="#{listGrade.quantidade}" />
+													</f:facet>
+													<f:facet name="input">
+														<p:inputText value="#{listGrade.quantidade}"
+															style="width:100%" />
+													</f:facet>
+												</p:cellEditor>
+											</p:column>
+											<p:columnGroup type="footer">
+												<p:row>
+													<p:column colspan="1"
+														style="text-align:right;font-size:18px;font-weight:bold;"
+														footerText="#{label['label.op.fichaTecnica.totGrade']}" />
+													<p:column>
+														<f:facet name="footer">
+															<h:outputText value="#{fabricaBean.totalGradeTemp} un."
+																style="font-size:18px;color:blue;font-weight:bold;">
+															</h:outputText>
+														</f:facet>
+													</p:column>
+												</p:row>
+											</p:columnGroup>
+										</p:dataTable>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="box box-info box-body">
+								<div class="row">
+									<p:focus for="idRefItem" context="empresaForm" />
+									<p:defaultCommand target="insereItem" />
+									<div class="form-group col-md-4">
+										<p:outputLabel value="#{label['label.nfe.item.codigo']}"
+											for="idRefItem">
+											<p:commandButton
+												actionListener="#{fabricaBean.telaListaBarrasFicha()}"
+												styleClass="btn btn-flat btn-info"
+												disabled="#{userSessionBean.hasRole(authorization.VENDA_INSERT) eq 'false'}"
+												icon="fa fa-search" style="width:20px;height:20px"
+												process="empresaForm" />
+										</p:outputLabel>
+										<h:inputText value="#{fabricaBean.ref}" id="idRefItem"
+											styleClass="form-control">
+
+										</h:inputText>
+									</div>
+									<div class="form-group col-md-2">
+										<p:outputLabel value="#{label['label.nfe.item.quantidade']}:"
+											for="idItemQuant" style="width:100%" />
+										<p:inputNumber value="#{fabricaBean.quantidade}"
+											id="idItemQuant" onkeypress="setaFoco(this)"
+											maxValue="9999999.99" minValue="0.0" immediate="true"
+											decimalSeparator="," thousandSeparator="." style="width:5%"
+											size="5">
+										</p:inputNumber>
+									</div>
+									<div class="form-group col-md-2">
+
+										<p:outputLabel value="#{label['label.insert']} "
+											for="insereItem" style="width:100%" />
+										<p:commandButton
+											actionListener="#{fabricaBean.localizaProduto()}"
+											process="empresaForm"
+											oncomplete="$(function(){PrimeFaces.focus('idRefItem');});"
+											update="labelRef labelDesc labelQuant idRefItem idItemQuant listaBarrasMaterial" id="insereItem"
+											style="width:70%;margin:5px"
+											styleClass="btn btn-flat btn-warning" icon="fa fa-plus" />
+									</div>
+									<div class="form-group col-md-12">
+										<p:outputLabel
+											value="#{messages['fabrica.producao.list.grade']}" />
+										<p:dataTable id="listaBarrasMaterial" var="lista"
+											styleClass="table" widgetVar="listItemFicha"
+											value="#{fabricaBean.listaItemModel}"
+											paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+											paginator="true" rows="20" lazy="false" rowKey="#{lista.id}"
+											selection="#{fabricaBean.itemFicha}"
+											sortBy="#{lista.produto.descricao}" 
+											rowsPerPageTemplate="20,30">
+
+											<p:column headerText="#{label['label.ref']}" rendered="true"
+												style="width:15%">
+												<h:outputText value="#{lista.barras.barras}" />
+											</p:column>
+
+											<p:column headerText="#{label['label.descricao']}"
+												style="width:30%" rendered="true">
+												<h:outputText value="#{lista.produto.descricao}" />
+											</p:column>
+
+											<p:column headerText="#{label['label.nfe.item.quantidade']}"
+												style="width:15%" rendered="true">
+												<h:outputText value="#{lista.quantidade}" />
+											</p:column>
+											<p:column headerText="#{label['label.list.Action']}">
+												<p:commandButton process="listaBarrasMaterial"
+													icon="fa fa-remove" title="#{menu['delete']}"
+													styleClass="btn btn-flat btn-danger"
+													actionListener="#{fabricaBean.excluiItemFicha(lista)}"
+													update="listaBarrasMaterial" />
+											</p:column>
+										</p:dataTable>
+									</div>
+								</div>
+							</div>
+						</div>
+
+					</div>
+				</div>
+			</div>
+			<pe:blockUI target="empresaForm" widgetVar="formBlock">
+				<p:graphicImage width="32" height="32" library="resources/nsym"
+					name="img/loading.gif" />
+			</pe:blockUI>
+		</h:form>
+	</ui:define>
+
+	<ui:define name="sub-content">
+	</ui:define>
+	<ui:define name="popups">
+		<h:form id="formPopup" prependId="false">
+			<ui:include src="/main/fabrica/util/dialogFichaTecMaterial.xhtml" />
+			<ui:include src="/main/fabrica/util/dialogPesquisaBarrasMaterial.xhtml" />
+			<ui:include src="/main/fabrica/util/dialogPesquisaBarras.xhtml" />
+		</h:form>
+	</ui:define>
+</ui:composition>

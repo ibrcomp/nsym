@@ -1,0 +1,131 @@
+<!--
+  Copyright (C) 2015 Arthur Gregorio, AG.Software
+ 
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+ 
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+ 
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:p="http://primefaces.org/ui" xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	template="/template/mainTemplate.xhtml">
+
+	<ui:param name="activeMenu" value="contacts" />
+
+	<f:metadata>
+		<f:viewAction action="#{contactBean.initializeListing()}" />
+	</f:metadata>
+
+	<ui:define name="pageTitle">
+        #{messages['contact.page-title']}
+    </ui:define>
+
+	<ui:define name="pageDescription">
+        #{messages['contact.page-description']}
+    </ui:define>
+
+	<ui:define name="breadcrumb">
+		<li><a href="#">#{breadcrumb['entries']}</a></li>
+		<li class="active"><a href="listContacts.xhtml">#{breadcrumb['entries.contact']}</a></li>
+	</ui:define>
+
+	<ui:define name="content">
+
+		<div class="row">
+			<div class="col-md-12 col-sm-12 col-xs-12">
+				<p:messages id="messages" closable="true" />
+			</div>
+		</div>
+
+		<div class="box">
+			<div class="box-header with-border">
+				<h:form id="controlsForm" prependId="false">
+					<p:defaultCommand target="btSearch" />
+					<div class="row">
+						<div class="col-xs-4">
+							<div class="input-group">
+								<p:inputText id="inFilter" styleClass="form-control"
+									value="#{contactBean.filter}"
+									placeholder="#{messages['filter.contact']}" />
+								<div class="input-group-btn">
+									<p:commandLink id="btSearch" process="controlsForm"
+										value="#{menu['search']}" onstart="PF('listBlock').show()"
+										oncomplete="PF('listBlock').hide()"
+										action="#{contactBean.filterList()}"
+										styleClass="btn btn-flat btn-warning" />
+								</div>
+							</div>
+						</div>
+						<div class="col-xs-8">
+							<div class="box-tools pull-right">
+								<p:commandButton immediate="true" value="#{menu['new']}"
+									action="#{contactBean.changeToAdd()}"
+									styleClass="btn btn-flat btn-info"
+									rendered="#{userSessionBean.hasRole(authorization.CONTACT_INSERT)}" />
+							</div>
+						</div>
+					</div>
+				</h:form>
+			</div>
+			<div jsf:id="boxBody" class="box-body">
+				<p:dataTable id="contactsList" rows="15" lazy="true" var="contact"
+					paginator="true" sortMode="ascending" paginatorPosition="bottom"
+					paginatorAlwaysVisible="false" value="#{contactBean.contactsModel}"
+					emptyMessage="#{messages['list.empty']}">
+
+					<p:column width="10%" styleClass="align-center"
+						headerText="#{messages['contact.list.blocked']}">
+						<p:selectBooleanCheckbox disabled="true"
+							value="#{contact.blocked}" />
+					</p:column>
+					<p:column headerText="#{messages['contact.list.name']}">
+                        #{contact.name}
+                    </p:column>
+					<p:column width="20%" styleClass="align-center"
+						headerText="#{messages['contact.list.type']}">
+                        #{enums[contact.contactType]}
+                    </p:column>
+					<p:column width="20%" styleClass="align-center"
+						headerText="#{messages['contact.list.document']}">
+                        #{contact.documentFormated}
+                    </p:column>
+
+					<p:column width="15%" style="text-align: center"
+						headerText="#{menu['actions']}">
+						<p:commandButton icon="fa fa-edit" title="#{menu['edit']}"
+							styleClass="btn btn-flat btn-default"
+							action="#{contactBean.changeToEdit(contact.id)}"
+							rendered="#{userSessionBean.hasRole(authorization.CONTACT_UPDATE)}" />
+						<p:spacer width="10" />
+						<p:commandButton icon="fa fa-remove" title="#{menu['delete']}"
+							styleClass="btn btn-flat btn-default"
+							actionListener="#{contactBean.changeToDelete(contact.id)}"
+							rendered="#{userSessionBean.hasRole(authorization.CONTACT_DELETE)}" />
+					</p:column>
+				</p:dataTable>
+			</div>
+		</div>
+
+		<p:blockUI block="boxBody" widgetVar="listBlock"
+			trigger="contactsList">
+			<p:graphicImage width="32" height="32" library="webbudget"
+				name="img/loading.gif" />
+		</p:blockUI>
+	</ui:define>
+
+	<ui:define name="popups">
+		<ui:include src="dialogDeleteContact.xhtml" />
+	</ui:define>
+</ui:composition>
