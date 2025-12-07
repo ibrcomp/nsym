@@ -92,6 +92,34 @@ public class CstIbsCbs extends PersistentEntity {
     @Getter @Setter
     @Column(name = "notas", length = 2000)
     private String notas;
+    
+    @Getter @Setter
+    @Column(name = "ind_gIBSCBSMono")
+    private Boolean indgIBSCBSMono
+;
+    @Getter @Setter
+    @Column(name = "ind_gRed")
+    private Boolean indgRed;
+    
+    @Getter @Setter
+    @Column(name = "ind_gDif")
+    private Boolean indgDif;
+    
+    @Getter @Setter
+    @Column(name = "ind_gTransfCred")
+    private Boolean indgTransfCred;
+    
+    @Getter @Setter
+    @Column(name = "ind_gCredPresIBSZFM")
+    private Boolean indgCredPresIBSZFM;
+    
+    @Getter @Setter
+    @Column(name = "ind_gAjusteCompet")
+    private Boolean indgAjusteCompet;
+    
+    @Getter @Setter
+    @Column(name = "ind_RedutorBC")
+    private Boolean indRedutorBC;
 
     @Getter @Setter
     @ManyToOne

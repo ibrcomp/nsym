@@ -757,7 +757,11 @@ public class Authorization {
 	@Getter
 	@AuthorizationGroup("authority.reformatrib")
 	public final String REFORMATRIB_EDIT = "authority.reformatrib.edit";
-
+	
+	@Getter
+	@AuthorizationGroup("authority.reformatrib")
+	public final String REFORMATRIB_IMPORT = "authority.reformatrib.import";
+	
     @Getter
     @AuthorizationGroup("authority.closing")
     public final String CLOSING_VIEW = "authority.closing.access";

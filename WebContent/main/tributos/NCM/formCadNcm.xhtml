@@ -111,6 +111,12 @@
 								<p:ajax update="permReducao" event="change" />
 							</p:selectBooleanButton>
 						</div>
+						<div class="form-group col-md-1">
+							<p:outputLabel value="#{label['label.ISIsento']}: " for="ISisento" />
+							<p:selectBooleanCheckbox value="#{ncmBean.ncm.excluirSeIsento}" id="ISisento"
+								disabled="#{userSessionBean.hasRole(authorization.NCM_INSERT) eq 'false'}">
+							</p:selectBooleanCheckbox>
+						</div>
 						<!-- 						<div class="form-group col-md-2"> -->
 						<!-- 							<p:outputLabel value="#{label['label.tributos.list']}: " rendered="#{ncmBean.pegaIdFilial() eq null}" -->
 						<!-- 								for="ncm"  /> -->

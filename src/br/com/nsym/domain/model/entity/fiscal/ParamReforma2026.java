@@ -27,6 +27,11 @@ public class ParamReforma2026 extends PersistentEntity{
     
     @Getter
     @Setter
+	@Column(name = "desc_regra", length = 10)
+    private String descricaoRegra;
+    
+    @Getter
+    @Setter
 	@Column(name = "ncm_prefix", length = 10)
     private String ncmPrefix;
     

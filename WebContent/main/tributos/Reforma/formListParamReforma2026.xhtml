@@ -117,7 +117,7 @@
                                              update=":paramReformaForm:dialogEdicao"
                                              actionListener="#{paramReforma2026Bean.novo}"
                                              oncomplete="PF('dlgEdicao').show()"
-                                             rendered="#{userSessionBean.hasRole('ROLE_PARAM_REFORMA2026_CADASTRAR')}" />
+                                             rendered="#{userSessionBean.hasRole(authorization.REFORMATRIB_INSERT)}" />
                         </f:facet>
 
                         <p:column headerText="ID" style="width:60px">
@@ -168,7 +168,7 @@
                                              update=":paramReformaForm:dialogEdicao"
                                              actionListener="#{paramReforma2026Bean.editar(p)}"
                                              oncomplete="PF('dlgEdicao').show()"
-                                             rendered="#{userSessionBean.hasRole('ROLE_PARAM_REFORMA2026_EDITAR')}" />
+                                             rendered="#{userSessionBean.hasRole(authorization.REFORMATRIB_EDIT)}" />
 
                             <p:commandButton icon="ui-icon-trash"
                                              title="Excluir"
@@ -177,7 +177,7 @@
                                              update="paramReformaForm"
                                              actionListener="#{paramReforma2026Bean.excluir(p)}"
                                              onclick="return confirm('Confirma exclusão?');"
-                                             rendered="#{userSessionBean.hasRole('ROLE_PARAM_REFORMA2026_EXCLUIR')}" />
+                                             rendered="#{userSessionBean.hasRole(authorization.REFORMATRIB_DELETE)}" />
                         </p:column>
 
                     </p:dataTable>
@@ -317,7 +317,7 @@
 							<p:outputLabel for="tipoCliente" value="Tipo Cliente" />
 							<p:selectOneMenu id="tipoCliente"
 								value="#{paramReforma2026Bean.entidade.tipoCliente}"
-								styleClass="form-control" converter="omnifaces.EnumConverter">
+								style="width:100%" converter="omnifaces.GenericEnumConverter">
 								<f:selectItem itemLabel="-- todos --" itemValue="#{null}"
 									noSelectionOption="true" />
 								<f:selectItems value="#{paramReforma2026Bean.tiposCliente}"

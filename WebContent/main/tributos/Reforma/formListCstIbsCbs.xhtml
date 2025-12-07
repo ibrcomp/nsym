@@ -8,42 +8,96 @@
 
     <!-- Menu / submenu ativos -->
     <ui:param name="activeMenu" value="Fiscal" />
-    <ui:param name="activeSubMenu" value="CST IBS/CBS" />
+    <ui:param name="activeSubMenu" value="ReformaTribCST" />
 
     <f:metadata>
         <f:viewAction action="#{cstIbsCbsBean.initializeListing()}" />
     </f:metadata>
 
     <ui:define name="pageTitle">
-        Manutenção de CST IBS/CBS
+        #{breadcrumb['cstibscbs']}
     </ui:define>
-
+    
     <ui:define name="pageDescription">
-        <h:outputText value="Cadastro dos códigos CST de IBS/CBS vinculados à classificação tributária (CClassTrib)." />
-    </ui:define>
+    	<o:outputFormat id="pageDescription"
+			rendered="#{cstIbsCbsBean.viewState eq 'LISTING'}"
+			value="#{breadcrumb['cstibscbs.listing']}}">
+			<f:param value="#{agendaBean.agTitulo.id}" />
+		</o:outputFormat>
+		<o:outputFormat id="pageEditing"
+			rendered="#{cstIbsCbsBean.viewState eq 'EDITING'}"
+			value="#{breadcrumb['cstibscbs.editing']}}">
+			<f:param value="#{agendaBean.agTitulo.id}" />
+		</o:outputFormat>
+	</ui:define>
 
     <ui:define name="breadcrumb">
-        <li><a href="#">Fiscal</a></li>
-        <li><a href="formListCstIbsCbs.xhtml">CST IBS/CBS</a></li>
+        <li><a href="#">#{breadcrumb['entries.tributos']}</a></li>
+        <li><a href="formListCstIbsCbs.xhtml">#{breadcrumb['entries.tributos.cstibscbs']}</a></li>
     </ui:define>
 
     <ui:define name="content">
 
         <h:form id="cstIbsCbsForm" prependId="false">
-
-            <p:messages id="messages" closable="true" />
-            <p:growl id="growl" showDetail="true" />
-
-            <div class="box">
+			<div class="row">
+				<div class="col-sm-12">
+					<p:messages id="messages" closable="true" />
+					<p:growl id="growl" showDetail="true" rendered="false" />
+				</div>
+			</div>
+			<div class="box">
                 <div class="box-header with-border">
                     <h2 class="box-title">
-                        Manutenção de CST IBS/CBS
+                        <p:outputLabel value="#{label['label.cstibscbs.list']}" />
                     </h2>
                 </div>
 
                 <div class="box-body">
+					<div class="row">
+						<div class="navbar-form">
+							<p:toolbar id="navegador">
+								<f:facet name="left">
+									<p:commandButton value="#{menu.new}"
+                                             icon="ui-icon-plus"
+                                             styleClass="btn btn-flat btn-success"
+                                             process="@this"
+                                             update=":cstIbsCbsForm:dialogEdicao"
+                                             actionListener="#{cstIbsCbsBean.novo}"
+                                             oncomplete="PF('dlgCstIbsCbs').show()"
+                                             rendered="#{userSessionBean.hasRole(authorization.REFORMATRIB_INSERT) and cstIbsCbsBean.viewState eq 'LISTING'}" />
 
-                    <!-- TABELA -->
+									<span class="ui-separator"> <span
+										class="ui-icon ui-icon-grip-dotted-vertical" />
+									</span>
+									
+									<p:commandButton value="#{menu.view}"
+                                             icon="ui-icon-plus"
+                                             styleClass="btn btn-flat btn-success"
+                                             process="@this"
+                                             update=":cstIbsCbsForm:dialogEdicao"
+                                             actionListener="#{cstIbsCbsBean.editar(cstIbsCbsBean.entidade.id)}"
+                                             oncomplete="PF('dlgCstIbsCbs').show()"
+                                             rendered="#{userSessionBean.hasRole(authorization.REFORMATRIB_EDIT)} and cstIbsCbsBean.viewState != 'EDITING'" />
+
+
+									<span class="ui-separator"> <span
+										class="ui-icon ui-icon-grip-dotted-vertical" />
+									</span>
+								</f:facet>
+								<f:facet name="right">
+									<p:spacer width="5" />
+									<span class="ui-separator"> <span
+										class="ui-icon ui-icon-grip-dotted-vertical" />
+									</span>
+									<p:commandButton immediate="true" value="#{menu['back']}"
+										action="#{userBean.toDashboard}"
+										styleClass="btn btn-flat btn-default" />
+								</f:facet>
+							</p:toolbar>
+						</div>
+					</div>
+
+					<!-- TABELA -->
                     <p:dataTable id="tabela"
                                  value="#{cstIbsCbsBean.lista}"
                                  var="c"
@@ -52,18 +106,9 @@
                                  styleClass="table table-striped"
                                  rowKey="#{c.id}"
                                  selectionMode="single"
+                                 selection="#{cstIbsCbsBean.entidade}"
                                  emptyMessage="Nenhum CST IBS/CBS cadastrado.">
 
-                        <f:facet name="header">
-                            <p:commandButton value="Novo"
-                                             icon="ui-icon-plus"
-                                             styleClass="btn btn-flat btn-success"
-                                             process="@this"
-                                             update=":cstIbsCbsForm:dialogEdicao"
-                                             actionListener="#{cstIbsCbsBean.novo}"
-                                             oncomplete="PF('dlgCstIbsCbs').show()"
-                                             rendered="#{userSessionBean.hasRole(authorization.REFORMATRIB_INSERT)}" />
-                        </f:facet>
 
                         <p:column headerText="ID" style="width:60px">
                             <h:outputText value="#{c.id}" />

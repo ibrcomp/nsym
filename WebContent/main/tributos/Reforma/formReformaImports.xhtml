@@ -1,0 +1,173 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:o="http://omnifaces.org/ui"
+    xmlns:p="http://primefaces.org/ui"
+    xmlns:jsf="http://xmlns.jcp.org/jsf"
+    xmlns:hh="http://xmlns.jcp.org/jsf/html"
+    xmlns:ff="http://xmlns.jcp.org/jsf/core"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+    xmlns:pe="http://primefaces.org/ui/extensions"
+    template="/template/mainTemplate.xhtml">
+
+    <!-- Ajuste estes parâmetros conforme seus menus -->
+    <ui:param name="activeMenu" value="FISCAL" />
+    <ui:param name="activeSubmenu" value="ImportIBSCBS" />
+
+    <f:metadata>
+        <!-- Sem viewAction por enquanto; se precisar inicializar algo,
+             crie um método initialize() no ReformaImportsBeans e chame aqui -->
+        <!-- <f:viewAction action="#{reformaImportsBean.initialize()}"/> -->
+    </f:metadata>
+
+    <ui:define name="pageTitle">
+        #{messages['reformaImports.page-title']}
+    </ui:define>
+
+    <ui:define name="pageDescription">
+        <h:outputText value="#{messages['reformaImports.page-description']}"
+                      rendered="#{not empty messages['reformaImports.page-description']}" />
+    </ui:define>
+
+    <ui:define name="breadcrumb">
+        <li><a href="#">#{breadcrumb['fiscal']}</a></li>
+        <li><a href="formReformaImports.xhtml">
+            #{breadcrumb['fiscal.reformaImports']}
+        </a></li>
+    </ui:define>
+
+    <ui:define name="content">
+        <h:form id="empresaForm" prependId="false" enctype="multipart/form-data">
+            <div class="row">
+                <div class="col-sm-12">
+                    <p:messages id="messages" closable="true" />
+                    <p:growl id="growl" showDetail="true" rendered="false" />
+                </div>
+            </div>
+
+            <!-- BOX PRINCIPAL (seguindo padrão do formAgenda) -->
+            <div class="box">
+                <div class="box-header with-border">
+                    <h2 class="box-title">
+                        <p:outputLabel value="#{breadcrumb['fiscal.reformaImports']}" />
+                    </h2>
+                </div>
+
+                <div class="box-body">
+                    <!-- Linha com instruções + upload -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h:panelGroup layout="block" style="margin-bottom:15px">
+                                <h:outputText
+                                    value="#{messages['reformaImports.instructions']}"
+                                    rendered="#{not empty messages['reformaImports.instructions']}" />
+                                <br/>
+                            </h:panelGroup>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="box box-info box-body with-border">
+                                <div class="row">
+                                    <div class="form-group col-md-12">
+                                        <p:outputLabel for="fileExcel"
+                                                       value="#{label['reformaImports.file']}" />
+                                        <br/>
+                                        <h:inputFile id="fileExcel"
+                                                      mode="simple"
+                                                      value="#{reformaImportsBean.arquivo}"
+                                                      label="#{label['reformaImports.choose-file']}"
+                                                      style="width:100%" />
+                                    </div>
+
+                                    <div class="form-group col-md-12">
+                                        <p:commandButton id="btnImportar"
+                                                         value="#{label['reformaImports.import']}"
+                                                         process="@form"
+                                                         action="#{reformaImportsBean.importar}"
+                                                         ajax="false"
+                                                         style="width:40%;margin-top:10px"
+                                                         styleClass="btn btn-flat btn-info"
+                                                         icon="fa fa-upload" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RESUMO DA ÚLTIMA IMPORTAÇÃO (painel) -->
+                    <h:panelGroup layout="block"
+                                  rendered="#{reformaImportsBean.temRelatorio}">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="box box-success box-body with-border">
+                                    <h3>#{messages['reformaImports.summary-title']}</h3>
+
+                                    <div class="row">
+                                        <div class="form-group col-md-4">
+                                            <p:outputLabel
+                                                value="#{label['reformaImports.qtdeCst']}" />
+                                            <br/>
+                                            <h:outputText
+                                                value="#{reformaImportsBean.relatorio.qtdeCst}"
+                                                style="font-weight:bold;font-size:18px" />
+                                        </div>
+
+                                        <div class="form-group col-md-4">
+                                            <p:outputLabel
+                                                value="#{label['reformaImports.qtdeCClassTrib']}" />
+                                            <br/>
+                                            <h:outputText
+                                                value="#{reformaImportsBean.relatorio.qtdeCClassTrib}"
+                                                style="font-weight:bold;font-size:18px" />
+                                        </div>
+
+                                        <div class="form-group col-md-4">
+                                            <p:outputLabel
+                                                value="#{label['reformaImports.totalRegistros']}" />
+                                            <br/>
+                                            <h:outputText
+                                                value="#{reformaImportsBean.totalRegistrosImportados}"
+                                                style="font-weight:bold;font-size:18px" />
+                                        </div>
+                                    </div>
+
+                                    <p:separator />
+
+                                    <h:outputText value="#{messages['reformaImports.summary']}"
+                                                  rendered="#{not empty messages['reformaImports.summary']}" />
+                                    <h:panelGroup rendered="#{empty messages['reformaImports.summary']}">
+                                        <h:outputText value="#{reformaImportsBean.resumoImportacao}" />
+                                    </h:panelGroup>
+                                </div>
+                            </div>
+                        </div>
+                    </h:panelGroup>
+
+                    <!-- Mensagem padrão quando ainda não houve importação -->
+                    <h:panelGroup layout="block"
+                                  rendered="#{not reformaImportsBean.temRelatorio}">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h:outputText
+                                    value="Nenhuma importação realizada nesta sessão."
+                                    style="color:gray" />
+                            </div>
+                        </div>
+                    </h:panelGroup>
+
+                </div>
+            </div>
+        </h:form>
+
+        <!-- Mesmo esquema de blockUI usado no formAgenda -->
+        <pe:blockUI target="empresaForm" widgetVar="formBlock">
+            <p:graphicImage width="32" height="32" library="nsym"
+                            name="img/loading.gif" />
+        </pe:blockUI>
+    </ui:define>
+
+    <!-- Popups (se você não precisar, pode deixar vazio ou remover esta define) -->
+    <ui:define name="popups">
+        <!-- Nenhum popup específico para esta tela por enquanto -->
+    </ui:define>
+</ui:composition>

@@ -571,18 +571,28 @@
 							<li class="header"
 								jsf:rendered="#{userSessionBean.hasRole(authorization.REFORMATRIB_VIEW)}"
 								style="color: #4CA8DB">#{menu['reformaTrib']}</li>
-							<li class="#{activeSubmenu eq 'ReformaTrib' ? 'active' : ''}"
+							<li class="#{activeSubmenu eq 'ReformaTribCST' ? 'active' : ''}"
 								jsf:rendered="#{userSessionBean.hasRole(authorization.REFORMATRIB_VIEW)}">
 								<p:link href="/main/tributos/Reforma/formListCstIbsCbs.xhtml">
 									<i class="fa fa-list-ul"></i>
 									<span>#{menu['reformaTrib.CstIbsCbs']}</span>
 								</p:link>
 							</li>
-							<li class="#{activeSubmenu eq 'ReformaTrib' ? 'active' : ''}"
+							<li class="#{activeSubmenu eq 'ReformaTribParam' ? 'active' : ''}"
 								jsf:rendered="#{userSessionBean.hasRole(authorization.REFORMATRIB_VIEW)}">
 								<p:link href="/main/tributos/Reforma/formListParamReforma2026.xhtml">
 									<i class="fa fa-list-ul"></i>
 									<span>#{menu['reformaTrib.param']}</span>
+								</p:link>
+							</li>
+							<li class="header"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.REFORMATRIB_IMPORT)}"
+								style="color: #4CA8DB">#{menu['reformaTribImports']}</li>
+								<li class="#{activeSubmenu eq 'ReformaTribParam' ? 'active' : ''}"
+								jsf:rendered="#{userSessionBean.hasRole(authorization.REFORMATRIB_VIEW)}">
+								<p:link href="/main/tributos/Reforma/formReformaImports.xhtml">
+									<i class="fa fa-list-ul"></i>
+									<span>#{menu['reformaTrib.importCSTIBSCBS']}</span>
 								</p:link>
 							</li>
 						</ul>

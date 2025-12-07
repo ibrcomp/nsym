@@ -1,6 +1,7 @@
 package br.com.nsym.domain.model.entity.fiscal.reforma;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -148,5 +149,91 @@ public class CClassTrib extends PersistentEntity {
 	@Setter
     @Column(name = "ind_outros")
     private Boolean indOutros;
-
+	
+	@Getter
+	@Setter
+    @Column(name = "ind_gTribRegular")
+    private Boolean indgTribRegular;
+	
+	@Getter
+	@Setter
+    @Column(name = "ind_gCredPresOper")
+    private Boolean indgCredPresOper;
+	@Getter
+	@Setter
+    @Column(name = "ind_gMonoPadrao")
+    private Boolean indgMonoPadrao;
+	@Getter
+	@Setter
+    @Column(name = "ind_gMonoReten")
+    private Boolean indgMonoReten;
+	@Getter
+	@Setter
+    @Column(name = "ind_gMonoRet")
+    private Boolean indgMonoRet;
+	@Getter
+	@Setter
+    @Column(name = "ind_gMonoDif")
+    private Boolean indgMonoDif;
+	@Getter
+	@Setter
+    @Column(name = "ind_gEstornoCred")
+    private Boolean indgEstornoCred;
+	
+	
+	@Getter @Setter
+    @Column(name = "dIniVig")
+    private LocalDate dIniVig;
+	
+	@Getter @Setter
+    @Column(name = "dFimVig")
+    private LocalDate dFimVig;
+    
+    @Getter @Setter
+    @Column(name = "dAtualizado")
+    private LocalDate dAtualizado;
+    @Getter
+    
+	@Setter
+    @Column(name = "indNFeABI")
+    private Boolean indNFeABI;
+    @Setter
+    @Column(name = "indNFe")
+    private Boolean indNFe;
+    @Setter
+    @Column(name = "indNFCe")
+    private Boolean indNFCe;
+    @Setter
+    @Column(name = "indCTe")
+    private Boolean indCTe;
+    @Setter
+    @Column(name = "indCTeOS")
+    private Boolean indCTeOS;
+    @Setter
+    @Column(name = "indBPe")
+    private Boolean indBPe;
+    @Setter
+    @Column(name = "indBPeTA")
+    private Boolean indBPeTA;
+    @Setter
+    @Column(name = "indBPeTM")
+    private Boolean indBPeTM;
+    @Setter
+    @Column(name = "indNF3e")
+    private Boolean indNF3e;
+    @Setter
+    @Column(name = "indNFSe")
+    private Boolean indNFSe;
+    @Setter
+    @Column(name = "indNFCom")
+    private Boolean indNFCom;
+    @Setter
+    @Column(name = "indNFAg")
+    private Boolean indNFAg;
+    @Setter
+    @Column(name = "indNFGas")
+    private Boolean indNFGas;
+    @Setter
+    @Column(name = "indDERE")
+    private Boolean indDERE;
 }
