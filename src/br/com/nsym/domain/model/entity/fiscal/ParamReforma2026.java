@@ -10,8 +10,11 @@ import javax.persistence.Enumerated;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import br.com.nsym.domain.model.entity.PersistentEntity;
+import br.com.nsym.domain.model.entity.fiscal.reforma.CClassTrib;
+import br.com.nsym.domain.model.entity.fiscal.reforma.CCredPres;
 import br.com.nsym.domain.model.entity.fiscal.reforma.CstIbsCbs;
 import br.com.nsym.domain.model.entity.fiscal.reforma.CstIs;
 import br.com.nsym.domain.model.entity.tools.TipoCliente;
@@ -27,7 +30,7 @@ public class ParamReforma2026 extends PersistentEntity{
     
     @Getter
     @Setter
-	@Column(name = "desc_regra", length = 10)
+	@Column(name = "desc_regra", length = 100)
     private String descricaoRegra;
     
     @Getter
@@ -161,7 +164,6 @@ public class ParamReforma2026 extends PersistentEntity{
     @Column(name = "prioridade")
     private Integer prioridade = 0;
     
-    
     // ========================
     // NOVOS CAMPOS
     // ========================
@@ -202,6 +204,30 @@ public class ParamReforma2026 extends PersistentEntity{
     @Getter @Setter  
     @Column(name = "ind_sem_ibsm")
     private Boolean indSemIbsm;
+    
+ // campo de configuração – JPA
+    @Getter @Setter
+    @Column(name = "ccredpres_codigo", length = 10)
+    private String codigoCredPres;
+    
+    @Getter @Setter
+    @Transient
+    private CCredPres regraCredPres;
+
+    @Getter @Setter
+    @Transient
+    private BigDecimal pCredPres;   // alíquota do crédito presumido (%)
+
+    @Getter @Setter
+    @Transient
+    private BigDecimal vCredPres;   // valor “orientativo” do crédito
+    
+    @Getter
+    @Setter
+	@ManyToOne
+	@JoinColumn(name="id_cClassTrib")
+    private CClassTrib cClassTrib;
+
 
 
 }

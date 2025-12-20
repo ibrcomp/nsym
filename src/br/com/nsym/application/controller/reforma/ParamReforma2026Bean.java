@@ -8,12 +8,23 @@ import javax.annotation.PostConstruct;
 import javax.faces.view.ViewScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.transaction.Transactional;
 
+import br.com.ibrcomp.exception.EstoqueException;
+import br.com.ibrcomp.exception.ParametroException;
+import br.com.ibrcomp.interceptor.RollbackOn;
 import br.com.nsym.application.controller.AbstractBeanEmpDS;
 import br.com.nsym.domain.model.entity.fiscal.ParamReforma2026;
+import br.com.nsym.domain.model.entity.fiscal.reforma.CClassTrib;
+import br.com.nsym.domain.model.entity.fiscal.reforma.CstIbsCbs;
+import br.com.nsym.domain.model.entity.fiscal.tools.CSTNormal;
+import br.com.nsym.domain.model.entity.fiscal.tools.CSTSimples;
 import br.com.nsym.domain.model.entity.tools.TipoCliente;
 import br.com.nsym.domain.model.repository.fiscal.ParamReforma2026Repository;
+import br.com.nsym.domain.model.repository.fiscal.reforma.CClassTribRepository;
+import br.com.nsym.domain.model.repository.fiscal.reforma.CstIbsCbsRepository;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -36,6 +47,16 @@ public class ParamReforma2026Bean extends AbstractBeanEmpDS<ParamReforma2026> {
 	@Getter
 	@Setter
     private ParamReforma2026 entidade;
+	
+	@Inject
+	private CstIbsCbsRepository ibsCbsDao;
+	
+	@Inject
+	private CClassTribRepository cClassTribDao;
+	
+	@Getter
+	@Setter
+	private CClassTrib cClassTrib;
 
     /** Filtros simples para pesquisa */
 	@Getter
@@ -53,6 +74,14 @@ public class ParamReforma2026Bean extends AbstractBeanEmpDS<ParamReforma2026> {
 	@Getter
 	@Setter
     private Boolean filtroAtivo;
+	
+	@Getter
+	@Setter
+	private CSTSimples cstVendaSimples;
+	
+	@Getter
+	@Setter
+	private CSTNormal cstVendaNormal;
 
 
     @PostConstruct
@@ -135,6 +164,17 @@ public class ParamReforma2026Bean extends AbstractBeanEmpDS<ParamReforma2026> {
     /** Editar registro existente */
     public void editar(ParamReforma2026 p) {
         this.entidade = p;
+        if (this.entidade != null) {
+        	if (this.entidade.getCClassTrib() != null) {
+        		this.cClassTrib = this.entidade.getCClassTrib();
+        	}
+        	if (this.entidade.getCsosn() != null ) {
+        		this.cstVendaSimples = CSTSimples.fromCodigo(this.entidade.getCsosn());
+        	}
+        	if (this.entidade.getCst() != null ) {
+        		this.cstVendaNormal = CSTNormal.fromCodigo(this.entidade.getCst());
+        	}
+        }
         this.viewState = ViewState.EDITING;
     }
 
@@ -146,17 +186,37 @@ public class ParamReforma2026Bean extends AbstractBeanEmpDS<ParamReforma2026> {
     }
 
     /** Salvar (insert/update) */
+    @RollbackOn({ParametroException.class})
     @Transactional
     public void salvar() {
-        if (this.entidade == null) {
-            return;
-        }
-        // Ajuste estes métodos conforme seu GenericRepositoryEmpDS
-        // Ex.: repository.salvar(entidade) ou repository.merge(entidade)
-        this.entidade = repository.save(this.entidade);
+    	try {
+    		if (this.entidade == null) {
+    			return;
+    		}
+    		// Ajuste estes métodos conforme seu GenericRepositoryEmpDS
+    		// Ex.: repository.salvar(entidade) ou repository.merge(entidade)
 
-        this.viewState = ViewState.LISTING;
-        carregarLista();
+    		if (this.cstVendaSimples != null ) {
+    			this.entidade.setCsosn(this.cstVendaSimples.getCst());
+    		}
+    		if (this.cstVendaNormal != null ) {
+    			this.entidade.setCst(this.cstVendaNormal.getCst());
+    		}
+    		if (this.cClassTrib != null) {
+    			this.entidade.setCClassTrib(this.cClassTrib);
+    		}else {
+    			throw new ParametroException(this.translate("reforma.cClassTrib.required" ));
+    		}
+
+    		this.entidade = repository.save(this.entidade);
+
+    		this.viewState = ViewState.LISTING;
+    		carregarLista();
+    	}catch (ParametroException p) {
+    		this.addError(true,p.getMessage());
+    	}catch (Exception e) {
+    		this.addError(true,e.getMessage());
+    	}
     }
 
     /** Excluir registro */
@@ -178,6 +238,22 @@ public class ParamReforma2026Bean extends AbstractBeanEmpDS<ParamReforma2026> {
     
     public TipoCliente[] getTiposCliente() {
         return TipoCliente.values();
+    }
+    
+	public CSTSimples[] getListaVendaSimples() {
+		return CSTSimples.values();
+	}
+	
+	public CSTNormal[] getListaVendaNormal() {
+		return CSTNormal.values();
+	}
+	
+    public List<CstIbsCbs> listaCstReforma(){
+    	return ibsCbsDao.listaCriteriaPorFilial(pegaIdEmpresa(), pegaIdFilial(), false, false);
+    }
+    
+    public List<CClassTrib> listaCClassTrib(){
+    	return cClassTribDao.listaCriteriaPorFilial(pegaIdEmpresa(), pegaIdFilial(), false, false);
     }
 
 

@@ -35,5 +35,17 @@ private final String cst;
 	public String getCst() {
 		return cst;
 	}
+	
+	 public static CSTNormal fromCodigo(String codigo) {
+	        if (codigo == null || codigo.trim().isEmpty()) return null;
+
+	        String c = codigo.trim();
+	        for (CSTNormal e : values()) {
+	            if (e.cst.equals(c)) {
+	                return e;
+	            }
+	        }
+	        return null; // ou lança exception com mensagem melhor
+	    }
 
 }

@@ -2,6 +2,7 @@ package br.com.nsym.domain.model.repository;
 
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,13 +55,39 @@ public abstract class GenericRepositoryEmpDS<T extends IPersistentEntity, ID ext
     private final Class<T> persistentClass;
     
 
-    /**
-     * Inicia o repositorio identificando qual e a classe de nossa entidade, seu
-     * tipo {@link Class<?>}
-     */
-    @SuppressWarnings({"unchecked", "unsafe"})
+//    /**
+//     * Inicia o repositorio identificando qual e a classe de nossa entidade, seu
+//     * tipo {@link Class<?>}
+//     */
+//    @SuppressWarnings({"unchecked", "unsafe"})
+//    public GenericRepositoryEmpDS() {
+//        this.persistentClass = (Class< T>) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+//    }
+    
     public GenericRepositoryEmpDS() {
-        this.persistentClass = (Class< T>) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+        this.persistentClass = resolveEntityClass();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Class<T> resolveEntityClass() {
+        // Começa na classe real (ou proxy) e vai subindo até achar o GenericRepositoryEmpDS parametrizado
+        Class<?> clazz = getClass();
+        while (clazz != null) {
+            Type generic = clazz.getGenericSuperclass();
+
+            if (generic instanceof ParameterizedType) {
+                ParameterizedType pt = (ParameterizedType) generic;
+                Type[] args = pt.getActualTypeArguments();
+                if (args != null && args.length > 0 && args[0] instanceof Class) {
+                    return (Class<T>) args[0];
+                }
+            }
+
+            clazz = clazz.getSuperclass();
+        }
+
+        // fallback (não deveria cair aqui em condições normais)
+        throw new IllegalStateException("Não foi possível resolver o tipo genérico de " + getClass());
     }
 
     /**

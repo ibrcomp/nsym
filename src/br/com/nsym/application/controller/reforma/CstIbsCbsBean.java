@@ -42,6 +42,7 @@ public class CstIbsCbsBean extends AbstractBeanEmpDS<CstIbsCbs> {
     @Getter
     @Setter
     private CstIbsCbs entidade;
+    
 
     /** Lista de classificações tributárias para o combo */
     @Getter
@@ -63,7 +64,7 @@ public class CstIbsCbsBean extends AbstractBeanEmpDS<CstIbsCbs> {
     }
 
     private void carregarListaCst() {
-        List<CstIbsCbs> result = cstIbsCbsRepository.listAll();
+        List<CstIbsCbs> result = cstIbsCbsRepository.listaCriteriaPorFilial(pegaIdEmpresa(),pegaIdFilial(),false,false);
         if (result == null) {
             result = new ArrayList<CstIbsCbs>();
         }
@@ -71,7 +72,7 @@ public class CstIbsCbsBean extends AbstractBeanEmpDS<CstIbsCbs> {
     }
 
     private void carregarListaClassTrib() {
-        List<CClassTrib> result = cClassTribRepository.listAll();
+        List<CClassTrib> result = cClassTribRepository.listaCriteriaPorFilial(pegaIdEmpresa(),pegaIdFilial(),false,false);
         if (result == null) {
             result = new ArrayList<CClassTrib>();
         }
@@ -89,13 +90,18 @@ public class CstIbsCbsBean extends AbstractBeanEmpDS<CstIbsCbs> {
     }
 
     /**
-     * Edita um registro existente (chamado pelo botão de edição da tabela).
+     * Edita um registro existente (chamado pelo botão de Visualizar).
      */
+    @Transactional
     public void editar(CstIbsCbs c) {
+    	if (c == null) {
+    		this.addError(true,"Edição esta nula!");
+    		return;
+    	}
     	this.entidade = c;
     	this.updateAndOpenDialog("dialogEdicao", "dlgCstIbsCbs");
     }
-
+    
     /**
      * Cancela a edição e volta apenas para a listagem.
      */
@@ -147,7 +153,7 @@ public class CstIbsCbsBean extends AbstractBeanEmpDS<CstIbsCbs> {
     public TipoTributo[] getTiposTributo() {
         return TipoTributo.values();
     }
-
+    
 	@Override
 	public CstIbsCbs setIdEmpresa(Long idEmpresa) {
 		// TODO Auto-generated method stub
@@ -171,9 +177,5 @@ public class CstIbsCbsBean extends AbstractBeanEmpDS<CstIbsCbs> {
 	 */
 	public String toTelaPrincipal() {
 		return "/main/dashboard.xhtml?faces-redirect=true";
-	}
-	
-	public void onRowSelect(SelectEvent event)throws IOException {
-		this.entidade = (CstIbsCbs)event.getObject();
 	}
 }

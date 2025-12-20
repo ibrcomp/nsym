@@ -32,5 +32,17 @@ private final String cst;
 		return cst;
 	}
 	
+	public static CSTSimples fromCodigo(String codigo) {
+        if (codigo == null || codigo.trim().isEmpty()) return null;
+
+        String c = codigo.trim();
+        for (CSTSimples e : values()) {
+            if (e.cst.equals(c)) {
+                return e;
+            }
+        }
+        return null; // ou lança exception com mensagem melhor
+    }
+	
 
 }

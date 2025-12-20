@@ -1,5 +1,6 @@
 package br.com.nsym.domain.model.repository.fiscal.reforma;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.enterprise.context.Dependent;
@@ -17,17 +18,31 @@ public class CClassTribRepository extends GenericRepositoryEmpDS<CClassTrib, Lon
 
 		private static final long serialVersionUID = 6274620376805398740L;
 
-	public CClassTrib findByCstAndCClassTrib(String cst, String cclass) {
+	public CClassTrib findByCstAndCClassTrib(String cst, String cclass,Long idEmpresa, Long idFilial) {
         CriteriaBuilder cb = this.getEntityManager().getCriteriaBuilder();
         CriteriaQuery<CClassTrib> cq = cb.createQuery(CClassTrib.class);
         Root<CClassTrib> root = cq.from(CClassTrib.class);
+        List<Predicate> predicates = new ArrayList<>();
 
-        Predicate p = cb.and(
+        // c.codigo = :codigo
+        predicates.add( cb.and(
                 cb.equal(root.get("cstIbsCbs"), cst),
                 cb.equal(root.get("cClassTrib"), cclass)
-        );
+        ));
+        
+        
+        // Controle de proprietário: mesma Empresa
+        if (idEmpresa != null) {
+            predicates.add(cb.equal(root.get("idEmpresa"), idEmpresa));
+        }
 
-        cq.select(root).where(p);
+        // Controle de proprietário: mesma Filial
+        if (idFilial != null) {
+            predicates.add(cb.equal(root.get("idFilial"), idFilial));
+        }
+        
+        cq.select(root)
+        .where(predicates.toArray(new Predicate[0]));
 
         List<CClassTrib> list = this.getEntityManager().createQuery(cq)
                 .setMaxResults(1)

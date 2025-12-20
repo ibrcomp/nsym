@@ -66,13 +66,14 @@ public class ReformaImportsBean extends AbstractBeanEmpDS<Object> {
 
     public int getTotalRegistrosImportados() {
         if (relatorio == null) return 0;
-        return relatorio.getQtdeCst() + relatorio.getQtdeCClassTrib();
+        return relatorio.getQtdeCst() + relatorio.getQtdeCClassTrib()+ relatorio.getQtdeCCredPres();
     }
 
     public String getResumoImportacao() {
         if (relatorio == null) return "";
         return "CST: " + relatorio.getQtdeCst()
              + " | cClassTrib: " + relatorio.getQtdeCClassTrib()
+             + " | cCredPres: " + relatorio.getQtdeCCredPres()
              + " | Total: " + getTotalRegistrosImportados();
     }
 

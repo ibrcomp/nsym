@@ -13,33 +13,54 @@ import javax.transaction.Transactional;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import br.com.nsym.application.producer.qualifier.AuthenticatedUser;
 import br.com.nsym.domain.model.entity.fiscal.reforma.CClassTrib;
 import br.com.nsym.domain.model.entity.fiscal.reforma.CstIbsCbs;
 import br.com.nsym.domain.model.repository.fiscal.reforma.CClassTribRepository;
 import br.com.nsym.domain.model.repository.fiscal.reforma.CstIbsCbsRepository;
+import br.com.nsym.domain.model.security.User;
+import lombok.Getter;
+import br.com.nsym.domain.model.entity.fiscal.reforma.CCredPres;
+import br.com.nsym.domain.model.repository.fiscal.reforma.CCredPresRepository;
 
 @RequestScoped
 public class ExcelCstCClassTribImporter {
+	
+	@Getter
+	@Inject
+	@AuthenticatedUser
+	private User usuarioAutenticado;
 
     @Inject
     private CstIbsCbsRepository cstRepo;
 
     @Inject
     private CClassTribRepository clasRepo;
+    
+    @Inject
+    private CCredPresRepository credPresRepo;
+    
+    private final DataFormatter formatter = new DataFormatter(new Locale("pt", "BR"));
+    
+    private FormulaEvaluator evaluator;
 
     public static class Relatorio {
         private int qtdeCst;
         private int qtdeCClassTrib;
+        private int qtdeCCredPres;
 
-        public Relatorio(int cst, int clas) {
+        public Relatorio(int cst, int clas, int cred) {
             this.qtdeCst = cst;
             this.qtdeCClassTrib = clas;
+            this.qtdeCCredPres = cred;
         }
 
         public int getQtdeCst() {
@@ -49,28 +70,37 @@ public class ExcelCstCClassTribImporter {
         public int getQtdeCClassTrib() {
             return qtdeCClassTrib;
         }
+        
+        public int getQtdeCCredPres() {
+            return qtdeCCredPres;
+        }
     }
 
     @Transactional
     public Relatorio importar(InputStream in) throws Exception {
-    	 Workbook wb = null;
-    	    try {
-    	        wb = new XSSFWorkbook(in);
+    	Workbook wb = null;
+    	try  {
+    		wb = new XSSFWorkbook(in);
+    		this.evaluator = wb.getCreationHelper().createFormulaEvaluator();
 
-    	        Sheet cstSheet   = findSheet(wb, "cst");
-    	        Sheet classSheet = findSheet(wb, "cclasstrib", "cclass");
 
-    	        int cstCount  = importarCst(cstSheet);
-    	        int clasCount = importarCClassTrib(classSheet);
+    		Sheet cstSheet   = findSheet(wb, "cst");
+    		Sheet classSheet = findSheet(wb, "cclasstrib", "cclass");
+    		Sheet credSheet  = findSheet(wb, "ccredpres", "credpres");
 
-    	        return new Relatorio(cstCount, clasCount);
-    	    } finally {
-    	        if (wb != null) {
-    	            wb.close();
-    	        }
-    	    }
+    		int cstCount  = importarCst(cstSheet);
+    		int clasCount = importarCClassTrib(classSheet);
+    		int credCount  = importarCCredPres(credSheet);
+
+
+    		return new Relatorio(cstCount, clasCount, credCount);
+    	} finally {
+    		if (wb != null) {
+    			wb.close();
+    		}
     	}
-    
+    }
+
     /* =============== Aba CST ================= */
 
     private int importarCst(Sheet sheet) throws Exception {
@@ -88,18 +118,19 @@ public class ExcelCstCClassTribImporter {
                 continue;
             }
 
-            String cst = tentaNumero(str(row, idx.col("CST-IBS/CBS")));
+            String cst = somenteDigitos(str(row, idx.col("CST-IBS/CBS"))); // ajuste o nome real da coluna
+            cst = zfill(cst, 3);
             if (isBlank(cst)) {
                 continue;
             }
 
-            CstIbsCbs ent = cstRepo.findByCst(cst); 
+            CstIbsCbs ent = cstRepo.findByCst(cst,usuarioAutenticado.getIdEmpresa(),usuarioAutenticado.getIdFilial()); 
             if (ent == null) {
                 ent = new CstIbsCbs();
             }
 
             ent.setCstIbsCbs(cst);
-            ent.setDescricaoCstIbsCbs(str(row, idx.col("DescriÁ„o CST-IBS/CBS")));
+            ent.setDescricaoCstIbsCbs(str(row, idx.col("Descri√ß√£o CST-IBS/CBS")));
             ent.setIndGibscbs(bool(row, idx.colAny("Ind GIBSCBS", "ind_gIBSCBS")));
             ent.setIndgIBSCBSMono(bool(row, idx.colAny("ind_gIBSCBSMono","ind gIBSCBSMono")));
             ent.setIndgRed(bool(row, idx.colAny("ind_gRed","ind gRed")));
@@ -137,12 +168,14 @@ public class ExcelCstCClassTribImporter {
             }
 
             String cst = tentaNumero(str(row, idx.col("CST-IBS/CBS")));
-            String cclass = tentaNumero(str(row, idx.col("cClassTrib")));
+            cst = zfill(cst, 3);
+            String cclass = somenteDigitos(str(row, idx.col("cClassTrib"))); // ajuste o nome real da coluna
+            cclass = zfill(cclass, 6);
             if (isBlank(cst) || isBlank(cclass)) {
                 continue;
             }
 
-            CClassTrib ent = clasRepo.findByCstAndCClassTrib(cst, cclass);
+            CClassTrib ent = clasRepo.findByCstAndCClassTrib(cst, cclass,usuarioAutenticado.getIdEmpresa(),usuarioAutenticado.getIdFilial()); 
             if (ent == null) {
                 ent = new CClassTrib();
             }
@@ -151,15 +184,15 @@ public class ExcelCstCClassTribImporter {
             ent.setCClassTrib(cclass);
 
             ent.setNomeCClassTrib(str(row, idx.col("Nome cClassTrib")));
-            ent.setTipoDeAliquota(str(row, idx.col("Tipo de alÌquota")));
+            ent.setTipoDeAliquota(str(row, idx.col("Tipo de al√≠quota")));
             ent.setPRedIbs(dec(row, idx.colAny("% Red. IBS", "pRedIBS")));
             ent.setPRedCbs(dec(row, idx.colAny("% Red. CBS", "pRedCBS")));
-            ent.setIndIbsRecuperavel(bool(row, idx.col("ind IBS Recuper·vel")));
-            ent.setIndCbsRecuperavel(bool(row, idx.col("ind CBS Recuper·vel")));
+            ent.setIndIbsRecuperavel(bool(row, idx.col("ind IBS Recuper√°vel")));
+            ent.setIndCbsRecuperavel(bool(row, idx.col("ind CBS Recuper√°vel")));
             ent.setIndExigMus(bool(row, idx.col("ind Exig MUS")));
             ent.setIndIsSeletivo(bool(row, idx.col("ind IS Seletivo")));
             ent.setIndOutraCamada(bool(row, idx.col("ind Outra Camada")));
-            ent.setIndMonofasico(bool(row, idx.col("ind Monof·sico")));
+            ent.setIndMonofasico(bool(row, idx.col("ind Monof√°sico")));
             ent.setIndCbsPorDentro(bool(row, idx.col("ind CBS por dentro")));
             ent.setIndIbsPorDentro(bool(row, idx.col("ind IBS por dentro")));
             ent.setIndgTribRegular(   bool(row, idx.col("ind_gTribRegular")));
@@ -174,15 +207,15 @@ public class ExcelCstCClassTribImporter {
             ent.setAnexo(tentaNumero(str(row, idx.col("ANEXO"))));
             ent.setLink(str(row, idx.col("Link")));
             ent.setIndCstAjustada(bool(row, idx.col("ind CST ajustada")));
-            ent.setIndApenasPessoaFisica(bool(row, idx.col("ind Apenas Pessoa FÌsica")));
+            ent.setIndApenasPessoaFisica(bool(row, idx.col("ind Apenas Pessoa F√≠sica")));
             ent.setIndApenasContribuinte(bool(row, idx.col("ind Apenas Contribuinte")));
-            ent.setIndCestObrigatorio(bool(row, idx.col("ind CEST ObrigatÛrio")));
+            ent.setIndCestObrigatorio(bool(row, idx.col("ind CEST Obrigat√≥rio")));
             ent.setIndPfNfce60B(bool(row, idx.col("ind PF NFC-e 60B")));
             ent.setIndNfseVia(bool(row, idx.colAny("ind NFSe Via", "indNFSe Via")));
             ent.setIndOutros(bool(row, idx.col("ind Outros")));
             ent.setDIniVig(   date(row, idx.col("dIniVig")));
             ent.setDFimVig(   date(row, idx.col("dFimVig")));
-            ent.setDAtualizado(date(row, idx.col("DataAtualizaÁ„o")));
+            ent.setDAtualizado(date(row, idx.col("DataAtualiza√ß√£o")));
             ent.setIndNFeABI( bool(row, idx.col("indNFeABI")));
             ent.setIndNFe(    bool(row, idx.col("indNFe")));
             ent.setIndNFCe(   bool(row, idx.col("indNFCe")));
@@ -201,6 +234,78 @@ public class ExcelCstCClassTribImporter {
             clasRepo.save(ent);
             upserts++;
         }
+        return upserts;
+    }
+    
+    /* =============== Aba CCredPres ================= */
+    private int importarCCredPres(Sheet sheet) throws Exception {
+        if (sheet == null) {
+            return 0;
+        }
+
+        Row header = sheet.getRow(0);
+        HeaderIdx idx = new HeaderIdx(header);
+
+        int upserts = 0;
+        int lastRow = sheet.getLastRowNum();
+
+        for (int r = 1; r <= lastRow; r++) {
+            Row row = sheet.getRow(r);
+            if (row == null) {
+                continue;
+            }
+
+            // c√≥digo do cr√©dito presumido (cCredPres)
+            String codigo = somenteDigitos(str(row, idx.colAny("cCredPres", "codigo")));
+            if (isBlank(codigo)) {
+                // linha vazia ou sem c√≥digo ‚Üí ignora
+                continue;
+            }
+
+            // procura registro existente
+            CCredPres ent = credPresRepo.findByCodigo(
+                    codigo,
+                    usuarioAutenticado.getIdEmpresa(),
+                    usuarioAutenticado.getIdFilial()
+            );
+            if (ent == null) {
+                ent = new CCredPres();
+            }
+
+            ent.setCodigo(codigo);
+
+            // Descri√ß√£o
+            String desc = str(row, idx.colAny("Descri√ß√£o", "Descricao"));
+            ent.setDescricao(corta(desc,1000));
+
+            // dispositivo legal ‚Äì coluna "LC 214/2025"
+            String lc214 = str(row, idx.col("LC 214/2025"));
+            ent.setLc214(corta(lc214, 1000));
+
+            // percentual de cr√©dito presumido ‚Äì usar "pAliqCredPresCBS"
+            ent.setPAliq(dec(row, idx.colAny("pAliqCredPresCBS", "pAliq")));
+
+            // *** Estes campos n√£o existem na planilha atual, ent√£o deixam nulos ***
+            // ent.setVBcCredPres(dec(row, idx.col("vBC_CredPres")));
+            // ent.setVCredPres(dec(row, idx.col("vCred Pres")));
+            // ent.setImpedimentoCredPres(str(row, idx.col("Impedimento de CredPres")));
+            
+            ent.setApropriaViaNf(bool(row, idx.col("Apropria via NF?")));
+            ent.setApropriaViaEvento(bool(row, idx.col("Apropria via evento?")));
+            ent.setIndDeduzCredPres(bool(row, idx.col("ind_DeduzCredPres")));
+            ent.setIndgCbsCredPres(bool(row, idx.col("ind_gCBSCredPres")));
+            ent.setIndgIbsCredPres(bool(row, idx.col("ind_gIBSCredPres")));
+            ent.setAliqCbs(dec(row, idx.col("Al√≠quota CBS")));
+            ent.setAliqIbs(dec(row, idx.col("Al√≠quota IBS")));
+
+            // datas de vig√™ncia
+            ent.setDataInicioVigencia(date(row, idx.colAny("dIniVig", "d_ini_vig")));
+            ent.setDataFimVigencia(date(row, idx.colAny("dFimVig", "d_fim_vig")));
+
+            credPresRepo.save(ent);
+            upserts++;
+        }
+
         return upserts;
     }
 
@@ -234,7 +339,7 @@ public class ExcelCstCClassTribImporter {
             return null;
         }
         try {
-            // ajuste o padr„o conforme o formato que vocÍ usar
+            // ajuste o padr√£o conforme o formato que voc√™ usar
             java.time.format.DateTimeFormatter fmt =
                     java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
             return LocalDate.parse(s.trim(), fmt);
@@ -266,7 +371,7 @@ public class ExcelCstCClassTribImporter {
         return null;
     }
 
-    /** Normaliza o nome da aba: trim, lower-case e remoÁ„o de espaÁos. */
+    /** Normaliza o nome da aba: trim, lower-case e remo√ß√£o de espa√ßos. */
     private String normalizeSheetName(String s) {
         if (s == null) {
             return "";
@@ -314,7 +419,7 @@ public class ExcelCstCClassTribImporter {
             if (s == null) {
                 return null;
             }
-            // normaliza: trim, lower-case, "_" tratado como espaÁo e m˙ltiplos espaÁos colapsados
+            // normaliza: trim, lower-case, "_" tratado como espa√ßo e m√∫ltiplos espa√ßos colapsados
             s = s.trim().toLowerCase(Locale.ROOT);
             s = s.replace('_', ' ');
             s = s.replaceAll("\\s+", " ");
@@ -349,31 +454,31 @@ public class ExcelCstCClassTribImporter {
         String v = s.trim();
         if (v.isEmpty()) return null;
 
-        // tira espaÁo estranho
+        // tira espa√ßo estranho
         v = v.replace("\u00A0", "").trim();
 
         boolean hasDot   = v.contains(".");
         boolean hasComma = v.contains(",");
 
         if (hasDot && hasComma) {
-            // Tem ponto e vÌrgula juntos: assume que o ˙ltimo È o decimal
+            // Tem ponto e v√≠rgula juntos: assume que o √∫ltimo √© o decimal
             int lastDot   = v.lastIndexOf('.');
             int lastComma = v.lastIndexOf(',');
 
             if (lastComma > lastDot) {
-                // Formato PT-BR: 1.234,56  (vÌrgula È decimal)
+                // Formato PT-BR: 1.234,56  (v√≠rgula √© decimal)
                 v = v.replace(".", "");   // tira milhar
-                v = v.replace(",", ".");  // vÌrgula vira decimal
+                v = v.replace(",", ".");  // v√≠rgula vira decimal
             } else {
-                // Formato EN: 1,234.56  (ponto È decimal)
+                // Formato EN: 1,234.56  (ponto √© decimal)
                 v = v.replace(",", "");   // tira milhar
-                // ponto j· È decimal
+                // ponto j√° √© decimal
             }
         } else if (hasComma) {
-            // SÛ vÌrgula: trata como decimal PT-BR
+            // S√≥ v√≠rgula: trata como decimal PT-BR
             v = v.replace(",", ".");
         }
-        // SÛ ponto ou nenhum: deixa como est·
+        // S√≥ ponto ou nenhum: deixa como est√°
 
         return new BigDecimal(v);
     }
@@ -393,11 +498,11 @@ public class ExcelCstCClassTribImporter {
                 return s;
             }
 
-            // remove zeros desnecess·rios (1.0 -> 1, 2.50 -> 2.5)
+            // remove zeros desnecess√°rios (1.0 -> 1, 2.50 -> 2.5)
             num = num.stripTrailingZeros();
             String txt = num.toPlainString(); // ex: "1", "1.5", "0.5"
 
-            // Se n„o tem ponto, j· È inteiro: "1", "2", "123"
+            // Se n√£o tem ponto, j√° √© inteiro: "1", "2", "123"
             if (!txt.contains(".")) {
                 return txt;
             }
@@ -405,24 +510,50 @@ public class ExcelCstCClassTribImporter {
             // Tem parte decimal: remove o ponto
             String semPonto = txt.replace(".", "");
 
-            // tira zeros ‡ esquerda, mas deixa um zero se for tudo zero
+            // tira zeros √† esquerda, mas deixa um zero se for tudo zero
             String resultado = semPonto.replaceFirst("^0+(?!$)", "");
 
             return resultado;
         } catch (NumberFormatException e) {
-            // n„o era n˙mero, devolve como veio
+            // n√£o era n√∫mero, devolve como veio
             return s;
         }
     }
 
-
-    private String str(Row r, int idx) {
-    	
-        if (idx < 0) {
+    private String corta(String s, int max) {
+        if (s == null) {
             return null;
         }
-        Cell c = r.getCell(idx);
-        return HeaderIdx.cellStr(c);
+        if (s.length() <= max) {
+            return s;
+        }
+        return s.substring(0, max);
+    }
+
+    private String str(Row row, int col) {
+        if (row == null || col < 0) return null;
+        Cell cell = row.getCell(col);
+        if (cell == null) return null;
+
+        String v = formatter.formatCellValue(cell, evaluator);
+        if (v == null) return null;
+
+        v = v.trim();
+        return v.isEmpty() ? null : v;
+    }
+    private String somenteDigitos(String s) {
+        if (s == null) return null;
+        String d = s.replaceAll("\\D+", "");
+        return d.isEmpty() ? null : d;
+    }
+
+    private String zfill(String s, int len) {
+        if (s == null) return null;
+        if (s.length() >= len) return s;
+        StringBuilder sb = new StringBuilder(len);
+        for (int i = s.length(); i < len; i++) sb.append('0');
+        sb.append(s);
+        return sb.toString();
     }
 
     private Boolean bool(Row r, int idx) {
@@ -436,7 +567,7 @@ public class ExcelCstCClassTribImporter {
             return null;
         }
 
-        // 1) Tenta interpretar como n˙mero: 0, 1, 1.0, 0.0, 1,00 etc.
+        // 1) Tenta interpretar como n√∫mero: 0, 1, 1.0, 0.0, 1,00 etc.
         try {
             java.math.BigDecimal num = new java.math.BigDecimal(v.replace(",", "."));
             if (num.compareTo(java.math.BigDecimal.ZERO) == 0) {
@@ -446,7 +577,7 @@ public class ExcelCstCClassTribImporter {
                 return Boolean.TRUE;
             }
         } catch (NumberFormatException e) {
-            // n„o era n˙mero, continua no tratamento textual
+            // n√£o era n√∫mero, continua no tratamento textual
         }
 
         // 2) Trata valores textuais

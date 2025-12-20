@@ -1,11 +1,7 @@
 package br.com.nsym.application.controller.nfe.tools;
 
-import java.io.File;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.file.Path;
-import java.time.LocalDate;
 import java.util.List;
 
 import javax.enterprise.context.RequestScoped;
@@ -22,11 +18,8 @@ import br.com.nsym.domain.model.entity.fiscal.TabIVAEstado;
 import br.com.nsym.domain.model.entity.fiscal.Tributos;
 import br.com.nsym.domain.model.entity.fiscal.Cfe.CFe;
 import br.com.nsym.domain.model.entity.fiscal.Cfe.ItemCFe;
-import br.com.nsym.domain.model.entity.fiscal.Cfe.Nfce;
-import br.com.nsym.domain.model.entity.fiscal.Cfe.NfceItem;
 import br.com.nsym.domain.model.entity.fiscal.nfe.ItemNfe;
 import br.com.nsym.domain.model.entity.fiscal.nfe.Nfe;
-import br.com.nsym.domain.model.entity.fiscal.reforma.CstIbsCbs;
 import br.com.nsym.domain.model.entity.fiscal.tools.CSTCOFINS;
 import br.com.nsym.domain.model.entity.fiscal.tools.CSTPIS;
 import br.com.nsym.domain.model.entity.fiscal.tools.CSTSimples;
@@ -39,11 +32,9 @@ import br.com.nsym.domain.model.entity.tools.TipoCliente;
 import br.com.nsym.domain.model.entity.tools.Uf;
 import br.com.nsym.domain.model.repository.cadastro.EmpresaRepository;
 import br.com.nsym.domain.model.repository.cadastro.FilialRepository;
-import br.com.nsym.domain.model.repository.fiscal.ParamReforma2026Repository;
 import br.com.nsym.domain.model.repository.fiscal.TabFcpEstadoRepository;
 import br.com.nsym.domain.model.repository.fiscal.TabIVAEstadoRepository;
 import br.com.nsym.domain.model.service.fiscal.reforma.ParametrizacaoReforma2026Service;
-import br.com.nsym.domain.model.service.fiscal.reforma.ParametrizacaoReforma2026Service.Aliquotas;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -59,8 +50,6 @@ public class CalculaTributos {
 	@Inject
 	private FilialRepository filialDao;
 	
-//	@Inject
-//    private ParamReforma2026Repository paramReforma2026Repository;
 	@Inject
 	private ParametrizacaoReforma2026Service paramService;
 
@@ -726,6 +715,11 @@ public class CalculaTributos {
 				System.out.println("CST IPI :" + itemCalculado.getCstIpi());
 				System.out.println("CST PIS / PIS-ST : " + itemCalculado.getCstPis());
 				System.out.println("CST COFINS / COFINS-ST : " + itemCalculado.getCstCofins());
+				//* calculando reforma tributaria
+				aplicarReformaTributariaNfe(this.itemCalculado,nfe,emp.getUf(),destino.getUf(), idEmpresa,idFilial);
+				
+				System.out.println("Reforma Tributaria Percentual PCbs: " + this.itemCalculado.getPCbs() );
+				
 				return this.itemCalculado;
 			}else{ // se produto for st
 
@@ -1152,7 +1146,9 @@ public class CalculaTributos {
 				System.out.println("CST COFINS / COFINS-ST : " + itemCalculado.getCstCofins());
 				
 				//* calculando reforma tributaria
-				aplicarReformaTributariaNfe(this.itemCalculado,nfe,idEmpresa,idFilial);
+				aplicarReformaTributariaNfe(this.itemCalculado,nfe,emp.getUf(),destino.getUf(),idEmpresa,idFilial);
+				
+				System.out.println("Reforma Tributaria Percentual PCbs: " + this.itemCalculado.getPCbs() );
 
 				return this.itemCalculado;
 
@@ -1166,7 +1162,7 @@ public class CalculaTributos {
 		}
 
 	}
-
+	
 	public ItemNfe defineCstIcms(ItemNfe item, Dest destino , Emp empresa, Nfe nfe ){
 		if (empresa.regime.equals(Enquadramento.Normal)){
 //			if (destino.regime.equals(Enquadramento.Normal) && destino.getUf().equals(empresa.getUf())){ SOMENTE QUANDO DESTINO FOR REGIME NORMAL*
@@ -1648,11 +1644,35 @@ public class CalculaTributos {
 	}
 	
 	/** Reforma 2026 (NFe): cálculo parametrizado por item */
-    private void aplicarReformaTributariaNfe(ItemNfe item, Nfe nota,Long idEmpresa, Long idFilial) {
-
-        // 1) Resolver a parametrização aplicável para esse item  
-    	ParamReforma2026 param = paramService.aliquotaItemNfeRef(item, nota.getEmitente().retornaUf().toString(), nota.getDestino().getUfDestino().toString(), nota.getEmitente().retornaCnae(),
-                nota.getDestino().getTipoCliente(), nota.getDestino().getConsumidorFinal(), nota.getDestino().getUfDestino().getIbgeUf().toString(), nota.getDataEmissao().toLocalDate(), idEmpresa, idFilial );
+    private void aplicarReformaTributariaNfe(ItemNfe item, Nfe nota,Uf ufEmitente, Uf ufDestino,Long idEmpresa, Long idFilial) {
+    	System.out.println("inicio Reforma tributaria");
+        // 1) Resolver a parametrização aplicável para esse item
+    	Uf estadoEmit;
+    	Uf estadoDest;
+    	String cnae = null;
+    	String tipoCliente = null ;
+    	Boolean consumidorFinal = false ;
+    	String ibge = null;
+    	if (nota.getEmitente() == null) {
+    		estadoEmit = ufEmitente;
+    		cnae="";
+    	}else {
+    		estadoEmit = nota.getEmitente().retornaUf();
+    		cnae=nota.getEmitente().retornaCnae();
+    	}
+    	
+    	if (nota.getDestino() == null) {
+    		estadoDest = ufEmitente;
+    	}else {
+    		estadoDest = nota.getDestino().getUfDestino();
+    		tipoCliente = nota.getDestino().getTipoCliente();
+    		consumidorFinal = nota.getDestino().getConsumidorFinal();
+    		ibge = nota.getDestino().getUfDestino().getIbgeUf().toString();
+    	}
+    	
+    	ParamReforma2026 param = paramService.aliquotaItemNfeRef(item, estadoEmit.name(), estadoDest.name(), cnae,
+    			tipoCliente, consumidorFinal, ibge, nota.getDataEmissao().toLocalDate(), idEmpresa, idFilial );
+    	
         if (param == null || Boolean.FALSE.equals(param.getAtivo())) {
             new TributosException("Não existe nenhuma regra ativa/ atribuida para este produto REF: " + item.getProduto().getReferencia());
         }
@@ -1660,21 +1680,30 @@ public class CalculaTributos {
         item.setIndSemIbsm(Boolean.TRUE.equals(param.getIndSemIbsm()));
 
         // 2) Resolver CST IBS/CBS a partir da parametrização
-        CstIbsCbs cstIbsCbs = param.getCstIbsCbs();
-        if (cstIbsCbs != null) {
-            item.setCstCbs(cstIbsCbs.getCstCbs());
-            item.setCstIbs(cstIbsCbs.getCstIbs());
-            item.setCstIs(cstIbsCbs.getCstIs());
+        System.out.println("Iniciando o processo de calculo Reforma");
+        System.out.println("Definindo ");
+//        CstIbsCbs cstIbsCbs = param.getCstIbsCbs();
+//        if (cstIbsCbs != null) {
+//            item.setCstCbs(cstIbsCbs.getCstCbs());
+//            item.setCstIbs(cstIbsCbs.getCstIbs());
+//            item.setCstIs(cstIbsCbs.getCstIs());
 
             // Definindo o CclasTrib utilizado
-            if (cstIbsCbs.getCClassTrib() != null) {
-                 item.setCclassTrib(cstIbsCbs.getCClassTrib());
-            }
-        }
+//            if (cstIbsCbs.getCClassTrib() != null) {
+//                 item.setCclassTrib(cstIbsCbs.getCClassTrib());
+//            }
+            if (param.getCClassTrib() != null) {
+                item.setCclassTrib(param.getCClassTrib());
+                item.setCstCbs(param.getCClassTrib().getCstIbsCbs());
+                item.setCstIbs(param.getCClassTrib().getCstIbsCbs());
+                item.setCstIs("000"); // so passa a valer em 2027
+           }
+//        }
 
         // 3) Definir base de cálculo usada para CBS/IBS/IS
         // AJUSTE ESTA LINHA para a base correta (por ex.: vProd + frete - desconto etc.)
-        BigDecimal baseCalculo = item.getValorTotal();
+        // reduzir os impostos antigos da base de calculo para os novos tributos. 
+        BigDecimal baseCalculo = paramService.calcularBaseOperacaoSemImpostos(item); 
         if (baseCalculo == null) {
             new TributosException("Erro de base de cálculo no produto "+ item.getProduto().getReferencia());
         }
@@ -1735,8 +1764,25 @@ public class CalculaTributos {
             // AJUSTE ESTES CAMPOS:
             item.setVbcIs(BigDecimal.ZERO);
             item.setPIs(BigDecimal.ZERO);
-            item.setVIs(BigDecimal.ZERO);
+            item.setVIs(new BigDecimal("0").setScale(2));
         }
+        
+        // 7) CCredPres
+        
+     // >>> Crédito presumido:
+        
+        BigDecimal vCredito = paramService.calcularCreditoPresumidoItemNfe(
+                item,
+                param,
+                nota.getDestino().getUfDestino().toString(),
+                nota.getDestino().getUfDestino().getIbgeUf().toString(),
+                nota.getDestino().getTipoCliente(),
+                nota.getDestino().getConsumidorFinal()
+        );
+
+        // 4) Grava o valor do crédito no item
+        item.setValorCreditoReforma(vCredito);
+        
     }
 
 

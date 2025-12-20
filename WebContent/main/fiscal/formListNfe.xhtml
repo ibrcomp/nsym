@@ -119,6 +119,14 @@
 										process="empresaForm"
 										rendered="#{nfeBean.viewState eq 'EDITING'}"
 										action="#{nfeBean.telaEmailAvulso()}" />
+									<p:commandButton title="Espelho" icon="fa-solid fa-eye" process="empresaForm"
+										action="#{nfeBean.emiteXMLEspelho()}"
+										onstart="PF('formBlock').block()"
+										styleClass="btn btn-flat btn-info"
+										oncomplete="PF('formBlock').unblock()" update="empresaForm"
+										rendered="#{nfeBean.viewState eq 'EDITING'}">
+										
+									</p:commandButton>
 									<span class="ui-separator"> <span
 										class="ui-icon ui-icon-grip-dotted-vertical" />
 									</span>

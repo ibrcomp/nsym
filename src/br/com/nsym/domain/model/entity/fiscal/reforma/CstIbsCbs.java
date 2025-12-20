@@ -29,6 +29,10 @@ import lombok.Setter;
 	        @UniqueConstraint(
 	            name = "uk_cst_is_emp_fil",
 	            columnNames = { "cst_is", "id_empresa", "id_filial" }
+	        		),
+	        @UniqueConstraint(
+	            name = "uk_cstIbsCbs_is_emp_fil",
+	            columnNames = { "cst_ibscbs", "id_empresa", "id_filial" }
 	        )
 	    }
 	)

@@ -320,22 +320,22 @@ public class ItemNfe extends PersistentEntity{
 	@Getter
 	@Setter
 	@Column(name = "vbc_cbs", precision = 15, scale = 2) 
-	private BigDecimal vbcCbs;
+	private BigDecimal vbcCbs= new BigDecimal("0");
 	
 	@Getter
 	@Setter
 	@Column(name = "p_cbs",   precision = 10, scale = 4)
-	private BigDecimal pCbs;
+	private BigDecimal pCbs= new BigDecimal("0");
 	
 	@Getter
 	@Setter
 	@Column(name = "v_cbs",   precision = 15, scale = 2)
-	private BigDecimal vCbs;
+	private BigDecimal vCbs= new BigDecimal("0");
 	
 	@Getter
 	@Setter
 	@Column(name = "vDif_Cbs", precision = 15, scale = 2)
-	private BigDecimal vDifCbs;
+	private BigDecimal vDifCbs= new BigDecimal("0");
 	
 	@Getter
 	@Setter
@@ -344,22 +344,22 @@ public class ItemNfe extends PersistentEntity{
 	@Getter
 	@Setter
 	@Column(name = "vbc_ibs", precision = 15, scale = 2)
-	private BigDecimal vbcIbs;
+	private BigDecimal vbcIbs= new BigDecimal("0");
 	
 	@Getter
 	@Setter
 	@Column(name = "vDif_ibs", precision = 15, scale = 2)
-	private BigDecimal vDifIbs;
+	private BigDecimal vDifIbs= new BigDecimal("0");
 	
 	@Getter
 	@Setter
 	@Column(name = "p_ibs",   precision = 10, scale = 4)
-	private BigDecimal pIbs;
+	private BigDecimal pIbs= new BigDecimal("0");
 	
 	@Getter
 	@Setter
 	@Column(name = "v_ibs",   precision = 15, scale = 2)
-	private BigDecimal vIbs;
+	private BigDecimal vIbs= new BigDecimal("0");
 	
 	@Getter
 	@Setter
@@ -368,22 +368,27 @@ public class ItemNfe extends PersistentEntity{
 	@Getter
 	@Setter
 	@Column(name = "vbc_is",  precision = 15, scale = 2)
-	private BigDecimal vbcIs;
+	private BigDecimal vbcIs= new BigDecimal("0");
 	
 	@Getter
 	@Setter
 	@Column(name = "p_is",    precision = 10, scale = 4)
-	private BigDecimal pIs;
+	private BigDecimal pIs= new BigDecimal("0");
 	
 	@Getter
 	@Setter
 	@Column(name = "v_is",    precision = 15, scale = 2)
-	private BigDecimal vIs;
+	private BigDecimal vIs= new BigDecimal("0");
 	
 	@Getter
     @Setter
     @Transient
-    private Boolean indSemIbsm;
+    private Boolean indSemIbsm = true;
+	
+	@Getter
+	@Setter
+	@Column(precision = 20, scale = 5)
+	private BigDecimal valorCreditoReforma = new BigDecimal("0");
 
 
 	@Override

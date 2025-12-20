@@ -162,6 +162,7 @@
 		<class>br.com.nsym.domain.model.entity.fiscal.Cfe.Nfce</class>
 		<class>br.com.nsym.domain.model.entity.fiscal.Cfe.NfceItem</class>
 		<class>br.com.nsym.domain.model.entity.fiscal.ParamReforma2026</class>
+		<class>br.com.nsym.domain.model.entity.fiscal.reforma.CCredPres</class>
 		<exclude-unlisted-classes>true</exclude-unlisted-classes>
 		<shared-cache-mode>ENABLE_SELECTIVE</shared-cache-mode>
 		<properties>

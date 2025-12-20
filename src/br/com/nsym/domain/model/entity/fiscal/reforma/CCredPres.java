@@ -22,9 +22,13 @@ import lombok.Setter;
 )
 public class CCredPres extends PersistentEntity {
 
-    private static final long serialVersionUID = 1L;
 
     /**
+	 *
+	 */
+	private static final long serialVersionUID = 8867517520744548493L;
+
+	/**
      * Código do crédito presumido (cCredPres – tabela oficial IBS/CBS).
      * Exemplos: "1", "2", ..., "13".
      */
@@ -47,7 +51,7 @@ public class CCredPres extends PersistentEntity {
      */
     @Getter
     @Setter
-    @Column(name = "lc214", length = 50)
+    @Column(name = "lc214", length = 2000)
     private String lc214;
 
     /**
@@ -83,11 +87,7 @@ public class CCredPres extends PersistentEntity {
     @Column(name = "impedimento_cred_pres", length = 2000)
     private String impedimentoCredPres;
 
-    /**
-     * Se a versão da planilha que você está usando trouxer datas de vigência
-     * (ex: dIniVig / dFimVig), você pode mapear aqui.
-     * Se não vier, esses campos simplesmente ficarão nulos.
-     */
+    
     @Getter
     @Setter
     @Column(name = "d_ini_vig")
@@ -97,4 +97,45 @@ public class CCredPres extends PersistentEntity {
     @Setter
     @Column(name = "d_fim_vig")
     private LocalDate dataFimVigencia;
+    
+ // Apropria via NF? (coluna "Apropria via NF?")
+    @Getter @Setter
+    @Column(name = "apropria_via_nf")
+    private Boolean apropriaViaNf;
+
+    // Apropria via evento? (coluna "Apropria via evento?")
+    @Getter @Setter
+    @Column(name = "apropria_via_evento")
+    private Boolean apropriaViaEvento;
+
+    // Coluna "ind_DeduzCredPres"
+    @Getter @Setter
+    @Column(name = "ind_deduz_cred_pres")
+    private Boolean indDeduzCredPres;
+
+    // Coluna "ind_gCBSCredPres"
+    @Getter @Setter
+    @Column(name = "ind_g_cbs_cred_pres")
+    private Boolean indgCbsCredPres;
+
+    // Coluna "ind_gIBSCredPres"
+    @Getter @Setter
+    @Column(name = "ind_g_ibs_cred_pres")
+    private Boolean indgIbsCredPres;
+
+    // Coluna "Alíquota CBS"
+    @Getter @Setter
+    @Column(name = "aliq_cbs", precision = 10, scale = 4)
+    private BigDecimal aliqCbs;
+
+    // Coluna "Alíquota IBS"
+    @Getter @Setter
+    @Column(name = "aliq_ibs", precision = 10, scale = 4)
+    private BigDecimal aliqIbs;
+
+    // Coluna "cClass nota referenciada"
+    @Getter @Setter
+    @Column(name = "cclass_nota_ref", length = 50)
+    private String cclassNotaReferenciada;
+    
 }

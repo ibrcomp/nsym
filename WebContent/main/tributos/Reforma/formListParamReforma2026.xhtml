@@ -79,7 +79,7 @@
                             <p:outputLabel value="Ativo?" for="filtroAtivo" />
                             <p:selectOneMenu id="filtroAtivo"
                                              value="#{paramReforma2026Bean.filtroAtivo}"
-                                             styleClass="form-control">
+                                             style="width:100%">
                                 <f:selectItem itemLabel="Todos" itemValue="#{null}" />
                                 <f:selectItem itemLabel="Sim" itemValue="#{true}" />
                                 <f:selectItem itemLabel="Não" itemValue="#{false}" />
@@ -120,11 +120,15 @@
                                              rendered="#{userSessionBean.hasRole(authorization.REFORMATRIB_INSERT)}" />
                         </f:facet>
 
-                        <p:column headerText="ID" style="width:60px">
+                        <p:column headerText="ID" style="width:5%">
                             <h:outputText value="#{p.id}" />
                         </p:column>
+                        
+                        <p:column headerText="Descrição" style="width:20%">
+                            <h:outputText value="#{p.descricaoRegra}" />
+                        </p:column>
 
-                        <p:column headerText="NCM" style="width:140px">
+                        <p:column headerText="NCM" style="width:10%">
                             <h:outputText value="#{p.ncmPrefix}" />
                             <h:outputText value=" " />
                             <h:outputText value="#{p.ncmIni}" />
@@ -132,31 +136,41 @@
                             <h:outputText value="#{p.ncmFim}" />
                         </p:column>
 
-                        <p:column headerText="CFOP" style="width:100px">
+                        <p:column headerText="CFOP" style="width:20%">
                             <h:outputText value="#{p.cfop}" />
+                            <h:outputText value=" - " />
+                            <h:outputText value="#{p.cfopList}" />
                         </p:column>
 
-                        <p:column headerText="UF Origem" style="width:80px">
+                        <p:column headerText="UF Origem" style="width:5%">
                             <h:outputText value="#{p.ufOrig}" />
                         </p:column>
 
-                        <p:column headerText="UF Dest" style="width:80px">
+                        <p:column headerText="UF Dest" style="width:5%">
                             <h:outputText value="#{p.ufDest}" />
                         </p:column>
 
-                        <p:column headerText="CBS %" style="width:80px">
+                        <p:column headerText="CBS %" style="width:5%">
                             <h:outputText value="#{p.PCbs}" />
                         </p:column>
 
-                        <p:column headerText="IBS %" style="width:80px">
+                        <p:column headerText="IBS %" style="width:5%">
                             <h:outputText value="#{p.PIbs}" />
                         </p:column>
 
-                        <p:column headerText="IS %" style="width:80px">
+                        <p:column headerText="IS %" style="width:5%">
                             <h:outputText value="#{p.PIs}" />
                         </p:column>
 
-                        <p:column headerText="Ativo" style="width:70px">
+						<p:column headerText="cCredPres" style="width:10%">
+							<h:outputText value="#{p.codigoCredPres}" />
+						</p:column>
+						
+						<p:column headerText="CClassTrib" style="width:10%">
+							<h:outputText value="#{p.CClassTrib.CClassTrib}" />
+						</p:column>
+
+						<p:column headerText="Ativo" style="width:5%">
                             <h:outputText value="#{p.ativo ? 'Sim' : 'Não'}" />
                         </p:column>
 
@@ -191,9 +205,18 @@
                       widgetVar="dlgEdicao"
                       modal="true"
                       resizable="false"
-                      width="980">
+                      width="70%">
 
                 <h:panelGroup id="panelEdicao">
+                	
+                	<div class="row">
+                		<div class="form-group col-md-6">
+                            <p:outputLabel for="descRegra" value="Descrição para esta Regra" />
+                            <p:inputText id="descRegra"
+                                         value="#{paramReforma2026Bean.entidade.descricaoRegra}"
+                                         styleClass="form-control" />
+                        </div>
+                	</div>
 
                     <!-- LINHA 1: NCM / CFOP / UF -->
                     <div class="row">
@@ -266,21 +289,35 @@
 
                     <!-- LINHA 3: CST / CSOSN / UF / IBGE -->
                     <div class="row">
-                        <div class="form-group col-md-2">
-                            <p:outputLabel for="cst" value="CST" />
-                            <p:inputText id="cst"
-                                         value="#{paramReforma2026Bean.entidade.cst}"
-                                         styleClass="form-control" />
-                        </div>
+						<div class="form-group col-md-2">
+							<p:outputLabel for="cstMenu"
+								value="#{messages['reforma.cstIcms']}: " rendered="true" />
+							<p:selectOneMenu id="cstMenu"
+								value="#{paramReforma2026Bean.cstVendaNormal}"
+								converter="omnifaces.GenericEnumConverter" style="width:100%"
+								rendered="true" required="false"
+								disabled="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}">
+								<f:selectItem itemValue="#{null}" noSelectionOption="true"
+									itemLabel="#{messages['reforma.form.select-all']}" />
+								<f:selectItems value="#{paramReforma2026Bean.listaVendaNormal}" itemLabel="#{nor.toString()}" var="nor"/>
+							</p:selectOneMenu>
+						</div>
+						<div class="form-group col-md-2">
+							<p:outputLabel for="csosnMenu"
+								value="#{messages['reforma.cstCsosn']}: " rendered="true" />
+							<p:selectOneMenu id="csosnMenu"
+								value="#{paramReforma2026Bean.cstVendaSimples}"
+								converter="omnifaces.GenericEnumConverter" style="width:100%"
+								rendered="true" required="false"
+								disabled="#{userSessionBean.hasRole(authorization.CLIENT_UPDATE) eq 'false'}">
+								<f:selectItem itemValue="#{null}" noSelectionOption="true"
+									itemLabel="#{messages['reforma.form.select-all']}" />
+								<f:selectItems value="#{paramReforma2026Bean.listaVendaSimples}" itemLabel="#{nor.toString()}" var="nor"/>
+							</p:selectOneMenu>
+						</div>
+						
 
-                        <div class="form-group col-md-2">
-                            <p:outputLabel for="csosn" value="CSOSN" />
-                            <p:inputText id="csosn"
-                                         value="#{paramReforma2026Bean.entidade.csosn}"
-                                         styleClass="form-control" />
-                        </div>
-
-                        <div class="form-group col-md-2">
+						<div class="form-group col-md-2">
                             <p:outputLabel for="ufOrig" value="UF Origem" />
                             <p:inputText id="ufOrig"
                                          maxlength="2"
@@ -325,14 +362,16 @@
 							</p:selectOneMenu>
 						</div>
 
-						<div class="form-group col-md-3">
+						<div class="form-group col-md-2">
                             <p:outputLabel for="consFinal" value="Consumidor Final?" />
+                            <BR />
                             <p:selectBooleanCheckbox id="consFinal"
                                                      value="#{paramReforma2026Bean.entidade.consumidorFinal}" />
                         </div>
 
-                        <div class="form-group col-md-3">
+                        <div class="form-group col-md-2">
                             <p:outputLabel for="ativo" value="Ativo" />
+                            <BR />
                             <p:selectBooleanCheckbox id="ativo"
                                                      value="#{paramReforma2026Bean.entidade.ativo}" />
                         </div>
@@ -358,30 +397,33 @@
                     <!-- LINHA 6: Alíquotas + Vigência -->
                     <div class="row">
                         <div class="form-group col-md-2">
-                            <p:outputLabel for="pCbs" value="CBS %" />
+                            <p:outputLabel for="pCbs" value="CBS % :" />
+                            <BR />
                             <p:inputNumber id="pCbs"
                                            value="#{paramReforma2026Bean.entidade.PCbs}"
                                            decimalPlaces="2"
-                                           styleClass="form-control" />
+                                           style="width:50%" />
                         </div>
 
                         <div class="form-group col-md-2">
-                            <p:outputLabel for="pIbs" value="IBS %" />
+                            <p:outputLabel for="pIbs" value="IBS % :" />
+                            <BR />
                             <p:inputNumber id="pIbs"
                                            value="#{paramReforma2026Bean.entidade.PIbs}"
                                            decimalPlaces="2"
-                                           styleClass="form-control" />
+                                           style="width:50%" />
                         </div>
 
                         <div class="form-group col-md-2">
-                            <p:outputLabel for="pIs" value="IS %" />
+                            <p:outputLabel for="pIs" value="IS % :" />
+                            <BR />
                             <p:inputNumber id="pIs"
                                            value="#{paramReforma2026Bean.entidade.PIs}"
                                            decimalPlaces="2"
-                                           styleClass="form-control" />
+                                           style="width:50%" />
                         </div>
-
-                        <div class="form-group col-md-3">
+					
+                        <div class="form-group col-md-2">
                             <p:outputLabel for="vigIni" value="Vigência Início" />
                             <p:calendar id="vigIni"
                                         value="#{paramReforma2026Bean.entidade.vigenciaIni}"
@@ -390,7 +432,7 @@
                                         showButtonPanel="true" />
                         </div>
 
-                        <div class="form-group col-md-3">
+                        <div class="form-group col-md-2">
                             <p:outputLabel for="vigFim" value="Vigência Fim" />
                             <p:calendar id="vigFim"
                                         value="#{paramReforma2026Bean.entidade.vigenciaFim}"
@@ -399,8 +441,30 @@
                                         showButtonPanel="true" />
                         </div>
                     </div>
-
-                    <!-- BOTÕES -->
+                    <!-- LINHA 7: Crédito Presumido -->
+					<div class="row">
+						<div class="form-group col-md-3">
+							<p:outputLabel for="codigoCredPres"
+								value="Crédito Presumido (cCredPres)" />
+							<p:inputText id="codigoCredPres"
+								value="#{paramReforma2026Bean.entidade.codigoCredPres}"
+								styleClass="form-control" />
+						</div>
+						<div class="form-group col-md-5">
+							<p:outputLabel value="#{messages['reforma.cClassTrib']}"
+								for="refCClass"  />
+							<p:selectOneMenu id="refCClass" filter="true" filterMatchMode="contains" 
+								value="#{paramReforma2026Bean.CClassTrib}"
+								required="true" requiredMessage="#{messages['reforma.cClassTrib.required']}"
+								converter="omnifaces.SelectItemsConverter" style="width:100%">
+								<f:selectItem itemValue="#{null}" noSelectionOption="false"
+									itemLabel="#{messages['filial.form.select-one']}" />
+								<f:selectItems value="#{paramReforma2026Bean.listaCClassTrib()}" var="lista"
+									itemLabel="#{lista.CClassTrib} - #{lista.nomeCClassTrib}" />
+							</p:selectOneMenu>
+						</div>
+					</div>
+					<!-- BOTÕES -->
                     <div class="row">
                         <div class="col-md-12" style="text-align:right">
                             <p:commandButton value="Salvar"
@@ -409,7 +473,7 @@
                                              actionListener="#{paramReforma2026Bean.salvar}"
                                              update=":paramReformaForm"
                                              oncomplete="PF('dlgEdicao').hide()"
-                                             rendered="#{userSessionBean.hasRole('ROLE_PARAM_REFORMA2026_SALVAR')}" />
+                                             rendered="#{userSessionBean.hasRole(authorization.REFORMATRIB_INSERT)}" />
 
                             <p:commandButton value="Cancelar"
                                              icon="ui-icon-close"

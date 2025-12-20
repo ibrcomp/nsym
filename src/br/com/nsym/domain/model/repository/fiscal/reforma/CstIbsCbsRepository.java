@@ -1,5 +1,6 @@
 package br.com.nsym.domain.model.repository.fiscal.reforma;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.enterprise.context.Dependent;
@@ -17,13 +18,27 @@ public class CstIbsCbsRepository extends GenericRepositoryEmpDS<CstIbsCbs, Long>
 	private static final long serialVersionUID = 3898873844202732147L;
 	
 
-    public CstIbsCbs findByCst(String cst) {
+    public CstIbsCbs findByCst(String cst,Long idEmpresa, Long idFilial) {
         CriteriaBuilder cb = this.getEntityManager().getCriteriaBuilder();
         CriteriaQuery<CstIbsCbs> cq = cb.createQuery(CstIbsCbs.class);
         Root<CstIbsCbs> root = cq.from(CstIbsCbs.class);
+        
+        List<Predicate> predicates = new ArrayList<>();
+        
+        predicates.add(cb.equal(root.get("cstIbsCbs"), cst));
+        
+        // Controle de proprietário: mesma Empresa
+        if (idEmpresa != null) {
+            predicates.add(cb.equal(root.get("idEmpresa"), idEmpresa));
+        }
 
-        Predicate p = cb.equal(root.get("cstIbsCbs"), cst);
-        cq.select(root).where(p);
+        // Controle de proprietário: mesma Filial
+        if (idFilial != null) {
+            predicates.add(cb.equal(root.get("idFilial"), idFilial));
+        }
+        
+        cq.select(root)
+        .where(predicates.toArray(new Predicate[0]));
 
         List<CstIbsCbs> list = this.getEntityManager().createQuery(cq)
                 .setMaxResults(1)

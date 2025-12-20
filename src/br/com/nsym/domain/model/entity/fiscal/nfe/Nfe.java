@@ -29,7 +29,6 @@ import br.com.nsym.domain.model.entity.PersistentEntity;
 import br.com.nsym.domain.model.entity.cadastro.Transportadora;
 import br.com.nsym.domain.model.entity.financeiro.FormaDePagamento;
 import br.com.nsym.domain.model.entity.financeiro.tools.ParcelasNfe;
-import br.com.nsym.domain.model.entity.fiscal.CFOP;
 import br.com.nsym.domain.model.entity.fiscal.Tributos;
 import br.com.nsym.domain.model.entity.fiscal.tools.FinalidadeNfe;
 import br.com.nsym.domain.model.entity.fiscal.tools.StatusNfe;
@@ -388,18 +387,28 @@ public class Nfe extends PersistentEntity {
 	@Getter
 	@Setter
 	@Column(name = "tot_v_cbs", precision = 15, scale = 2)
-	private BigDecimal totVCbs;
+	private BigDecimal totVCbs= new BigDecimal("0");
 	
 	@Getter
 	@Setter
 	@Column(name = "tot_v_ibs", precision = 15, scale = 2)
-	private BigDecimal totVIbs;
+	private BigDecimal totVIbs= new BigDecimal("0");
 
 	@Getter
 	@Setter
+	@Column(name = "vNFTo", precision = 15, scale = 2)
+	private BigDecimal vNFTo= new BigDecimal("0");
+	
+	@Getter
+	@Setter
 	@Column(name = "tot_v_is", precision = 15, scale = 2)
-	private BigDecimal totVIs;
-
+	private BigDecimal totVIs= new BigDecimal("0.00");
+	
+	@Getter
+	@Setter
+	@Column(name = "baseIBSCBS", precision = 15, scale = 2)
+	private BigDecimal baseIBSCBS= new BigDecimal("0");
+	
 	public void addItemNfe(ItemNfe item) {
 		item.setNfe(this);
 		listaItemNfe.add(item);

@@ -62,7 +62,15 @@
                                     value="#{messages['reformaImports.instructions']}"
                                     rendered="#{not empty messages['reformaImports.instructions']}" />
                                 <br/>
-                            </h:panelGroup>
+
+								<h:outputText
+									value="Baixe os arquivos oficiais para importação da Reforma Tributária 2026 no portal da NF-e: " />
+								<h:outputLink
+									value="https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=/NJarYc9nus="
+									target="_blank">
+									<h:outputText value="clique aqui para abrir o portal NF-e" />
+								</h:outputLink>
+							</h:panelGroup>
                         </div>
 
                         <div class="col-md-6">
@@ -103,7 +111,7 @@
                                     <h3>#{messages['reformaImports.summary-title']}</h3>
 
                                     <div class="row">
-                                        <div class="form-group col-md-4">
+                                        <div class="form-group col-md-3">
                                             <p:outputLabel
                                                 value="#{label['reformaImports.qtdeCst']}" />
                                             <br/>
@@ -112,7 +120,7 @@
                                                 style="font-weight:bold;font-size:18px" />
                                         </div>
 
-                                        <div class="form-group col-md-4">
+                                        <div class="form-group col-md-3">
                                             <p:outputLabel
                                                 value="#{label['reformaImports.qtdeCClassTrib']}" />
                                             <br/>
@@ -120,8 +128,17 @@
                                                 value="#{reformaImportsBean.relatorio.qtdeCClassTrib}"
                                                 style="font-weight:bold;font-size:18px" />
                                         </div>
+                                        
+                                        <div class="form-group col-md-3">
+                                            <p:outputLabel
+                                                value="#{label['reformaImports.qtdeCCredPres']}" />
+                                            <br/>
+                                            <h:outputText
+                                                value="#{reformaImportsBean.relatorio.qtdeCCredPres}"
+                                                style="font-weight:bold;font-size:18px" />
+                                        </div>
 
-                                        <div class="form-group col-md-4">
+                                        <div class="form-group col-md-3">
                                             <p:outputLabel
                                                 value="#{label['reformaImports.totalRegistros']}" />
                                             <br/>

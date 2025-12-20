@@ -102,12 +102,9 @@ import br.com.nsym.domain.model.repository.cadastro.FilialRepository;
 import br.com.nsym.domain.model.repository.cadastro.FornecedorRepository;
 import br.com.nsym.domain.model.repository.cadastro.NumeroSemUtilizacaoNFeRepository;
 import br.com.nsym.domain.model.repository.cadastro.ProdutoRepository;
-import br.com.nsym.domain.model.repository.cadastro.TransportadoraRepository;
-import br.com.nsym.domain.model.repository.financeiro.CustoProdutoRepository;
-import br.com.nsym.domain.model.repository.financeiro.FormaDePagementoRepository;
+import br.com.nsym.domain.model.repository.cadastro.TransportadoraRepository;import br.com.nsym.domain.model.repository.financeiro.FormaDePagementoRepository;
 import br.com.nsym.domain.model.repository.financeiro.tools.ParcelasNfeRepository;
 import br.com.nsym.domain.model.repository.fiscal.DIRepository;
-import br.com.nsym.domain.model.repository.fiscal.IiRepository;
 import br.com.nsym.domain.model.repository.fiscal.NcmEstoqueRepository;
 import br.com.nsym.domain.model.repository.fiscal.TributosRepository;
 import br.com.nsym.domain.model.repository.fiscal.nfe.CartaCorrecaoRepository;
@@ -132,8 +129,8 @@ public class NfeBean extends AbstractBeanEmpDS<Nfe>{
 	 */
 	private static final long serialVersionUID = 1L;
 
-	@Inject
-	private FormulasDosImpostos calcula;
+//	@Inject
+//	private FormulasDosImpostos calcula;
 
 
 	@Inject
@@ -162,8 +159,8 @@ public class NfeBean extends AbstractBeanEmpDS<Nfe>{
 	@Setter
 	private II ii = new II();
 
-	@Inject
-	private IiRepository iiDao;
+//	@Inject
+//	private IiRepository iiDao;
 
 	@Inject
 	private NfeRepository nfeDao;
@@ -265,8 +262,8 @@ public class NfeBean extends AbstractBeanEmpDS<Nfe>{
 	@Setter
 	private ProdutoCusto custoProduto;
 
-	@Inject
-	private CustoProdutoRepository custoDao;
+//	@Inject
+//	private CustoProdutoRepository custoDao;
 
 	@Getter
 	@Setter
@@ -1296,6 +1293,43 @@ public class NfeBean extends AbstractBeanEmpDS<Nfe>{
 						this.valorTotalNota =this.valorTotalNota.subtract(this.itemSelecionado.getValorTotal()).subtract(this.itemSelecionado.getValorFrete()).subtract(this.itemSelecionado.getValorSeguro()).subtract(this.itemSelecionado.getValorIcmsSt()).subtract(this.itemSelecionado.getValorIPI()).subtract(this.itemSelecionado.getValorDespesas());
 						this.nfe.setValorTotalNota(this.valorTotalNota.setScale(2, RoundingMode.HALF_EVEN));
 						this.totalNfe = this.nfe.getValorTotalProdutos().subtract(this.nfe.getDesconto()).setScale(2,RoundingMode.HALF_EVEN);
+						
+						// calculo reforma tributaria
+						
+						BigDecimal totalIS  = BigDecimal.ZERO;
+						BigDecimal totalIBS = BigDecimal.ZERO;
+						BigDecimal totalCBS = BigDecimal.ZERO;
+						BigDecimal baseIBSCBS = BigDecimal.ZERO;
+						BigDecimal totalNfeIBSCBS = BigDecimal.ZERO;
+						// cbs
+						totalCBS = this.nfe.getTotVCbs().subtract(this.itemSelecionado.getVCbs());
+						this.nfe.setTotVCbs(totalCBS.setScale(2, RoundingMode.HALF_EVEN));
+						
+						//IBS
+						totalIBS = this.nfe.getTotVIbs().subtract(this.itemSelecionado.getVIbs());
+						this.nfe.setTotVIbs(totalIBS.setScale(2, RoundingMode.HALF_EVEN));
+						
+						// Total NFe Reforma tributaria
+						totalNfeIBSCBS = this.nfe.getVNFTo().subtract(this.itemSelecionado.getValorTotal());
+						this.nfe.setVNFTo(totalNfeIBSCBS.setScale(2, RoundingMode.HALF_EVEN));
+//						this.valorTotalNota =this.valorTotalNota.subtract(this.itemSelecionado.getValorTotal())  verificar se precisa fazer estes calculos 
+//								.subtract(this.itemSelecionado.getValorFrete())
+//								.subtract(this.itemSelecionado.getValorSeguro())
+//								.subtract(this.itemSelecionado.getValorIcmsSt())
+//								.subtract(this.itemSelecionado.getValorIPI())
+//								.subtract(this.itemSelecionado.getValorDespesas());
+						
+						
+//						// IS
+						totalIS = this.nfe.getTotVIs().subtract(this.itemSelecionado.getVIs());
+						this.nfe.setTotVIs(totalIS.setScale(2, RoundingMode.HALF_EVEN));
+						
+//						// BaseIBSCBS
+						
+						baseIBSCBS = this.nfe.getBaseIBSCBS().subtract(this.itemSelecionado.getVbcCbs());
+						this.nfe.setBaseIBSCBS(baseIBSCBS.setScale(2, RoundingMode.HALF_EVEN));
+////						
+						
 						this.nfe.setListaItemNfe(this.listaTemporariaItens);
 
 					}
@@ -1919,6 +1953,33 @@ public class NfeBean extends AbstractBeanEmpDS<Nfe>{
 							this.nfe.setValorIcms(new BigDecimal("0"));
 							this.valorIcms = new BigDecimal("0");
 						}
+						// Calculo dos Totais Da Nfe - Reforma Tributaria 2026
+						BigDecimal totalIS  = BigDecimal.ZERO;
+						BigDecimal totalIBS = BigDecimal.ZERO;
+						BigDecimal totalCBS = BigDecimal.ZERO;
+						BigDecimal baseIBSCBS = BigDecimal.ZERO;
+						BigDecimal totalNfeIBSCBS = BigDecimal.ZERO;
+						// cbs
+						totalCBS = this.nfe.getTotVCbs().add(this.itemNfe.getVCbs());
+						this.nfe.setTotVCbs(totalCBS);
+						
+						//IBS
+						totalIBS = this.nfe.getTotVIbs().add(this.itemNfe.getVIbs());
+						this.nfe.setTotVIbs(totalIBS);
+						
+						// Total NFe Reforma tributaria
+						totalNfeIBSCBS = this.nfe.getVNFTo().add(this.itemNfe.getValorTotal());
+						this.nfe.setVNFTo(totalNfeIBSCBS);
+						
+						// IS
+						totalIS = this.nfe.getTotVIs().add(this.itemNfe.getVIs());
+						this.nfe.setTotVIs(totalIS);
+						
+						// BaseIBSCBS
+						
+						baseIBSCBS = this.nfe.getBaseIBSCBS().add(this.itemNfe.getVbcCbs());
+						this.nfe.setBaseIBSCBS(baseIBSCBS);
+						
 						//			this.nfe.setListaItemNfe(this.listaTemporariaItens);
 						//			this.ref = new String();
 
@@ -2009,8 +2070,8 @@ public class NfeBean extends AbstractBeanEmpDS<Nfe>{
 	@Transactional
 	public Long pegaUltimoNumeroDiponivel() {
 		Long numeroDisponivel = 0l;
-		int ultimoIndiceDaLista = 0 ;
-		NumeroSemUtilizacaoNFe numNFE = new NumeroSemUtilizacaoNFe();
+//		int ultimoIndiceDaLista = 0 ;
+//		NumeroSemUtilizacaoNFe numNFE = new NumeroSemUtilizacaoNFe();
 		List<NumeroSemUtilizacaoNFe> listaNumDisponivel = new ArrayList<>();
 		listaNumDisponivel = this.numeroDao.retornaListaDeNumeroNFeDisponivel(getUsuarioAutenticado().getIdEmpresa(), getUsuarioAutenticado().getIdFilial());
 		if (getUsuarioAutenticado().getIdFilial() != null){
@@ -2263,6 +2324,11 @@ public class NfeBean extends AbstractBeanEmpDS<Nfe>{
 			BigDecimal acrescimoTotalNaParcela = new BigDecimal("0");
 			BigDecimal acrescimoPorParcela = new BigDecimal("0");
 			BigDecimal totalDasParcelas = new BigDecimal("0");
+			BigDecimal totalIS  = BigDecimal.ZERO;
+			BigDecimal totalIBS = BigDecimal.ZERO;
+			BigDecimal totalCBS = BigDecimal.ZERO;
+			BigDecimal baseIBSCBS = BigDecimal.ZERO;
+			BigDecimal totalNfeIBSCBS = BigDecimal.ZERO;
 			this.valorIcms = new BigDecimal("0");
 			this.nfe.setBaseIcms(new BigDecimal("0"));
 			this.nfe.setVICMSUFDest(new BigDecimal("0"));
@@ -2350,6 +2416,22 @@ public class NfeBean extends AbstractBeanEmpDS<Nfe>{
 					this.nfe.setValorIcms(new BigDecimal("0"));
 					this.valorIcms = new BigDecimal("0");
 				}
+				// Calculo dos Totais Da Nfe - Reforma Tributaria 2026
+				// cbs
+				totalCBS = totalCBS.add(itemNfe.getVCbs());
+
+				//IBS
+				totalIBS = totalIBS.add(itemNfe.getVIbs());
+
+				// Total NFe Reforma tributaria
+				totalNfeIBSCBS = totalNfeIBSCBS.add(itemNfe.getValorTotal());
+
+				// IS
+				totalIS = totalIS.add(itemNfe.getVIs());
+
+				// BaseIBSCBS
+
+				baseIBSCBS = baseIBSCBS.add(itemNfe.getVbcCbs());
 			}
 			if (this.nfe.isImportacao()) {
 				this.nfe.setValorTotalII(vIITotal);
@@ -2374,6 +2456,12 @@ public class NfeBean extends AbstractBeanEmpDS<Nfe>{
 					}
 				}
 			}
+			// preenchendo os totais na nfe
+			this.nfe.setTotVCbs(totalCBS);
+			this.nfe.setTotVIbs(totalIBS);
+			this.nfe.setVNFTo(totalNfeIBSCBS);
+			this.nfe.setTotVIs(totalIS);
+			this.nfe.setBaseIBSCBS(baseIBSCBS);
 			System.out.println("base icms " + this.totalBaseIcms );
 			System.out.println("Total Nota: " + this.valorTotalNota);
 		}catch (Exception e){
@@ -2693,14 +2781,14 @@ public class NfeBean extends AbstractBeanEmpDS<Nfe>{
 		try {
 			String retorno="";
 			String CStat="";
-			String resulXmotivo="";
+//			String resulXmotivo="";
 			String protocolo="";
 			String resposta="";
 			String arquivo="";
 			int procuraIni = 0;
-			int procuraFim=0;
-			int procuraXmotivo = 0;
-			int procuraProtocolo = 0;
+//			int procuraFim=0;
+//			int procuraXmotivo = 0;
+//			int procuraProtocolo = 0;
 			if (this.nfe.getStatusEmissao() == StatusNfe.CA){
 				this.addWarning(true, "nfe.cancel.isCancel");
 			}else{
@@ -2763,12 +2851,53 @@ public class NfeBean extends AbstractBeanEmpDS<Nfe>{
 
 	public List<String> linhaTexto(String texto){
 		List<String> linhaString = new ArrayList<>();
-		Scanner sc = new Scanner(texto).useDelimiter("\\n");
-		while(sc.hasNext()){
-			linhaString.add(sc.next());
+		try (Scanner sc = new Scanner(texto).useDelimiter("\\n")) {
+			while(sc.hasNext()){
+				linhaString.add(sc.next());
+			}
+			sc.close();
 		}
-		sc.close();
 		return linhaString;
+	}
+	public void gerarEspelho() throws IOException {
+		this.respostaAcbrLocal = this.acbr.enviaComandoACBr(this.infConexao, "NFe.CriarNFe(\""+"C:\\ibrcomp\\tmp\\"+this.nomeArquivo+".ini\",1,1,1,,0,,1)").toUpperCase();
+	}
+	
+	@Transactional
+	public void emiteXMLEspelho()throws IOException,NfeException {
+		String resp;
+		System.out.println("EmiteXML ibr");
+		this.nfe = this.nfeDao.pegaNfe(this.nfe.getId(), pegaIdEmpresa(),pegaIdFilial());
+		System.out.println("pesquisa nota EmiteXML ibr");
+		this.nfe.setListaLacres(this.lacreDao.findLacreForNfe(this.nfe, getUsuarioAutenticado().getIdEmpresa(), getUsuarioAutenticado().getIdFilial()));
+		this.nfe.setFormaPagamento(this.formaPagDao.findById(this.nfe.getFormaPagamento().getId(), false));
+		this.nfe.setListaParcelas(this.parcelaDao.listaParcelasPorNfe(this.nfe, getUsuarioAutenticado().getIdEmpresa(), getUsuarioAutenticado().getIdFilial()));
+		System.out.println("Antes de inserir transporte ibr");
+		this.setTransp(this.nfe.getTransportador());
+		System.out.println("EmiteXML ibr depois de inserir transporte");
+		this.nomeArquivo = this.getUsuarioAutenticado().getName()+this.getUsuarioAutenticado().getIdEmpresa();
+
+		if (this.nfe.getNumeroNota() == null){
+			this.nfe.setNumeroNota(pegaUltimoNumeroDiponivel());
+		}
+		System.out.println("EmiteXML ibr antes de gerar arquivo");
+		geraNfe();
+		System.out.println("EmiteXML ibr depois de gerar arquivo");
+		this.nfe.setRespostaAcbr(this.respostaAcbrLocal);
+		resp = this.respostaAcbrLocal.substring(0,2);
+		System.out.println(resp);
+		if (resp.equals("OK")){
+			gerarEspelho();
+//			transmiteNfe();
+			this.nfe.setRespostaFinalAcbr(this.respostaAcbrLocal);
+		}else{
+			this.nfe.setRespostaAcbr(this.respostaAcbrLocal);
+		}
+//		salvaTransmitido();
+		//		}catch (Exception e){
+		//			salvaTransmitido();
+		//			this.addError(true, "error.geraxml");
+		//		}
 	}
 
 	@Transactional
@@ -3365,6 +3494,11 @@ public class NfeBean extends AbstractBeanEmpDS<Nfe>{
 	public AbstractLazyModel<Produto> getLazyProduto(){
 		this.produtoModel = new AbstractLazyModel<Produto>() {
 
+			/**
+			 *
+			 */
+			private static final long serialVersionUID = -3458619495852208082L;
+
 			@Override
 			public List<Produto> load(int first, int pageSize, String sortField, SortOrder sortOrder,
 					Map<String, Object> filters) {
@@ -3869,7 +4003,7 @@ public class NfeBean extends AbstractBeanEmpDS<Nfe>{
 						throw new NfeException(this.translate("nfe.erro.listItens.empty"));
 					}
 					List<ItemNfe> listaConvertidaItemPedido = new ArrayList<ItemNfe>();
-					BigDecimal valorDeDesconto = new BigDecimal("0");
+//					BigDecimal valorDeDesconto = new BigDecimal("0");
 					//					BigDecimal percentualDesconto = new BigDecimal("0");
 					BigDecimal fundoCombate = new BigDecimal("0");
 					BigDecimal fundoCPRetidoST = new BigDecimal("0");

@@ -136,6 +136,8 @@
 									<br />
 									<p:commandButton value="#{label['label.nfe.destino.pesquisa']}"
 										process="tabPrincipal"
+										onstart="PF('formBlock').block()"
+										oncomplete="PF('formBlock').unblock()"
 										actionListener="#{nfeBean.pesquisaDestinatario()}"
 										update="listaResultadoDialog tabPrincipal" id="buttonPesquisa"
 										style="width:100%;margin:5px"

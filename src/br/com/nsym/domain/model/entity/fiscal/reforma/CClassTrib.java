@@ -236,4 +236,10 @@ public class CClassTrib extends PersistentEntity {
     @Setter
     @Column(name = "indDERE")
     private Boolean indDERE;
+    
+ // Indica se esta classificação permite crédito presumido para operações na ZFM (Zona Franca de Manaus)
+    @Getter
+    @Setter
+    @Column(name = "ind_gCredPresIBSZFM")
+    private Boolean indgCredPresIBSZFM;
 }

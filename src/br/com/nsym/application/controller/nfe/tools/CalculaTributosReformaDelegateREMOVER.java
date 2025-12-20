@@ -13,9 +13,9 @@ import br.com.nsym.domain.model.entity.fiscal.nfe.ItemNfe;
  * A ideia é ser chamado de dentro do seu CalculaTributos atual, sem acoplar
  * diretamente toda a lógica nova nele.
  */
-public final class CalculaTributosReformaDelegate {
+public final class CalculaTributosReformaDelegateREMOVER {
 
-    private CalculaTributosReformaDelegate() {}
+    private CalculaTributosReformaDelegateREMOVER() {}
 
     public static void aplicarReformaNoItem(ParamReforma2026 regra, ItemNfe item) {
 

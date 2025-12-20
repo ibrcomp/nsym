@@ -1,9 +1,9 @@
 package br.com.nsym.application.controller.nfe.tools;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 import br.com.nsym.domain.model.entity.fiscal.nfe.ItemNfe;
+import br.com.nsym.domain.model.entity.fiscal.nfe.Nfe;
 
 /**
  * Helper para geração dos blocos da Reforma Tributária (IS / IBS / CBS)
@@ -46,24 +46,28 @@ public final class AcbrComunicaReformaHelper {
      * @param contador  número sequencial do item (001, 002, ...)
      */
     public static void appendBlocosReformaItem(StringBuilder sb, ItemNfe item, int contador) {
+    	
+    	System.out.println("Incicio Bloco Item Reforma");
 
         // ====== IS ====== (grupo [ISnnn])
         // Campos no ItemNfe:
         //  - cstIs, vbcIs, pIs, vIs  (já criados)
-        if (item.getCstIs() != null || hasPositive(item.getVIs())) {
-            sb.append(section("IS", contador))
-              // deixar em branco ou usar cstis000
-              .append(kv("CSTIS", item.getCstIs()))
-              // deixar em branco ou usar 000001 (classificação IS, se você já tiver)
-              .append(kv("cClassTribIS", null))
-              .append(kv("vBCIS", item.getVbcIs()))
-              .append(kv("pIS", item.getPIs()))
-              // por enquanto não estamos tratando pISEspec / uTrib / qTrib
-              .append(kv("pISEspec", null))
-              .append(kv("uTrib", null))
-              .append(kv("qTrib", null))
-              .append(kv("vIS", item.getVIs()));
-        }
+    	if (!item.getProduto().getNcm().isExcluirSeIsento()) {
+    		if (item.getCstIs() != null || hasPositive(item.getVIs())) {
+    			sb.append(section("IS", contador))
+    			// deixar em branco ou usar cstis000
+    			.append(kv("CSTIS", item.getCstIs()))
+    			// deixar em branco ou usar 000001 (classificação IS, se você já tiver)
+    			.append(kv("cClassTribIS", "000001"))
+    			.append(kv("vBCIS", item.getVbcIs()))
+    			.append(kv("pIS", item.getPIs()))
+    			// por enquanto não estamos tratando pISEspec / uTrib / qTrib
+    			.append(kv("pISEspec", null))
+    			.append(kv("uTrib", null))
+    			.append(kv("qTrib", null))
+    			.append(kv("vIS", item.getVIs()));
+    		}
+    	}
 
         // ====== IBSCBS ====== (grupo [IBSCBSnnn])
         // Aqui usam-se os CSTs de IBS/CBS que vêm do CstIbsCbs via CalculaTributos
@@ -71,7 +75,6 @@ public final class AcbrComunicaReformaHelper {
             sb.append(section("IBSCBS", contador))
               // '','000', '010', '011', '200', ...
               .append(kv("CST", escolherCstIbscbs(item)))
-              // Se você tiver CClassTrib amarrado ao item, pode pegar o código aqui.
               .append(kv("cClassTrib", item.getCclassTrib().getCClassTrib()));
         }
 
@@ -88,8 +91,8 @@ public final class AcbrComunicaReformaHelper {
         // então deixamos os campos mais “avançados” em branco.
         // Você pode especializar depois se criar campos específicos.
         sb.append(section("gIBSUF", contador))
-          .append(kv("pIBSUF", null))
-          .append(kv("vIBSUF", null))
+          .append(kv("pIBSUF", item.getPIbs()))
+          .append(kv("vIBSUF", item.getVIbs()))
           .append(kv("pDif", null))
           .append(kv("vDif", null))
           .append(kv("vDevTrib", null))
@@ -101,8 +104,8 @@ public final class AcbrComunicaReformaHelper {
         boolean suprimirIbsm = Boolean.TRUE.equals(getIndSemIbsmSafe(item));
         if (!suprimirIbsm && hasPositive(item.getVIbs())) {
             sb.append(section("gIBSMun", contador))
-              .append(kv("pIBSMun", item.getPIbs()))
-              .append(kv("vIBSMun", item.getVIbs()))
+              .append(kv("pIBSMun", null))
+              .append(kv("vIBSMun", null))
               .append(kv("pDif", null))
               .append(kv("vDif", null))
               .append(kv("vDevTrib", null))
@@ -127,6 +130,7 @@ public final class AcbrComunicaReformaHelper {
         // gMonoRet, gMonoDif, gTransfCred, gCredPresIBSZFM)
         // podem ser adicionados aqui no futuro, quando você tiver
         // os campos necessários mapeados no ItemNfe.
+        System.out.println("Fim Bloco Item Reforma");
     }
 
     private static String escolherCstIbscbs(ItemNfe item) {
@@ -149,9 +153,10 @@ public final class AcbrComunicaReformaHelper {
         try {
             // se você já criou o campo transient indSemIbsm em ItemNfe com Lombok,
             // isso aqui vai funcionar:
-            return (Boolean) ItemNfe.class
-                    .getMethod("getIndSemIbsm")
-                    .invoke(item);
+//            RETURN (BOOLEAN) ITEMNFE.CLASS
+//                    .GETMETHOD("GETINDSEMIBSM")
+//                    .INVOKE(ITEM);
+        	return item.getProduto().getNcm().isExcluirSeIsento();
         } catch (Exception e) {
             // se ainda não existir o campo, consideramos FALSE (não suprime IBS Mun)
             return Boolean.FALSE;
@@ -167,28 +172,28 @@ public final class AcbrComunicaReformaHelper {
      *
      * Pode ser chamado depois do [Total] padrão do ACBr.
      */
-    public static void appendBlocosTotaisReforma(StringBuilder sb, List<ItemNfe> itens) {
+    public static void appendBlocosTotaisReforma(StringBuilder sb, Nfe it) {
+    	
+    	System.out.println("Incicio Bloco Totais Reforma");
 
         BigDecimal totalIS  = BigDecimal.ZERO;
         BigDecimal totalIBS = BigDecimal.ZERO;
         BigDecimal totalCBS = BigDecimal.ZERO;
         BigDecimal baseIBSCBS = BigDecimal.ZERO;
-
-        for (ItemNfe it : itens) {
-            totalIS    = totalIS.add(nz(it.getVIs()));
-            totalIBS   = totalIBS.add(nz(it.getVIbs()));
-            totalCBS   = totalCBS.add(nz(it.getVCbs()));
-            baseIBSCBS = baseIBSCBS.add(nz(it.getVbcIbs())).add(nz(it.getVbcCbs()));
-        }
+        
+            totalIS    = totalIS.add(nz(it.getTotVIs()));
+            totalIBS   = totalIBS.add(nz(it.getTotVIbs()));
+            totalCBS   = totalCBS.add(nz(it.getTotVCbs()));
+            baseIBSCBS = baseIBSCBS.add(nz(it.getBaseIBSCBS()));
 
         // [ISTot]
+        if (hasPositive(totalIS)) {
         sb.append("[ISTot]\n")
-          .append(kv("vIS", hasPositive(totalIS) ? totalIS : null));
-
+          .append(kv("vIS", hasPositive(totalIS) ? totalIS : new BigDecimal("0").setScale(2)));
+        }
         // [IBSCBSTot]
         sb.append("[IBSCBSTot]\n")
           .append(kv("vBCIBSCBS", hasPositive(baseIBSCBS) ? baseIBSCBS : null));
-
         // [gIBS] – totais de IBS agregados
         sb.append("[gIBS]\n")
           .append(kv("vIBS", hasPositive(totalIBS) ? totalIBS : null))
@@ -207,7 +212,7 @@ public final class AcbrComunicaReformaHelper {
         sb.append("[gIBSMunTot]\n")
           .append(kv("vDif", null))
           .append(kv("vDevTrib", null))
-          .append(kv("vIBSMun", hasPositive(totalIBS) ? totalIBS : null));
+          .append(kv("vIBSMun", null));
 
         // [gCBSTot] – totais de CBS
         sb.append("[gCBSTot]\n")
@@ -225,5 +230,7 @@ public final class AcbrComunicaReformaHelper {
           .append(kv("vCBSMonoReten", null))
           .append(kv("vIBSMonoRet", null))
           .append(kv("vCBSMonoRet", null));
+        
+        System.out.println("Fim Bloco Totais Reforma");
     }
 }

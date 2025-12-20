@@ -16,6 +16,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 
 import javax.annotation.PostConstruct;
 import javax.faces.view.ViewScoped;
@@ -2236,6 +2237,17 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	public String geraCFe() {
 		try {
 			if (this.resto.compareTo(new BigDecimal("0"))==0) {
+				// verificando se NFCe ativado
+				try {
+					if (AbstractBeanEmpDS.<Boolean>campoEmpUser(this.empresaUsuario,Filial::isNFCeAtivo,Empresa::isNFCeAtivo ).booleanValue()) {
+						
+					}else {
+					}
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
 				// inicializando o CFe
 				this.cfe = new CFe();
 				// preenchendo o destinatario
@@ -2326,6 +2338,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 			this.cfe.setDesconto(this.agrupado.getDesconto());
 			String retornoAcbr = "";
 			if (nfceAtivado) { // criar o arquivo de envio NFCE
+				acbr.criarArqIniMaqRemota(pegaConexao(), nomeArquivo, nfce, FinalidadeNfe.NO, true);
 				// criarArqIniMaqRemota é o que cria a NFe que tambem será usado para o NFC-e 
 				// necessario alterar  metodo para a reforma tributaria
 //				acbr.criarArqIniMaqRemota(pegaConexao(), nomeArquivo, this.cfe,pegaVersaoSat());

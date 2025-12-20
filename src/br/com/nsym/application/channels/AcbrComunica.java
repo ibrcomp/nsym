@@ -786,7 +786,7 @@ public class AcbrComunica {
 	        }
 	        // 2.2 [gPagAntecipado01] via Streams
 //	        if (!nota.getFinalidadeEmissao().equals(FinalidadeNfe.NO) && nota.getListaChavesReferenciada() != null) {
-	        if (nota.getNatOperacao().getFinalidadeEmissao().equals(FinalidadeNfe.ND) && nota.getListaChavesReferenciada() != null) {
+	        if (nota.getFinalidadeEmissao().equals(FinalidadeNfe.ND) && nota.getListaChavesReferenciada() != null) {
 
 	            final String referStr = nota.getListaChavesReferenciada().stream()
 	                .map(r -> {
@@ -808,7 +808,8 @@ public class AcbrComunica {
 	        // 5) [autXML1] (se houver CNPJ/CPF do destinatário)
 	        String autXml = "";
 	        if (this.destino.getCNPJCPF() != null) {
-	            autXml = section("autXML", 1) + kv("CNPJCPF", this.destino.getCNPJCPF());
+	            autXml = section("autXML", 1) ;
+//	            autXml = section("autXML", 1) + kv("CNPJCPF", this.destino.getCNPJCPF());
 	        }
 
 	        // 6) [Total]
@@ -816,10 +817,10 @@ public class AcbrComunica {
 	        
 	        
 	        // 6-1 novos totalizadores para referma tributaria
-	        
+	        System.out.println("Incicio appendBlocosTotaisReforma");
 	        StringBuilder novosTotais = new StringBuilder();
-	        AcbrComunicaReformaHelper.appendBlocosTotaisReforma(novosTotais, nota.getListaItemNfe());
-	        
+	        AcbrComunicaReformaHelper.appendBlocosTotaisReforma(novosTotais, nota);
+	        System.out.println("Fim appendBlocosTotaisReforma");
 
 	        // 7) [Transportador] + [Volume001]
 	        String transportador = buildTransportador(nota);
@@ -1085,6 +1086,9 @@ public class AcbrComunica {
 //                    	.append(kv("vDevTrib",item.getCclassTrib().getCstIbsCbs()))
 //                    	.append(kv("pRedAliq",item.getCclassTrib().getCstIbsCbs()))
 //                    	.append(kv("pAliqEfet",item.getCclassTrib().getCstIbsCbs()));
+	                    System.out.println("Incicio appendBlocosReformaItem");
+		                AcbrComunicaReformaHelper.appendBlocosReformaItem(prod, item, contador);
+		                System.out.println("Fim appendBlocosReformaItem");
 
 	                    this.produtoPreenchido += prod.toString();
 	                } else {
@@ -1209,11 +1213,14 @@ public class AcbrComunica {
 	                    // PIS/COFINS
 	                    prod.append(buildPIS(contador, item));
 	                    prod.append(buildCOFINS(contador, item));
-
+	                    
+//	                    liberar somente em 2027!!!!
+	                 // gera o ini dos campos ibs/cbs/is e seus subgrupos dos itens 
+//		            	System.out.println("Incicio appendBlocosReformaItem");
+//		                AcbrComunicaReformaHelper.appendBlocosReformaItem(prod, item, contador);
+//		                System.out.println("Fim appendBlocosReformaItem");
 	                    this.produtoPreenchido += prod.toString();
 	                }
-	                // gera o ini dos campos ibs/cbs/is e seus subgrupos dos itens
-	                AcbrComunicaReformaHelper.appendBlocosReformaItem(prod, item, contador);
 //	                contador++;
 	            }
 	        }
@@ -1258,7 +1265,7 @@ public class AcbrComunica {
 	        if (!nota.getFinalidadeEmissao().equals(FinalidadeNfe.NO)) {
 	            infArquivo = infNfe + identificacao + emitente + destinatario + this.notaReferencia + autXml + this.produtoPreenchido + total +novosTotais +transportador + volume + lacre + this.pagamentoPreenchido + adicionais;
 	        } else {
-	            infArquivo = infNfe + identificacao + emitente + destinatario + autXml + this.produtoPreenchido + total + transportador + volume + lacre + fatura + this.pagamentoPreenchido + adicionais;
+	            infArquivo = infNfe + identificacao + emitente + destinatario + autXml + this.produtoPreenchido + total +novosTotais +transportador + volume + lacre + fatura + this.pagamentoPreenchido + adicionais;
 	        }
 
 	        System.out.println("finalizado a criação do arquivo na pasta c:\\ibrcomp\\tmp\\" + nomeArquivo);
@@ -1315,22 +1322,6 @@ public class AcbrComunica {
 	    return base;
 	}
 	
-//	;Reforma tributaria
-
-//	cMunFGIBS=Informar o município de ocorrência do fato gerador do IBS / CBS.
-//			Campo preenchido somente quando “indPres = 5 (Operação presencial, fora do estabelecimento)”, 
-//			e não tiver endereço do destinatário (Grupo: E05) ou local de entrega (Grupo: G01).
-
-
-	
-//	private String buildCBS(Nfe nota) {
-//		 StringBuilder refCbs = new StringBuilder();
-//		 refCbs.append("[]")
-//		 b.section("CBS" + idx).kv("vBC", fmt(it.getVbcCbs())).kv("pCBS", fmt(it.getPCbs())).kv("vCBS", fmt(it.getVCbs())).blank();
-//         b.section("IBS" + idx).kv("vBC", fmt(it.getVbcIbs())).kv("pIBS", fmt(it.getPIbs())).kv("vIBS", fmt(it.getVIbs())).blank();
-//         b.section("IS"  + idx).kv("vBC", fmt(it.getVbcIs())). kv("pIS",  fmt(it.getPIs())). kv("vIS",  fmt(it.getVIs())).blank();
-//		
-//	}
 
 	private String buildIdentificacao(Nfe nota,boolean isNFCE) {
 	    StringBuilder sb = new StringBuilder();
@@ -1360,10 +1351,10 @@ public class AcbrComunica {
 	    .append(kv("idDest", defineIdDest(nota)))
 	    .append(kv("tpImp", this.emissor.getTpImp()))
 	    .append(kv("tpEmis", "1"))
-//	    .append(kv("finNFe", nota.getFinalidadeEmissao().getCodigo()))
-	    .append(kv("finNFe", nota.getNatOperacao().getFinalidadeEmissao().getCodigo()))
+	    .append(kv("finNFe", nota.getFinalidadeEmissao().getCodigo()))
 	    .append(kv("indFinal", nota.getIndFinal()))
 	    .append(kv("procEmi", "0"));
+//	    .append(kv("finNFe", nota.getNatOperacao().getFinalidadeEmissao().getCodigo()))
 	    //	      .append(kv("cMunFG", this.emissor.getCMunFG()))
 	    if (nota.getNatOperacao().getTpNFCredito() != null ) {
 	      sb.append(kv("tpNFCredito",nota.getNatOperacao().getTpNFCredito().getCod()));
@@ -1496,7 +1487,7 @@ public class AcbrComunica {
 	     .append(kv("vCOFINS", nota.getValorTotalCofins().setScale(2, java.math.RoundingMode.HALF_EVEN)))
 	     .append(kv("vOutro",  nota.getOutrasDespesas().setScale(2, java.math.RoundingMode.HALF_EVEN)))
 	     .append(kv("vNF",     nota.getValorTotalNota().setScale(2, java.math.RoundingMode.HALF_EVEN)))
-	     .append(kv("vNFTot", nota.getValorTotalNota().setScale(2, java.math.RoundingMode.HALF_EVEN)))
+	     .append(kv("vNFTot", nota.getVNFTo().setScale(2, java.math.RoundingMode.HALF_EVEN)))
 	     .append(kv("vTotTrib",nota.getValorTotalTributos().setScale(2, java.math.RoundingMode.HALF_EVEN)));
 
 	    if ("9".equals(destino.getIndIEDest())) {

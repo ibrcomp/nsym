@@ -319,6 +319,11 @@ public abstract class Item extends PersistentEntity   {
 	@Setter
     @Column(name = "v_is",    precision = 15, scale = 2) 
 	private BigDecimal vIs;
+	
+	@Getter
+	@Setter
+	@Column(precision = 20, scale = 5)
+	private BigDecimal valorCreditoReforma = BigDecimal.ZERO;
 
 	@Override
 	public int hashCode() {
