@@ -9,6 +9,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.Charset;
 import java.text.Normalizer;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -26,6 +27,7 @@ import org.hibernate.HibernateException;
 
 import br.com.ibrcomp.exception.NfeException;
 import br.com.nsym.application.controller.nfe.tools.AcbrComunicaReformaHelper;
+import br.com.nsym.application.controller.nfe.tools.CupomFiscalCaixa;
 import br.com.nsym.application.controller.nfe.tools.FormulasDosImpostos;
 import br.com.nsym.application.producer.qualifier.AuthenticatedUser;
 import br.com.nsym.domain.misc.CpfCnpjUtils;
@@ -35,6 +37,7 @@ import br.com.nsym.domain.model.entity.cadastro.Contato;
 import br.com.nsym.domain.model.entity.cadastro.Email;
 import br.com.nsym.domain.model.entity.cadastro.Empresa;
 import br.com.nsym.domain.model.entity.cadastro.Fone;
+import br.com.nsym.domain.model.entity.financeiro.RecebimentoParcial;
 import br.com.nsym.domain.model.entity.financeiro.TipoPagamento;
 import br.com.nsym.domain.model.entity.financeiro.tools.Parcelas;
 import br.com.nsym.domain.model.entity.financeiro.tools.ParcelasNfe;
@@ -42,6 +45,7 @@ import br.com.nsym.domain.model.entity.fiscal.NVE;
 import br.com.nsym.domain.model.entity.fiscal.Cfe.CFe;
 import br.com.nsym.domain.model.entity.fiscal.Cfe.EmitenteCFe;
 import br.com.nsym.domain.model.entity.fiscal.Cfe.ItemCFe;
+import br.com.nsym.domain.model.entity.fiscal.Cfe.Nfce;
 import br.com.nsym.domain.model.entity.fiscal.nfe.CartaCorrecao;
 import br.com.nsym.domain.model.entity.fiscal.nfe.Emitente;
 import br.com.nsym.domain.model.entity.fiscal.nfe.ItemNfe;
@@ -694,6 +698,42 @@ public class AcbrComunica {
 	}
 	
 	/**
+	 * Envia uma NF-e/NFC-e por e-mail (comando do ACBrMonitor: NFe.EnviarEmail).
+	 *
+	 * Assunto e corpo da mensagem são configurados no ACBrMonitor/ACBrNFeMonitor.
+	 *
+	 * Sintaxe (ACBr): NFe.EnviarEmail(cEmailDestino,cArqXML,cEnviaPDF,[cAssunto],[cEmailsCopias],[cAnexos],[cReplayTo])
+	 */
+	public String nfeEnviarEmail(DadosDeConexaoSocket dados,
+			String emailDestino,
+			String caminhoXml,
+			boolean enviaPdf,
+			String assunto,
+			String emailsCopias,
+			String anexos,
+			String replyTo) throws IOException {
+
+		String cmd = "NFe.EnviarEmail(\"" + safeStr(emailDestino).trim() + "\","
+				+ "\"" + safeStr(caminhoXml).trim() + "\","
+				+ (enviaPdf ? "1" : "0");
+
+		if (!isBlank(assunto) || !isBlank(emailsCopias) || !isBlank(anexos) || !isBlank(replyTo)) {
+			cmd += ",\"" + nz(assunto) + "\"";
+			cmd += ",\"" + nz(emailsCopias) + "\"";
+			cmd += ",\"" + nz(anexos) + "\"";
+			cmd += ",\"" + nz(replyTo) + "\"";
+		}
+
+		cmd += ")";
+		return enviaComandoACBr(dados, cmd);
+	}
+
+	public String nfeEnviarEmail(DadosDeConexaoSocket dados, String emailDestino, String caminhoXml, boolean enviaPdf) throws IOException {
+		return nfeEnviarEmail(dados, emailDestino, caminhoXml, enviaPdf, null, null, null, null);
+	}
+
+	
+	/**
 	 * cria o PDF do CFe 
 	 * 
 	 * @param dados - Conexão do ACBR
@@ -813,30 +853,45 @@ public class AcbrComunica {
 	        }
 
 	        // 6) [Total]
-	        String total = buildTotais(nota);
+	        String total = buildTotais(nota, isNFCEAtivo);
 	        
 	        
 	        // 6-1 novos totalizadores para referma tributaria
 	        System.out.println("Incicio appendBlocosTotaisReforma");
+	        LocalDate dataImplata = LocalDate.of(2026, 1, 1);
 	        StringBuilder novosTotais = new StringBuilder();
-	        AcbrComunicaReformaHelper.appendBlocosTotaisReforma(novosTotais, nota);
+	        if (!LocalDate.now().isBefore(dataImplata)) {
+	        	AcbrComunicaReformaHelper.appendBlocosTotaisReforma(novosTotais, nota);
+	        }
 	        System.out.println("Fim appendBlocosTotaisReforma");
 
 	        // 7) [Transportador] + [Volume001]
-	        String transportador = buildTransportador(nota);
-	        String volume = new StringBuilder()
-	                .append("[Volume001]\n")
-	                .append(kv("qVol", nota.getTransportador().getQuantidade()))
-	                .append(kv("esp", nota.getTransportador().getEspecie()))
-	                .append(kvIfNotNull("Marca", nota.getTransportador().getMarca()))
-	                .append(kvIfNotNull("nVol", nota.getTransportador().getNumeracao()))
-	                .append(kv("pesoL", nota.getTransportador().getPesoLiquido()))
-	                .append(kv("pesoB", nota.getTransportador().getPesoBruto()))
-	                .toString();
+	        String transportador;
+	        String volume = "";
+	        if (isNFCEAtivo) {
+	            // NFC-e (modelo 65): não informar dados de transporte/frete.
+	            // modFrete deve ser 9 (sem frete) e não deve existir grupo de volumes/lacres.
+	            transportador = new StringBuilder()
+	                    .append("[Transportador]\n")
+	                    .append(kv("modFrete", "9"))
+	                    .toString();
+	        } else {
+	            transportador = buildTransportador(nota);
+	            volume = new StringBuilder()
+	                    .append("[Volume001]\n")
+	                    .append(kv("qVol", nota.getTransportador().getQuantidade()))
+	                    .append(kv("esp", nota.getTransportador().getEspecie()))
+	                    .append(kvIfNotNull("Marca", nota.getTransportador().getMarca()))
+	                    .append(kvIfNotNull("nVol", nota.getTransportador().getNumeracao()))
+	                    .append(kv("pesoL", nota.getTransportador().getPesoLiquido()))
+	                    .append(kv("pesoB", nota.getTransportador().getPesoBruto()))
+	                    .toString();
+	        }
+
 
 	        // 7.1) [Lacre001XYZ] via Streams
 	        String lacre = "";
-	        if (nota.getListaLacres() != null && !nota.getListaLacres().isEmpty()) {
+	        if (!isNFCEAtivo && nota.getListaLacres() != null && !nota.getListaLacres().isEmpty()) {
 	            lacre = java.util.stream.IntStream.range(0, nota.getListaLacres().size())
 	                    .mapToObj(i -> "[Lacre001" + pad3(i + 1) + "]\n" + kv("nLacre", nota.getListaLacres().get(i).getLacre()))
 	                    .collect(java.util.stream.Collectors.joining());
@@ -977,8 +1032,8 @@ public class AcbrComunica {
                         .append(kv("uTrib", item.getProduto().getTipoMedida() == null ? "UN" : item.getProduto().getTipoMedida().getSigla()))
                         .append(kv("qTrib", item.getQuantidade()))
                         .append(kv("vUnTrib", item.getValorUnitario()))
-                        .append(kv("vFrete", item.getValorFrete()))
-                        .append(kv("vSeg", item.getValorSeguro()))
+                        .append(kv("vFrete", (isNFCEAtivo ? java.math.BigDecimal.ZERO : item.getValorFrete())))
+                        .append(kv("vSeg", (isNFCEAtivo ? java.math.BigDecimal.ZERO : item.getValorSeguro())))
                         .append(kv("vDesc", item.getDesconto()))
                         .append(kv("vOutro", item.getValorDespesas()))
                         .append(kv("indTot", "1"))
@@ -1087,7 +1142,9 @@ public class AcbrComunica {
 //                    	.append(kv("pRedAliq",item.getCclassTrib().getCstIbsCbs()))
 //                    	.append(kv("pAliqEfet",item.getCclassTrib().getCstIbsCbs()));
 	                    System.out.println("Incicio appendBlocosReformaItem");
-		                AcbrComunicaReformaHelper.appendBlocosReformaItem(prod, item, contador);
+	        	        if (!LocalDate.now().isBefore(dataImplata)) {
+	                    	AcbrComunicaReformaHelper.appendBlocosReformaItem(prod, item, contador);
+	                    }
 		                System.out.println("Fim appendBlocosReformaItem");
 
 	                    this.produtoPreenchido += prod.toString();
@@ -1288,6 +1345,46 @@ public class AcbrComunica {
 	private static String nz(String s) { return s == null ? "" : s; }
 	private static String safeStr(String s) { return s == null ? "" : s; }
 
+	private static java.math.BigDecimal nzbd(java.math.BigDecimal v) {
+		return (v != null ? v : java.math.BigDecimal.ZERO);
+	}
+
+	private static java.math.BigDecimal scale2(java.math.BigDecimal v) {
+		return nzbd(v).setScale(2, java.math.RoundingMode.HALF_EVEN);
+	}
+
+	private static java.math.BigDecimal scale2Nullable(java.math.BigDecimal v) {
+		return (v != null ? v.setScale(2, java.math.RoundingMode.HALF_EVEN) : null);
+	}
+
+	private static boolean isBlank(String s) {
+		return s == null || s.trim().isEmpty();
+	}
+
+	private static String firstNonBlank(String... values) {
+		if (values == null) return null;
+		for (String v : values) {
+			if (!isBlank(v)) return v.trim();
+		}
+		return null;
+	}
+
+	private static Object tryInvoke(Object target, String methodName) {
+		if (target == null || isBlank(methodName)) return null;
+		try {
+			java.lang.reflect.Method m = target.getClass().getMethod(methodName);
+			m.setAccessible(true);
+			return m.invoke(target);
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	private static String tryInvokeStr(Object target, String methodName) {
+		Object o = tryInvoke(target, methodName);
+		return (o != null ? String.valueOf(o) : null);
+	}
+
 	private static String pad3(int n) {
 	    if (n < 10) return "00" + n;
 	    if (n < 100) return "0" + n;
@@ -1295,7 +1392,24 @@ public class AcbrComunica {
 	}
 
 	private static String section(String name, int idx) {
-	    return "[" + name + pad3(idx) + "]\n";
+		// 1) section("PAG", 1)  -> [PAG001]
+				// 2) section("PAG%03d", 1) -> [PAG001]
+				String secName;
+				if (name != null && name.contains("%")) {
+					try {
+						secName = String.format(name, idx);
+					} catch (Exception e) {
+						secName = name + pad3(idx);
+					}
+				} else {
+					secName = name + pad3(idx);
+				}
+				return "[" + secName + "]\n";
+
+	}
+	
+	private static String section(String name) {
+	    return "[" + name + "]\n";
 	}
 
 	private static String kv(String k, Object v) {
@@ -1458,7 +1572,7 @@ public class AcbrComunica {
 	    return d.toString();
 	}
 
-	private String buildTotais(Nfe nota) {
+	private String buildTotais(Nfe nota, boolean isNFCE) {
 	    StringBuilder t = new StringBuilder();
 	    t.append("[Total]\n");
 
@@ -1474,8 +1588,8 @@ public class AcbrComunica {
 	     .append(kv("vBCST",      nota.getBaseIcmsSubstituicao().setScale(2, java.math.RoundingMode.HALF_EVEN)))
 	     .append(kv("vST",        nota.getValorIcmsSubstituicao().setScale(2, java.math.RoundingMode.HALF_EVEN)))
 	     .append(kv("vProd",      nota.getValorTotalProdutos().setScale(2, java.math.RoundingMode.HALF_EVEN)))
-	     .append(kv("vFrete",     nota.getValorFrete().setScale(2, java.math.RoundingMode.HALF_EVEN)))
-	     .append(kv("vSeg",       nota.getValorSeguro().setScale(2, java.math.RoundingMode.HALF_EVEN)))
+	     .append(kv("vFrete",     (isNFCE ? java.math.BigDecimal.ZERO : nota.getValorFrete()).setScale(2, java.math.RoundingMode.HALF_EVEN)))
+	     .append(kv("vSeg",       (isNFCE ? java.math.BigDecimal.ZERO : nota.getValorSeguro()).setScale(2, java.math.RoundingMode.HALF_EVEN)))
 	     .append(kv("vDesc",      nota.getDesconto().setScale(2, java.math.RoundingMode.HALF_EVEN)));
 
 	    if (nota.isImportacao()) {
@@ -1796,2826 +1910,7 @@ public class AcbrComunica {
 	    }
 	    return sb.toString();
 	}
-
 	
-//	// ====== INÍCIO DO MÉTODO (Java 8 compatível) ======
-//	public String criarArqIniMaqRemota(DadosDeConexaoSocket dados,String nomeArquivo, Nfe nota, FinalidadeNfe finalidade, boolean isNFCEAtivo) throws IOException{
-//	    try{
-//	        System.out.println("Iniciando a montagem da nfe para acbr");
-//	        int contador = 1;
-//	        int secunContador = 1;
-//	        String infArquivo;
-//
-//	        System.out.println("inicio de conversao Emissor");
-//	        this.emissor = preencheEmitente(nota);
-//	        System.out.println("Fim do emissor inicio da conversao do destino");
-//	        this.destino = preencheDestino(nota);
-//	        System.out.println("Fim do destino");
-//
-//	        java.time.format.DateTimeFormatter formataData = java.time.format.DateTimeFormatter
-//	                .ofLocalizedDate(java.time.format.FormatStyle.SHORT)
-//	                .withLocale(new java.util.Locale("pt", "BR"));
-//
-//	        java.time.format.DateTimeFormatter formataAAMM = java.time.format.DateTimeFormatter
-//	                .ofPattern("yy/MM");
-//
-//	        java.time.format.DateTimeFormatter formataAaaaMmDd = java.time.format.DateTimeFormatter
-//	                .ofPattern("dd/MM/yyyy");
-//
-//	        System.out.println("1- inicio infNFE ");
-//	        String infNfe = "[infNFE]"+"\n"+
-//	                "versao="+ApplicationUtils.getConfiguration("versao.nfe")+"\n";
-//	        System.out.println("1- Fim infNFE ");
-//	        System.out.println("2- inicio Identificaco ");
-//	        System.out.println(nota.getNumeroNota());
-//	        System.out.println(nota.getNatOperacao().getDescricao());
-//	        System.out.println(nota.getDataEmissao().format(formatoSimples));
-//	        System.out.println(nota.getDataSaida().format(formatoSimples));
-//	        System.out.println(nota.getNatOperacao().getTipoNF().getCodigo());
-//	        System.out.println(nota.getFinalidadeEmissao().getCodigo());
-//	        System.out.println(nota.getIndFinal());
-//	        System.out.println("Pegando a versao do aplicativo");
-//	        System.out.println(ApplicationUtils.getConfiguration("application.version"));
-//
-//	        boolean isNFCE = isNFCEAtivo; // Toggle NFC-e/NFe
-//	        String identificacao = "[Identificacao]"+ "\n"+
-//	                "cNF="+nota.getNumeroNota()+"32"+"\n"+ // código aleatório
-//	                "natOp="+removerAcentos(nota.getNatOperacao().getDescricao())+"\n"+
-//	                "mod="+(isNFCE ? "65" : "55")+"\n";
-//
-//	        if (this.emissor.getSerie().length() == 1) {
-//	            identificacao = identificacao + "serie="+"00"+this.emissor.getSerie()+"\n";
-//	        } else if (this.emissor.getSerie().length() == 2) {
-//	            identificacao = identificacao + "serie="+"0"+this.emissor.getSerie() + "\n";
-//	        } else {
-//	            identificacao = identificacao + "serie="+this.emissor.getSerie()+"\n";
-//	        }
-//
-//	        identificacao = identificacao +
-//	                "nNF="+nota.getNumeroNota()+"\n"+
-//	                "dhEmi="+nota.getDataEmissao().format(formatoSimples)+"\n"+
-//	                "dhSaiEnt="+nota.getDataSaida().format(formatoSimples)+"\n"+
-//	                "tpNF="+nota.getNatOperacao().getTipoNF().getCodigo()+"\n"+ //0-ENTRADA 1- SAÍDA
-//	                "idDest="+defineIdDest(nota)+"\n"+
-//	                "tpImp="+(isNFCE ? "4" : "2")+"\n"+
-//	                "tpEmis="+"1"+"\n"+
-//	                "finNFe="+nota.getFinalidadeEmissao().getCodigo()+"\n"+
-//	                "indFinal="+nota.getIndFinal()+"\n"+
-//	                "procEmi="+"0"+"\n"+
-//	                "verProc="+ApplicationUtils.getConfiguration("application.version")+"\n";
-//
-//	        if (nota.isTipoOperacao()){
-//	            identificacao = identificacao + "indPres=1"+"\n"; // venda presencial
-//	        }else{
-//	            identificacao = identificacao + "indPres=2"+"\n"; // não presencial
-//	        }
-//	        System.out.println("2- Fim Identificaco ");
-//
-//	        System.out.println("Linha 307 - AcbrComunica - Nota referenciada");
-//	        contador = 1;
-//	        String refer = "";
-//	        if (!nota.getFinalidadeEmissao().equals(FinalidadeNfe.NO)){
-//	            for (int i = 0 ; nota.getListaChavesReferenciada().size() > i; i++){
-//	                if (contador >9 && contador <100 ){
-//	                    refer = "[NFRef"+"0"+contador+"]"+"\n";
-//	                }else if (contador <= 9){
-//	                    refer = "[NFRef"+"00"+contador+"]"+"\n";
-//	                }else{
-//	                    refer= "[NFRef"+contador+"]"+"\n";
-//	                }
-//	                refer = refer +
-//	                        "Tipo="+"NFe"+"\n"+  // pode ser NF NFe NFP CTe ECF
-//	                        "refNFe="+nota.getListaChavesReferenciada().get(i).getChaveReferenciada()+"\n"+
-//	                        "cUF="+this.destino.getCUF()+"\n"+
-//	                        "AAMM="+nota.getListaChavesReferenciada().get(i).getAaMM().format(formataAAMM)+"\n"+
-//	                        "CNPJ="+this.destino.getCNPJCPF()+"\n"+
-//	                        "mod="+"01"+"\n"+
-//	                        "Serie="+nota.getListaChavesReferenciada().get(i).getSerie()+"\n"+
-//	                        "nNF="+nota.getListaChavesReferenciada().get(i).getNNF()+"\n";
-//	                this.notaReferencia = this.notaReferencia+refer;
-//	                contador++;
-//	            }
-//	        }
-//
-//	        System.out.println("3- inicio Emitente ");
-//	        String emitente = "[Emitente]"+"\n"+
-//	                "CNPJCPF="+this.emissor.getCnpjCpf()+"\n"+
-//	                "xNome="+this.emissor.getXNome()+"\n";
-//	        if (this.emissor.getXFant() != null){
-//	            emitente = emitente + "xFant="+this.emissor.getXFant()+"\n";
-//	        }
-//	        emitente = emitente + "IE="+this.emissor.getIe()+"\n";
-//	        if (this.emissor.getIeST() != null){
-//	            emitente = emitente + "IEST="+this.emissor.getIeST()+"\n";
-//	        }
-//	        if (this.emissor.getIMunicipal() != null){
-//	            emitente = emitente + "IM="+this.emissor.getIMunicipal()+"\n";
-//	        }
-//	        emitente = emitente +
-//	                "CRT="+this.emissor.getCrt()+"\n"+
-//	                "xLgr="+this.emissor.getXLgr()+"\n"+
-//	                "nro="+this.emissor.getNro()+"\n";
-//	        if (this.emissor.getXCpl() != null){
-//	            emitente = emitente + "xCpl="+this.emissor.getXCpl()+"\n";
-//	        }
-//	        emitente = emitente +
-//	                "xBairro="+this.emissor.getXBairro()+"\n"+
-//	                "cMun="+this.emissor.getCMun()+"\n"+
-//	                "xMun="+this.emissor.getXMun()+"\n"+
-//	                "UF="+this.emissor.getUf().name()+"\n"+
-//	                "CEP="+this.emissor.getCep()+"\n"+
-//	                "cPais="+this.emissor.getCPais()+"\n"+
-//	                "xPais="+this.emissor.getXPais()+"\n";
-//	        if (this.emissor.getFone() != null){
-//	            emitente = emitente + "Fone="+this.emissor.getFone()+"\n";
-//	        }
-//	        System.out.println("3- Fim Emitente ");
-//
-//	        System.out.println("4- inicio Destinatario ");
-//	        String destinatario = "[Destinatario]"+"\n";
-//	        if (nota.isImportacao()){
-//	            if (this.destino.getIdEstrangeiro() != null) {
-//	                destinatario= destinatario+ "idEstrangeiro="+this.destino.getIdEstrangeiro()+"\n";
-//	            }else {
-//	                destinatario= destinatario+ "idEstrangeiro="+"0"+"\n";
-//	            }
-//	        }else{
-//	            if (this.destino.getIdEstrangeiro() != null) {
-//	                destinatario= destinatario+ "idEstrangeiro="+this.destino.getIdEstrangeiro()+"\n";
-//	            }else {
-//	                destinatario = destinatario+ "CNPJCPF="+this.destino.getCNPJCPF()+"\n";
-//	            }
-//	        }
-//	        destinatario = destinatario+
-//	                "xNome="+this.destino.getXNome()+"\n"+
-//	                "indIEDest="+this.destino.getIndIEDest()+"\n";
-//	        if (this.destino.getIE() != null){
-//	            destinatario = destinatario+ "IE="+this.destino.getIE()+"\n";
-//	        }
-//	        if (this.destino.getISUF() != null){
-//	            destinatario = destinatario+ "ISUF="+this.destino.getISUF()+"\n";
-//	        }
-//	        if (this.destino.getEmail() != null){
-//	            destinatario = destinatario+ "Email="+this.destino.getEmail()+"\n";
-//	        }
-//	        destinatario = destinatario+
-//	                "xLgr="+this.destino.getXLgr()+"\n"+
-//	                "nro="+this.destino.getNro()+"\n";
-//	        if (this.destino.getXCpl() != null){
-//	            destinatario = destinatario+ "xCpl="+this.destino.getXCpl()+"\n";
-//	        }
-//	        destinatario = destinatario+
-//	                "xBairro="+this.destino.getXBairro()+"\n"+
-//	                "cMun="+this.destino.getCMun()+"\n"+
-//	                "xMun="+this.destino.getXMun()+"\n"+
-//	                "UF="+this.destino.getUf()+"\n"+
-//	                "CEP="+this.destino.getCep()+"\n"+
-//	                "cPais="+this.destino.getCPais()+"\n"+
-//	                "xPais="+this.destino.getXPais()+"\n";
-//	        if (this.destino.getFone() != null){
-//	            destinatario = destinatario+ "Fone="+this.destino.getFone()+"\n";
-//	        }
-//	        System.out.println("4- Fim Destinatario ");
-//
-//	        System.out.println("5- inicio autXML ");
-//	        String autXml = "";
-//	        if (this.destino.getCNPJCPF() != null) {
-//	            contador =1;
-//	            autXml = autXml + "[autXML"+contador+"]"+ "\n" + "CNPJCPF="+this.destino.getCNPJCPF()+"\n";
-//	        }
-//	        System.out.println("5- Fim autXML ");
-//
-//	        System.out.println("6- inicio Total ");
-//	        String total= "[Total]"+"\n";
-//	        if ((emissor.getRegime().equals(Enquadramento.SimplesNacional) || emissor.getRegime().equals(Enquadramento.SimplesNacionalMei))  && !nota.getFinalidadeEmissao().equals(FinalidadeNfe.DV)){
-//	            total = total+ "vBC="+"0.00"+"\n"+ "vICMS="+"0.00"+"\n";
-//	        }else if (nota.getFinalidadeEmissao().equals(FinalidadeNfe.DV) || emissor.getRegime().equals(Enquadramento.Normal)){
-//	            total = total+
-//	                    "vBC="+nota.getBaseIcms().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n"+
-//	                    "vICMS="+nota.getValorIcms().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n";
-//	        }
-//	        total =total+
-//	                "vICMSDeson="+nota.getValorIcmsDesonerado().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n"+
-//	                "vBCST="+nota.getBaseIcmsSubstituicao().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n"+
-//	                "vST="+nota.getValorIcmsSubstituicao().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n"+
-//	                "vProd="+nota.getValorTotalProdutos().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n"+
-//	                "vFrete="+nota.getValorFrete().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n"+
-//	                "vSeg="+nota.getValorSeguro().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n"+
-//	                "vDesc="+nota.getDesconto().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n";
-//	        if (nota.isImportacao()) {
-//	            total =total+ "vII="+nota.getValorTotalII()+"\n";
-//	        }
-//	        total =total+
-//	                "vIPI="+nota.getValorTotalIpi().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n"+
-//	                "vPIS="+nota.getValorTotalPis().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n"+
-//	                "vCOFINS="+nota.getValorTotalCofins().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n"+
-//	                "vOutro="+nota.getOutrasDespesas().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n"+
-//	                "vNF="+nota.getValorTotalNota().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n"+
-//	                "vTotTrib="+nota.getValorTotalTributos().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n";
-//	        if ("9".equals(destino.getIndIEDest())){
-//	            total = total+
-//	                    "vFCPUFDest="+nota.getVFCPUFDest().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n"+
-//	                    "vICMSUFDest="+nota.getVICMSUFDest().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n"+
-//	                    "vICMSUFRemet="+nota.getVICMSUFRemet().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n";
-//	        }
-//	        if (nota.getVFCP().compareTo(new java.math.BigDecimal("0")) == 1){
-//	            total = total +
-//	                    "vFCP="+nota.getVFCP().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n"+
-//	                    "vFCPST="+nota.getVFCPST().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n"+
-//	                    "vFCPSTRet="+nota.getVFCPSTRet().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n";
-//	            this.infFisco = this.infFisco+"vFCP="+nota.getVFCP().setScale(2, java.math.RoundingMode.HALF_EVEN)+
-//	                    "vFCPST="+nota.getVFCPST().setScale(2, java.math.RoundingMode.HALF_EVEN)+
-//	                    "vFCPSTRet="+nota.getVFCPSTRet().setScale(2, java.math.RoundingMode.HALF_EVEN);
-//	        }
-//	        System.out.println("6- Fim Total ");
-//
-//	        System.out.println("7- inicio Transportador ");
-//	        String transportador = "[Transportador]"+"\n"+
-//	                "modFrete="+nota.getTipoFrete().getCodigo()+"\n";
-//	        if (!nota.isClienteRetira()){
-//	            if (nota.getTransportador().getTransportadora().getCnpj() == null){
-//	                transportador = transportador + "CNPJCPF="+nota.getTransportador().getTransportadora().getCpf()+"\n";
-//	            }else {
-//	                transportador = transportador + "CNPJCPF="+nota.getTransportador().getTransportadora().getCnpj()+"\n";
-//	            }
-//	            transportador = transportador +
-//	                    "xNome="+removerAcentos(nota.getTransportador().getTransportadora().getRazaoSocial())+"\n"+
-//	                    "IE="+nota.getTransportador().getTransportadora().getInscEstadual()+"\n";
-//	            String logradouro = null;
-//	            if (nota.getTransportador().getTransportadora().getEndereco() != null){
-//	                logradouro = nota.getTransportador().getTransportadora().getEndereco().getLogradouro();
-//	            }
-//	            if (logradouro == null || logradouro.isEmpty()) {
-//	                transportador = transportador + "xEnder="+removerAcentos(nota.getTransportador().getTransportadora().getEndereco().getEndereco().getLogra())+"\n";
-//	            }else {
-//	                transportador = transportador + "xEnder="+removerAcentos(logradouro)+"\n";
-//	            }
-//	            transportador = transportador +
-//	                    "xMun="+removerAcentos(nota.getTransportador().getTransportadora().getEndereco().getEndereco().getLocalidade())+"\n"+
-//	                    "UF="+nota.getTransportador().getTransportadora().getEndereco().getEndereco().getUf().name()+"\n";
-//	        }else{
-//	            transportador = transportador +
-//	                    "CNPJCPF="+nota.getTransportador().getRetiraDoc()+"\n"+
-//	                    "xNome="+removerAcentos(nota.getTransportador().getRetiraNome())+"\n"+
-//	                    "IE="+nota.getTransportador().getRetiraInsc()+"\n"+
-//	                    "xEnder="+removerAcentos(nota.getTransportador().getRetiraEnd())+"\n"+
-//	                    "xMun="+removerAcentos(nota.getTransportador().getRetiraMunicipio())+"\n"+
-//	                    "UF="+nota.getTransportador().getRetiraUf()+"\n";
-//	        }
-//	        if (nota.getTransportador().getPlaca() != null){
-//	            transportador = transportador +
-//	                    "Placa="+nota.getTransportador().getPlaca().toUpperCase()+"\n"+
-//	                    "UFPlaca="+nota.getTransportador().getUfPlaca().name()+"\n";
-//	        }
-//	        if (nota.getTransportador().getCodigoAnnt() != null){
-//	            transportador = transportador + "RNTC="+nota.getTransportador().getCodigoAnnt()+"\n";
-//	        }
-//	        if (nota.getTransportador().getVagao() != null){
-//	            transportador = transportador + "vagao="+nota.getTransportador().getVagao()+"\n";
-//	        }
-//	        if (nota.getTransportador().getBalsa() != null){
-//	            transportador = transportador + "balsa="+nota.getTransportador().getBalsa()+"\n";
-//	        }
-//	        System.out.println("7- Fim Transportador - Inicio Volume - linha 756");
-//
-//	        String volume = "[Volume001]"+"\n"+
-//	                "qVol="+nota.getTransportador().getQuantidade()+"\n"+
-//	                "esp="+nota.getTransportador().getEspecie()+"\n";
-//	        if (nota.getTransportador().getMarca() != null){
-//	            volume = volume +"Marca="+nota.getTransportador().getMarca()+"\n";
-//	        }
-//	        if (nota.getTransportador().getNumeracao() != null){
-//	            volume = volume+"nVol="+nota.getTransportador().getNumeracao()+"\n";
-//	        }
-//	        volume = volume+"pesoL="+nota.getTransportador().getPesoLiquido()+"\n"+
-//	                "pesoB="+nota.getTransportador().getPesoBruto()+"\n";
-//	        System.out.println(" Fim Volume - Inicio Lacres - linha 817");
-//	        System.out.println("Lista lacres vazia? "+nota.getListaLacres().isEmpty());
-//	        String lacre="";
-//	        if (!nota.getListaLacres().isEmpty()){
-//	            System.out.println("Dentro da lista lacres!");
-//	            int b = 1;
-//	            for (int i = 0 ; i < nota.getListaLacres().size() ; i++){
-//	                String numeroLocal;
-//	                if (b <= 9){
-//	                    numeroLocal = "00"+b;
-//	                }else if (b >9 && b <= 99){
-//	                    numeroLocal = "0"+b;
-//	                }else{
-//	                    numeroLocal = ""+b;
-//	                }
-//	                lacre = lacre +"[Lacre001"+numeroLocal+"]"+"\n"+
-//	                        "nLacre="+nota.getListaLacres().get(i).getLacre()+"\n";
-//	                b++;
-//	            }
-//	        }
-//	        System.out.println("Fim lacres");
-//	        String fatura ="";
-//	        if (!nota.isImportacao()) {
-//	            fatura = "[Fatura]"+"\n"+
-//	                    "nFat="+nota.getNumeroNota()+"\n"+
-//	                    "vOrig="+nota.getValorTotalNota().add(nota.getDesconto())+"\n"+
-//	                    "vDesc="+nota.getDesconto()+"\n"+
-//	                    "vLiq="+nota.getValorTotalNota()+"\n";
-//	        }
-//
-//	        System.out.println("inicio do Pagamento - linha 807");
-//	        String pag ="";
-//	        String duplicata ="" ;
-//	        contador = 1;
-//
-//	        // ----------- AGRUPAMENTO DE PARCELAS SEM STREAMS -----------
-//	        if (nota.getListaParcelas() != null && !nota.getListaParcelas().isEmpty()){
-//	            java.util.Map<TipoPagamento, java.util.List<Parcelas>> agrupado = new java.util.HashMap<TipoPagamento, java.util.List<Parcelas>>();
-//	            for (Parcelas p : nota.getListaParcelas()){
-//	                if (p != null && p.getFormaPag() != null && p.getFormaPag().getTipoPagamento() != null){
-//	                    TipoPagamento tp = p.getFormaPag().getTipoPagamento();
-//	                    java.util.List<Parcelas> lst = agrupado.get(tp);
-//	                    if (lst == null){
-//	                        lst = new java.util.ArrayList<Parcelas>();
-//	                        agrupado.put(tp, lst);
-//	                    }
-//	                    lst.add(p);
-//	                }
-//	            }
-//	            for (java.util.Map.Entry<TipoPagamento, java.util.List<Parcelas>> entry : agrupado.entrySet()) {
-//	                TipoPagamento tipo = entry.getKey();
-//	                java.util.List<Parcelas> parcelas = entry.getValue();
-//
-//	                java.math.BigDecimal totalparc = java.math.BigDecimal.ZERO;
-//	                for (Parcelas par : parcelas){
-//	                    if (par != null && par.getValorParcela() != null){
-//	                        totalparc = totalparc.add(par.getValorParcela());
-//	                    }
-//	                }
-//
-//	                if (contador >9 && contador <100 ){
-//	                    pag = "[PAG"+"0"+contador+"]"+"\n";
-//	                }else if (contador <= 9){
-//	                    pag = "[PAG"+"00"+contador+"]"+"\n";
-//	                }else{
-//	                    pag = "[PAG"+contador+"]"+"\n";
-//	                }
-//
-//	                pag = pag + "tpag="+tipo.getCod()+"\n";
-//
-//	                if ("99".equals(tipo.getCod())){
-//	                    if (parcelas.get(0).getFormaPag().getDescOutros() != null) {
-//	                        pag = pag+"xPag="+ parcelas.get(0).getFormaPag().getDescOutros()+"\n";
-//	                    }else {
-//	                        throw new NfeException("Tipo Pagamento definido como Outros. É necessário preencher o campo descrição de TIPO DE PAGAMENTO em formas de pagamento");
-//	                    }
-//	                }
-//	                if ("90".equals(tipo.getCod())){
-//	                    pag = pag+ "vPag="+"0.00"+"\n";
-//	                }else{
-//	                    pag = pag+ "vPag="+totalparc.setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n";
-//	                }
-//	                if ("01".equals(tipo.getCod())){
-//	                    pag = pag+ "vTroco="+"0.00"+"\n";
-//	                }
-//	                if ("03".equals(tipo.getCod()) || "04".equals(tipo.getCod())){
-//	                    pag = pag + "tpIntegra="+ApplicationUtils.getConfiguration("integra.car")+"\n";
-//	                }
-//	                this.pagamentoPreenchido = this.pagamentoPreenchido + pag;
-//	                contador++;
-//	            }
-//	        }
-//	        // ----------- FIM AGRUPAMENTO -----------
-//
-//	        contador = 1;
-//	        System.out.println("inserindo as duplicatas - linha 832");
-//	        if (nota.getListaParcelas() != null && !nota.getListaParcelas().isEmpty()){
-//	            for (int i = 0 ; i <nota.getListaParcelas().size(); i++){
-//	                String cod = nota.getListaParcelas().get(i).getFormaPag().getTipoPagamento().getCod();
-//	                if ("14".equals(cod) || "15".equals(cod)){
-//	                    if (contador >9 && contador <100 ){
-//	                        duplicata = "[Duplicata"+"0"+contador+"]"+"\n";
-//	                    }else if (contador <= 9){
-//	                        duplicata = "[Duplicata"+"00"+contador+"]"+"\n";
-//	                    }else{
-//	                        duplicata = "[Duplicata"+contador+"]"+"\n";
-//	                    }
-//	                    if (nota.getListaParcelas().get(i).getNumParcela() <= 9){
-//	                        duplicata = duplicata + "nDup=00"+nota.getListaParcelas().get(i).getNumParcela()+"\n";
-//	                    }else if (nota.getListaParcelas().get(i).getNumParcela() > 9 && nota.getListaParcelas().get(i).getNumParcela() < 100){
-//	                        duplicata = duplicata + "nDup=0"+nota.getListaParcelas().get(i).getNumParcela()+"\n";
-//	                    }else{
-//	                        duplicata = duplicata + "nDup="+nota.getListaParcelas().get(i).getNumParcela()+"\n";
-//	                    }
-//	                    duplicata = duplicata +
-//	                            "dVenc="+nota.getListaParcelas().get(i).getVencimento().format(formataAaaaMmDd)+"\n"+
-//	                            "vDup="+nota.getListaParcelas().get(i).getValorParcela()+"\n";
-//	                }
-//	                this.pagamentoPreenchido = this.pagamentoPreenchido + duplicata;
-//	                contador++;
-//	            }
-//	            System.out.println("Adicionando as duplicatas ao pagamento");
-//	        }
-//	        System.out.println("fim do pagamento - linha 852");
-//
-//	        System.out.println("8- inicio Item NFE ");
-//	        contador = 1;
-//	        String todosOsProdutos = "";
-//
-//	        for (ItemNfe item : nota.getListaItemNfe()) {
-//	            if (this.emissor.getRegime() == Enquadramento.Normal){
-//	                System.out.println("Cliente Regime Normal");
-//	                if (contador >9 && contador <100 ){
-//	                    todosOsProdutos = "[Produto"+"0"+contador+"]"+"\n";
-//	                }else if (contador <= 9){
-//	                    todosOsProdutos = "[Produto"+"00"+contador+"]"+"\n";
-//	                }else{
-//	                    todosOsProdutos = "[Produto"+contador+"]"+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos +
-//	                        "cProd="+item.getProduto().getReferencia()+"\n"+
-//	                        "cEAN="+"SEM GTIN"+"\n";
-//	                if (item.getBarras() != null) {
-//	                    if (item.getBarras().getCor() != null) {
-//	                        System.out.println("Estou dentro do item GetCOR ACBR");
-//	                        todosOsProdutos = todosOsProdutos +
-//	                                "xProd="+removerAcentos(item.getProduto().getDescricao())+" tam: "+item.getBarras().getTamanho().getTamanho()+" cor: "+item.getBarras().getCor().getNome()+"\n";
-//	                    }else {
-//	                        if (item.getBarras().getTamanho() != null) {
-//	                            System.out.println("Estou dentro do item getTamanho ACBR");
-//	                            todosOsProdutos = todosOsProdutos +
-//	                                    "xProd="+removerAcentos(item.getProduto().getDescricao())+" tam: "+item.getBarras().getTamanho().getTamanho()+"\n";
-//	                        }else {
-//	                            System.out.println("item.getbarras = null ACBR");
-//	                            todosOsProdutos = todosOsProdutos + "xProd="+removerAcentos(item.getProduto().getDescricao())+"\n";
-//	                        }
-//	                    }
-//	                }else {
-//	                    System.out.println("item.getbarras = null ACBR");
-//	                    todosOsProdutos = todosOsProdutos + "xProd="+removerAcentos(item.getProduto().getDescricao())+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos + "NCM="+item.getProduto().getNcm().getNcm()+"\n";
-//	                if (item.getProduto().getNcm().getExTipi() != null){
-//	                    todosOsProdutos = todosOsProdutos + "EXTIPI="+item.getProduto().getNcm().getExTipi()+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos + "CFOP="+item.getCfopItem().getCfop()+"\n";
-//	                if (item.getProduto().getTipoMedida() == null){
-//	                    todosOsProdutos = todosOsProdutos + "uCom="+"UN"+"\n";
-//	                }else{
-//	                    todosOsProdutos = todosOsProdutos + "uCom="+item.getProduto().getTipoMedida().getSigla()+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos +
-//	                        "qCom="+item.getQuantidade()+"\n"+
-//	                        "vUnCom="+item.getValorUnitario()+"\n"+
-//	                        "vProd="+item.getValorTotalBruto()+"\n"+
-//	                        "cEANTrib="+"SEM GTIN"+"\n";
-//	                if (item.getProduto().getTipoMedida() == null){
-//	                    todosOsProdutos = todosOsProdutos + "uTrib="+"UN"+"\n";
-//	                }else{
-//	                    todosOsProdutos = todosOsProdutos + "uTrib="+item.getProduto().getTipoMedida().getSigla()+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos +
-//	                        "qTrib="+item.getQuantidade()+"\n"+
-//	                        "vUnTrib="+item.getValorUnitario()+"\n"+
-//	                        "vFrete="+item.getValorFrete()+"\n"+
-//	                        "vSeg="+item.getValorSeguro()+"\n"+
-//	                        "vDesc="+item.getDesconto()+"\n"+
-//	                        "vOutro="+item.getValorDespesas()+"\n"+
-//	                        "indTot="+"1"+"\n"+
-//	                        "vTotTrib="+item.getValorTotalTributoItem()+"\n";
-//	                if (item.getObsItem() != null){
-//	                    todosOsProdutos = todosOsProdutos+ "infAdProd="+item.getObsItem()+"\n";
-//	                }
-//
-//	                if (nota.isImportacao()) {
-//	                    if (nota.getDi() != null) {
-//	                        if (contador >9 && contador <100 ){
-//	                            todosOsProdutos = todosOsProdutos+ "[DI"+"0"+contador+"001]"+"\n";
-//	                        }else if (contador <= 9){
-//	                            todosOsProdutos = todosOsProdutos+ "[DI"+"00"+contador+"001]"+"\n";
-//	                        }else{
-//	                            todosOsProdutos = todosOsProdutos+ "[DI"+contador+"001]"+"\n";
-//	                        }
-//	                        todosOsProdutos = todosOsProdutos+
-//	                                "nDi="+nota.getDi().getNnDi()+"\n"+
-//	                                "dDi="+nota.getDi().getDDi().format(formatoSimplesDate)+"\n"+
-//	                                "xLocDesemb="+nota.getDi().getXLocDesemb()+"\n"+
-//	                                "UFDesemb="+nota.getDi().getUFDesemb()+"\n"+
-//	                                "dDesemb="+nota.getDi().getDdDesemb().format(formatoSimplesDate)+"\n"+
-//	                                "tpViaTransp="+nota.getDi().getTpViaTransp().getCodigo()+"\n"+
-//	                                "vAFRMM="+nota.getDi().getVAFRMM()+"\n"+
-//	                                "tpIntermedio="+nota.getDi().getTpIntermedio().getCodigo()+"\n";
-//	                        if (nota.getDi().getCnpjAdq() != null) {
-//	                            todosOsProdutos = todosOsProdutos+"CNPJ="+nota.getDi().getCnpjAdq()+"\n";
-//	                        }else {
-//	                            todosOsProdutos = todosOsProdutos+"CNPJ="+"\n";
-//	                        }
-//	                        if (nota.getDi().getUFTerceiro() != null) {
-//	                            todosOsProdutos = todosOsProdutos+ "UFTerceiro="+nota.getDi().getUFTerceiro()+"\n";
-//	                        }else {
-//	                            todosOsProdutos = todosOsProdutos+ "UFTerceiro="+"\n";
-//	                        }
-//	                        todosOsProdutos = todosOsProdutos+"cExportador="+nota.getDi().getCExportador()+"\n";
-//
-//	                        if (contador >9 && contador <100 ){
-//	                            todosOsProdutos = todosOsProdutos + "[LADI"+"0"+contador+"001"+"001]"+"\n";
-//	                        }else if (contador <= 9){
-//	                            todosOsProdutos = todosOsProdutos+ "[LADI"+"00"+contador+"001"+"001]"+"\n";
-//	                        }else{
-//	                            todosOsProdutos = todosOsProdutos+"[LADI"+contador+"001"+"001]"+"\n";
-//	                        }
-//	                        todosOsProdutos = todosOsProdutos +
-//	                                "nAdicao="+nota.getDi().getListaAdicao().get(contador-1).getNAdicao()+"\n"+
-//	                                "nSeqAdi="+nota.getDi().getListaAdicao().get(contador-1).getNSeqAdic()+"\n"+
-//	                                "cFabricante="+nota.getDi().getListaAdicao().get(contador-1).getCFabricante()+"\n"+
-//	                                "vDescDI="+nota.getDi().getListaAdicao().get(contador-1).getVDescDI()+"\n";
-//	                        if (nota.getDi().getListaAdicao().get(contador-1).getNDraw() != null) {
-//	                            todosOsProdutos = todosOsProdutos+"nDraw="+nota.getDi().getListaAdicao().get(contador-1).getNDraw()+"\n";
-//	                        }else {
-//	                            todosOsProdutos = todosOsProdutos+"nDraw="+"\n";
-//	                        }
-//	                        if (contador >9 && contador <100 ){
-//	                            todosOsProdutos = todosOsProdutos +"[II"+"0"+contador+"]"+"\n";
-//	                        }else if (contador <= 9){
-//	                            todosOsProdutos = todosOsProdutos +"[II"+"00"+contador+"]"+"\n";
-//	                        }else{
-//	                            todosOsProdutos = todosOsProdutos +"[II"+contador+"]"+"\n";
-//	                        }
-//	                        todosOsProdutos = todosOsProdutos+
-//	                                "vBC="+item.getIi().getVBC()+"\n"+
-//	                                "vDespAdu="+item.getIi().getVDespAdu()+"\n"+
-//	                                "vII="+item.getIi().getVII()+"\n"+
-//	                                "vIOF="+item.getIi().getVIOF()+"\n";
-//	                    }
-//	                }
-//
-//	                if (contador >9 && contador <100 ){
-//	                    todosOsProdutos = todosOsProdutos +"[ICMS"+"0"+contador+"]"+"\n";
-//	                }else if (contador <= 9){
-//	                    todosOsProdutos = todosOsProdutos +"[ICMS"+"00"+contador+"]"+"\n";
-//	                }else{
-//	                    todosOsProdutos = todosOsProdutos +"[ICMS"+contador+"]"+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos+
-//	                        "orig="+item.getOrigem()+"\n"+
-//	                        "CST="+item.getCst()+"\n";
-//
-//	                if (nota.isImportacao()) {
-//	                    if ("00".equals(item.getCst())){
-//	                        todosOsProdutos = todosOsProdutos+
-//	                                "modBC="+item.getTributo().getIcms().getModICMSNormal().getCod()+"\n"+
-//	                                "vBC="+item.getBaseICMS()+"\n"+
-//	                                "pICMS="+item.getAliqIcms()+"\n"+
-//	                                "vICMS="+item.getValorIcms()+"\n";
-//	                        if (item.getPFCP().compareTo(new java.math.BigDecimal("0")) == 1 ){
-//	                            todosOsProdutos = todosOsProdutos+
-//	                                    "pFCP="+item.getPFCP()+"\n"+
-//	                                    "vFCP="+item.getVFCP()+"\n"+
-//	                                    "infAdProd="+"pFCP="+item.getPFCP()+"vFCP="+item.getVFCP()+"\n";
-//	                        }
-//	                    }
-//	                }else {
-//	                    if ("00".equals(item.getCst())){
-//	                        todosOsProdutos = todosOsProdutos+
-//	                                "modBC="+item.getTributo().getIcms().getModICMSNormal().getCod()+"\n"+
-//	                                "vBC="+item.getBaseICMS()+"\n"+
-//	                                "pICMS="+item.getAliqIcms()+"\n"+
-//	                                "vICMS="+item.getValorIcms()+"\n";
-//	                        if (item.getPFCP().compareTo(new java.math.BigDecimal("0")) == 1 ){
-//	                            todosOsProdutos = todosOsProdutos+
-//	                                    "pFCP="+item.getPFCP()+"\n"+
-//	                                    "vFCP="+item.getVFCP()+"\n"+
-//	                                    "infAdProd="+"pFCP="+item.getPFCP()+"vFCP="+item.getVFCP()+"\n";
-//	                        }
-//	                    }
-//	                }
-//	                if ("10".equals(item.getCst())){
-//	                    todosOsProdutos = todosOsProdutos+
-//	                            "modBC="+item.getTributo().getIcmsSt().getModICMS().getCod()+"\n"+
-//	                            "vBC="+item.getBaseICMS()+"\n"+
-//	                            "pICMS="+item.getAliqIcms()+"\n"+
-//	                            "vICMS="+item.getValorIcms()+"\n"+
-//	                            "modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+
-//	                            "pMVAST="+item.getMvaSt()+"\n"+
-//	                            "vBCST="+item.getBaseICMSSt()+"\n"+
-//	                            "pICMSST="+item.getAliqIcmsSt()+"\n"+
-//	                            "vICMSST="+item.getValorIcmsSt()+"\n";
-//	                    if (item.getPFCP().compareTo(new java.math.BigDecimal("0")) == 0 ){
-//	                        todosOsProdutos = todosOsProdutos+
-//	                                "vBCFCP="+"0"+"\n"+
-//	                                "pFCP="+item.getPFCP()+"\n"+
-//	                                "vFCP="+item.getVFCP()+"\n"+
-//	                                "infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+"vFCP="+item.getVFCP()+"\n";
-//	                    }else{
-//	                        todosOsProdutos = todosOsProdutos+
-//	                                "vBCFCP="+item.getBaseICMSSt()+"\n"+
-//	                                "pFCP="+item.getPFCP()+"\n"+
-//	                                "vFCP="+item.getVFCP()+"\n"+
-//	                                "infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+"vFCP="+item.getVFCP()+"\n";
-//	                    }
-//	                }
-//	                if ("20".equals(item.getCst())){
-//	                    todosOsProdutos = todosOsProdutos+
-//	                            "modBC="+item.getTributo().getIcms().getModICMSNormal().getCod()+"\n"+
-//	                            "vBC="+item.getBaseICMS()+"\n"+
-//	                            "pICMS="+item.getAliqIcms()+"\n"+
-//	                            "vICMS="+item.getValorIcms()+"\n";
-//	                    if (item.getPFCP().compareTo(new java.math.BigDecimal("0")) == 1 ){
-//	                        todosOsProdutos = todosOsProdutos+
-//	                                "vBCFCP="+item.getBaseICMSSt()+"\n"+
-//	                                "pFCP="+item.getPFCP()+"\n"+
-//	                                "vFCP="+item.getVFCP()+"\n"+
-//	                                "infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+"vFCP="+item.getVFCP()+"\n";
-//	                    }
-//	                }
-//	                if ("30".equals(item.getCst())){
-//	                    todosOsProdutos = todosOsProdutos+
-//	                            "modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+
-//	                            "pMVAST="+item.getMvaSt()+"\n"+
-//	                            "vBCST="+item.getBaseICMSSt()+"\n"+
-//	                            "pICMSST="+item.getAliqIcmsSt()+"\n"+
-//	                            "vICMSST="+item.getValorIcmsSt()+"\n";
-//	                    if (this.destino.getISUF()!=null && !this.destino.getISUF().isEmpty()){
-//	                        // campos de desoneração se necessário
-//	                    }
-//	                    if (item.getPFCP().compareTo(new java.math.BigDecimal("0")) == 1 ){
-//	                        todosOsProdutos = todosOsProdutos+
-//	                                "vBCFCP="+item.getBaseICMSSt()+"\n"+
-//	                                "pFCP="+item.getPFCP()+"\n"+
-//	                                "vFCP="+item.getVFCP()+"\n"+
-//	                                "infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+"vFCP="+item.getVFCP()+"\n";
-//	                    }
-//	                }
-//	                if ("40".equals(item.getCst()) || "41".equals(item.getCst()) || "50".equals(item.getCst())){
-//	                    this.is50 = true;
-//	                    if (this.destino.getISUF()!=null && !this.destino.getISUF().isEmpty()){
-//	                        todosOsProdutos = todosOsProdutos+ "vICMSDeson="+"\n"+ "motDesICMS="+"\n";
-//	                    }
-//	                }
-//	                if ("51".equals(item.getCst())){
-//	                    todosOsProdutos = todosOsProdutos+
-//	                            "modBC="+item.getTributo().getIcms().getModICMSNormal().getCod()+"\n"+
-//	                            "pRedBC="+emissor.getBaseReducao()+"\n"+
-//	                            "vBC="+item.getBaseICMS()+"\n"+
-//	                            "pICMS="+item.getAliqIcms()+"\n"+
-//	                            "vICMSOp="+item.getValorIcms()+"\n"+
-//	                            "vICMS="+item.getValorIcms()+"\n";
-//	                }
-//	                if ("60".equals(item.getCst())){
-//	                    if (item.getPFCP().compareTo(new java.math.BigDecimal("0")) == 1 ){
-//	                        // campos FCP retido se aplicável
-//	                    }
-//	                }
-//	                if ("70".equals(item.getCst())){
-//	                    todosOsProdutos = todosOsProdutos+
-//	                            "modBC="+item.getTributo().getIcms().getModICMSNormal().getCod()+"\n"+
-//	                            "pRedBC="+emissor.getBaseReducao()+"\n"+
-//	                            "vBC="+item.getBaseICMS()+"\n"+
-//	                            "pICMS="+item.getAliqIcms()+"\n"+
-//	                            "vICMS="+item.getValorIcms()+"\n"+
-//	                            "modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+
-//	                            "pMVAST="+item.getMvaSt()+"\n"+
-//	                            "vBCST="+item.getBaseICMSSt()+"\n"+
-//	                            "pICMSST="+item.getAliqIcmsSt()+"\n"+
-//	                            "vICMSST="+item.getValorIcmsSt()+"\n";
-//	                    if (item.getPFCP().compareTo(new java.math.BigDecimal("0")) == 1 ){
-//	                        todosOsProdutos = todosOsProdutos+
-//	                                "vBCFCP="+item.getBaseICMSSt()+"\n"+
-//	                                "pFCP="+item.getPFCP()+"\n"+
-//	                                "vFCP="+item.getVFCP()+"\n"+
-//	                                "infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+"vFCP="+item.getVFCP()+"\n";
-//	                    }
-//	                    todosOsProdutos = todosOsProdutos+ "vICMSDeson="+"\n"+ "motDesICMS="+"\n";
-//	                }
-//	                if ("90".equals(item.getCst())){
-//	                    todosOsProdutos = todosOsProdutos+
-//	                            "modBC="+item.getTributo().getIcms().getModICMSNormal().getCod()+"\n"+
-//	                            "pRedBC="+emissor.getBaseReducao()+"\n"+
-//	                            "vBC="+item.getBaseICMS()+"\n"+
-//	                            "pICMS="+item.getAliqIcms()+"\n"+
-//	                            "vICMS="+item.getValorIcms()+"\n"+
-//	                            "vICMSDeson="+"\n"+
-//	                            "motDesICMS="+"\n";
-//	                    if (item.isItemST()){
-//	                        todosOsProdutos = todosOsProdutos+
-//	                                "modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+
-//	                                "pMVAST="+item.getMvaSt()+"\n"+
-//	                                "vBCST="+item.getBaseICMSSt()+"\n"+
-//	                                "pICMSST="+item.getAliqIcmsSt()+"\n"+
-//	                                "vICMSST="+item.getValorIcmsSt()+"\n";
-//	                    }
-//	                    if (item.getPFCP().compareTo(new java.math.BigDecimal("0")) == 1 ){
-//	                        todosOsProdutos = todosOsProdutos+
-//	                                "vBCFCP="+item.getBaseICMSSt()+"\n"+
-//	                                "pFCP="+item.getPFCP()+"\n"+
-//	                                "vFCP="+item.getVFCP()+"\n"+
-//	                                "infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+"vFCP="+item.getVFCP()+"\n";
-//	                    }
-//	                }
-//	            }else{ // simples nacional
-//	                this.isSimples = true;
-//	                System.out.println("Cliente Simples");
-//	                if (contador >9 && contador <100 ){
-//	                    todosOsProdutos = "[Produto"+"0"+contador+"]"+"\n";
-//	                }else if (contador <= 9){
-//	                    todosOsProdutos = "[Produto"+"00"+contador+"]"+"\n";
-//	                }else{
-//	                    todosOsProdutos = "[Produto"+contador+"]"+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos +
-//	                        "cProd="+item.getProduto().getReferencia()+"\n"+
-//	                        "cEAN="+"SEM GTIN" + "\n";
-//	                if (item.getBarras() != null) {
-//	                    if (item.getBarras().getCor() != null) {
-//	                        todosOsProdutos = todosOsProdutos +
-//	                                "xProd="+removerAcentos(item.getProduto().getDescricao())+" tam: "+item.getBarras().getTamanho().getTamanho()+" cor: "+item.getBarras().getCor().getNome()+"\n";
-//	                    }else {
-//	                        if (item.getBarras().getTamanho() != null) {
-//	                            todosOsProdutos = todosOsProdutos +
-//	                                    "xProd="+removerAcentos(item.getProduto().getDescricao())+" tam: "+item.getBarras().getTamanho().getTamanho()+"\n";
-//	                        }else {
-//	                            todosOsProdutos = todosOsProdutos + "xProd="+removerAcentos(item.getProduto().getDescricao())+"\n";
-//	                        }
-//	                    }
-//	                }else {
-//	                    todosOsProdutos = todosOsProdutos + "xProd="+removerAcentos(item.getProduto().getDescricao())+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos + "NCM="+item.getProduto().getNcm().getNcm()+"\n";
-//	                if (item.getProduto().getNcm().getExTipi() != null){
-//	                    todosOsProdutos = todosOsProdutos + "EXTIPI="+item.getProduto().getNcm().getExTipi()+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos + "CFOP="+item.getCfopItem().getCfop()+"\n";
-//	                if (item.getProduto().getTipoMedida() == null){
-//	                    todosOsProdutos = todosOsProdutos + "uCom="+"UN"+"\n";
-//	                }else{
-//	                    todosOsProdutos = todosOsProdutos + "uCom="+item.getProduto().getTipoMedida().getSigla()+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos +
-//	                        "qCom="+item.getQuantidade()+"\n"+
-//	                        "vUnCom="+item.getValorUnitario()+"\n"+
-//	                        "vProd="+item.getValorTotalBruto()+"\n"+
-//	                        "cEANTrib="+"SEM GTIN"+"\n";
-//	                if (item.getProduto().getTipoMedida() == null){
-//	                    todosOsProdutos = todosOsProdutos + "uTrib="+"UN"+"\n";
-//	                }else{
-//	                    todosOsProdutos = todosOsProdutos + "uTrib="+item.getProduto().getTipoMedida().getSigla()+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos +
-//	                        "qTrib="+item.getQuantidade()+"\n"+
-//	                        "vUnTrib="+item.getValorUnitario()+"\n"+
-//	                        "vFrete="+item.getValorFrete()+"\n"+
-//	                        "vSeg="+item.getValorSeguro()+"\n"+
-//	                        "vDesc="+item.getDesconto()+"\n"+
-//	                        "vOutro="+item.getValorDespesas()+"\n"+
-//	                        "indTot="+"1"+"\n"+
-//	                        "vTotTrib="+item.getValorTotalTributoItem()+"\n";
-//	                if (item.getObsItem() != null){
-//	                    todosOsProdutos = todosOsProdutos+ "infAdProd="+item.getObsItem()+"\n";
-//	                }
-//
-//	                if (contador >9 && contador <100 ){
-//	                    todosOsProdutos = todosOsProdutos +"[ICMS"+"0"+contador+"]"+"\n";
-//	                }else if (contador <= 9){
-//	                    todosOsProdutos = todosOsProdutos +"[ICMS"+"00"+contador+"]"+"\n";
-//	                }else{
-//	                    todosOsProdutos = todosOsProdutos +"[ICMS"+contador+"]"+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos +
-//	                        "orig="+item.getOrigem()+"\n"+
-//	                        "CSOSN="+item.getCst()+"\n";// simples nacional
-//
-//	                if ("101".equals(item.getCst())){
-//	                    this.is101 = true;
-//	                    todosOsProdutos = todosOsProdutos +
-//	                            "pCredSN="+emissor.getBaseReducao()+"\n"+
-//	                            "vCredICMSSN="+item.getValorIcms()+"\n";
-//	                }
-//	                if ("201".equals(item.getCst())){
-//	                    this.is101 = true;
-//	                    todosOsProdutos = todosOsProdutos +
-//	                            "modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+
-//	                            "pMVAST="+item.getMvaSt()+"\n"+
-//	                            "vBCST="+item.getBaseICMSSt()+"\n"+
-//	                            "pICMSST="+item.getAliqIcmsSt()+"\n"+
-//	                            "vICMSST="+item.getValorIcmsSt()+"\n"+
-//	                            "pCredSN="+emissor.getBaseReducao()+"\n"+
-//	                            "vCredICMSSN="+item.getValorIcms()+"\n";
-//	                    if (!"2".equals(destino.getIndIEDest())){
-//	                        if (item.getPFCP().compareTo(new java.math.BigDecimal("0")) == 0){
-//	                            todosOsProdutos = todosOsProdutos +
-//	                                    "vBCFCPST="+"0"+"\n"+
-//	                                    "pFCPST="+item.getPFCP()+"\n"+
-//	                                    "vFCPST="+item.getVFCP()+"\n"+
-//	                                    "infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+"vFCP="+item.getVFCP()+"\n";
-//	                        }else{
-//	                            todosOsProdutos = todosOsProdutos +
-//	                                    "vBCFCPST="+item.getBaseICMSSt()+"\n"+
-//	                                    "pFCPST="+item.getPFCP()+"\n"+
-//	                                    "vFCPST="+item.getVFCP()+"\n"+
-//	                                    "infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+"vFCP="+item.getVFCP()+"\n";
-//	                        }
-//	                    }
-//	                }
-//	                if ("202".equals(item.getCst()) || "203".equals(item.getCst())){
-//	                    todosOsProdutos = todosOsProdutos +
-//	                            "modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+
-//	                            "pMVAST="+item.getMvaSt()+"\n"+
-//	                            "vBCST="+item.getBaseICMSSt()+"\n"+
-//	                            "pICMSST="+item.getAliqIcmsSt()+"\n"+
-//	                            "vICMSST="+item.getValorIcmsSt()+"\n";
-//	                    if (!"2".equals(destino.getIndIEDest())){
-//	                        if (item.getPFCP().compareTo(new java.math.BigDecimal("0")) == 0){
-//	                            todosOsProdutos = todosOsProdutos +
-//	                                    "vBCFCPST="+"0"+"\n"+
-//	                                    "pFCPST="+item.getPFCP()+"\n"+
-//	                                    "vFCPST="+item.getVFCP()+"\n"+
-//	                                    "infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+"vFCP="+item.getVFCP()+"\n";
-//	                        }else{
-//	                            todosOsProdutos = todosOsProdutos +
-//	                                    "vBCFCPST="+item.getBaseICMSSt()+"\n"+
-//	                                    "pFCPST="+item.getPFCP()+"\n"+
-//	                                    "vFCPST="+item.getVFCP()+"\n"+
-//	                                    "infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+"vFCP="+item.getVFCP()+"\n";
-//	                        }
-//	                    }
-//	                }
-//	                if ("500".equals(item.getCst())){
-//	                    todosOsProdutos = todosOsProdutos +
-//	                            "pRedBCST="+"0"+"\n"+
-//	                            "pST="+"0"+"\n"+
-//	                            "vICMSSTRet="+"0"+"\n"+
-//	                            "vBCFCPSTRet="+"0"+"\n"+
-//	                            "pFCPSTRet="+"0"+"\n"+
-//	                            "vFCPSTRet="+"0"+"\n";
-//	                }
-//	                if ("900".equals(item.getCst())){
-//	                    if (this.destino.getRegime().equals(Enquadramento.Normal) && nota.getFinalidadeEmissao().equals(FinalidadeNfe.DV) ){
-//	                        this.is101 = true;
-//	                        todosOsProdutos = todosOsProdutos + "modBC="+item.getTributo().getIcms().getModICMSNormal().getCod()+"\n";
-//	                        todosOsProdutos = todosOsProdutos +
-//	                                "pRedBC="+destino.getReducaoBase()+"\n"+
-//	                                "vBC="+item.getBaseICMS()+"\n"+
-//	                                "pICMS="+item.getAliqIcms()+"\n"+
-//	                                "vICMS="+item.getValorIcms()+"\n";
-//	                        if (item.isItemST()){
-//	                            todosOsProdutos = todosOsProdutos +
-//	                                    "modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+
-//	                                    "pMVAST="+item.getMvaSt()+"\n"+
-//	                                    "vBCST="+item.getBaseICMSSt()+"\n"+
-//	                                    "pICMSST="+item.getAliqIcmsSt()+"\n"+
-//	                                    "vICMSST="+item.getValorIcmsSt()+"\n";
-//	                        }
-//	                    }else{
-//	                        if (this.destino.getRegime().equals(Enquadramento.Normal)){
-//	                            this.is101 = true;
-//	                            todosOsProdutos = todosOsProdutos +
-//	                                    "modBC="+item.getTributo().getIcms().getModICMSNormal().getCod()+"\n"+
-//	                                    "pRedBC="+emissor.getBaseReducao()+"\n"+
-//	                                    "vBC="+item.getBaseICMS()+"\n"+
-//	                                    "pICMS="+item.getAliqIcms()+"\n"+
-//	                                    "vICMS="+item.getValorIcms()+"\n"+
-//	                                    "pCredSN="+emissor.getBaseReducao()+"\n"+
-//	                                    "vCredICMSSN="+item.getValorIcms()+"\n";
-//	                            if (item.isItemST()){
-//	                                todosOsProdutos = todosOsProdutos +
-//	                                        "modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+
-//	                                        "pMVAST="+item.getMvaSt()+"\n"+
-//	                                        "vBCST="+item.getBaseICMSSt()+"\n"+
-//	                                        "pICMSST="+item.getAliqIcmsSt()+"\n"+
-//	                                        "vICMSST="+item.getValorIcmsSt()+"\n"+
-//	                                        "pCredSN="+emissor.getBaseReducao()+"\n"+
-//	                                        "vCredICMSSN="+item.getValorIcms()+"\n";
-//	                            }
-//	                        }else{
-//	                            this.is101 = false;
-//	                            todosOsProdutos = todosOsProdutos +
-//	                                    "pCredSN="+emissor.getBaseReducao()+"\n"+
-//	                                    "vCredICMSSN="+item.getValorIcms()+"\n";
-//	                            if (item.isItemST()){
-//	                                todosOsProdutos = todosOsProdutos +
-//	                                        "modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+
-//	                                        "pMVAST="+item.getMvaSt()+"\n"+
-//	                                        "vBCST="+item.getBaseICMSSt()+"\n"+
-//	                                        "pICMSST="+item.getAliqIcmsSt()+"\n"+
-//	                                        "vICMSST="+item.getValorIcmsSt()+"\n";
-//	                            }
-//	                        }
-//	                    }
-//	                }
-//	            }
-//
-//	            // DIFAL
-//	            if ( emissor.getRegime().equals(Enquadramento.Normal)){
-//	                if ("9".equals(destino.getIndIEDest())){
-//	                    if (!nota.isImportacao()) {
-//	                        if (contador >9 && contador <100 ){
-//	                            todosOsProdutos = todosOsProdutos +"[ICMSUFDest"+"0"+contador+"]"+"\n";
-//	                        }else if (contador <= 9){
-//	                            todosOsProdutos = todosOsProdutos +"[ICMSUFDest"+"00"+contador+"]"+"\n";
-//	                        }else{
-//	                            todosOsProdutos = todosOsProdutos +"[ICMSUFDest"+contador+"]"+"\n";
-//	                        }
-//	                        todosOsProdutos = todosOsProdutos +
-//	                                "vBCUFDest="+item.getBaseICMS()+"\n"+
-//	                                "vBCFCPUFDest="+item.getVBCUFDest()+"\n"+
-//	                                "pFCPUFDest="+item.getPFCPUFDest()+"\n"+
-//	                                "pICMSUFDest="+item.getPICMSUFDest()+"\n"+
-//	                                "pICMSInter="+item.getPICMSInter()+"\n"+
-//	                                "pICMSInterPart="+item.getPICMSInterPart()+"\n"+
-//	                                "vFCPUFDest="+item.getVFCPUFDest()+"\n"+
-//	                                "vICMSUFDest="+item.getVICMSUFDest()+"\n"+
-//	                                "vICMSUFRemet="+item.getVICMSUFRemet()+"\n";
-//	                    }
-//	                }
-//	            }
-//
-//	            // IPI
-//	            if ("00".equals(item.getCstIpi()) || "49".equals(item.getCstIpi()) || "50".equals(item.getCstIpi()) || "99".equals(item.getCstIpi())){
-//	                if (contador >9 && contador <100 ){
-//	                    todosOsProdutos = todosOsProdutos +"[IPI"+"0"+contador+"]"+"\n";
-//	                }else if (contador <= 9){
-//	                    todosOsProdutos = todosOsProdutos +"[IPI"+"00"+contador+"]"+"\n";
-//	                }else{
-//	                    todosOsProdutos = todosOsProdutos +"[IPI"+contador+"]"+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos +
-//	                        "CST="+item.getCstIpi()+"\n"+
-//	                        "cEnq="+item.getTributo().getIpi().getCodigoEnquadramento()+"\n";
-//	                if (item.getTributo().getIpi().getCalculo().equals(TipoCalculo.TP)) {
-//	                    todosOsProdutos = todosOsProdutos + "vBC="+item.getBaseIPI()+"\n"+ "pIPI="+item.getAliqIPI()+"\n";
-//	                }else {
-//	                    todosOsProdutos = todosOsProdutos + "qUnid="+item.getQuantidade()+"\n"+ "vUnid="+item.getValorUnitario()+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos + "vIPI="+item.getValorIPI()+"\n";
-//	            }else {
-//	                if (contador >9 && contador <100 ){
-//	                    todosOsProdutos = todosOsProdutos +"[IPI"+"0"+contador+"]"+"\n";
-//	                }else if (contador <= 9){
-//	                    todosOsProdutos = todosOsProdutos +"[IPI"+"00"+contador+"]"+"\n";
-//	                }else{
-//	                    todosOsProdutos = todosOsProdutos +"[IPI"+contador+"]"+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos +
-//	                        "CST="+item.getCstIpi()+"\n"+
-//	                        "cEnq="+item.getTributo().getIpi().getCodigoEnquadramento()+"\n";
-//	            }
-//
-//	            // PIS
-//	            if (item.getCstPis() == 1 || item.getCstPis() == 2 ){
-//	                if (contador >9 && contador <100 ){
-//	                    todosOsProdutos =todosOsProdutos + "[PIS"+"0"+contador+"]"+"\n";
-//	                }else if (contador <= 9){
-//	                    todosOsProdutos =todosOsProdutos + "[PIS"+"00"+contador+"]"+"\n";
-//	                }else{
-//	                    todosOsProdutos =todosOsProdutos + "[PIS"+contador+"]"+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos +
-//	                        "CST=0"+item.getCstPis()+"\n"+
-//	                        "vBC="+item.getBasePis()+"\n"+
-//	                        "pPIS="+item.getAliqPis()+"\n"+
-//	                        "vPIS="+item.getValorPis()+"\n";
-//	            }else if (item.getCstPis() == 3){
-//	                if (contador >9 && contador <100 ){
-//	                    todosOsProdutos =todosOsProdutos + "[PIS"+"0"+contador+"]"+"\n";
-//	                }else if (contador <= 9){
-//	                    todosOsProdutos =todosOsProdutos + "[PIS"+"00"+contador+"]"+"\n";
-//	                }else{
-//	                    todosOsProdutos =todosOsProdutos + "[PIS"+contador+"]"+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos +
-//	                        "CST=0"+item.getCstPis()+"\n"+
-//	                        "vBC="+item.getBasePis()+"\n"+
-//	                        "qBCProd="+item.getQuantidade()+"\n"+
-//	                        "vAliqProd="+item.getTributo().getPis().getValor()+"\n"+
-//	                        "vPIS="+item.getValorPis()+"\n";
-//	            }else if (item.getCstPis() == 4 || item.getCstPis() == 5 || item.getCstPis() == 6 || item.getCstPis() == 7|| item.getCstPis() == 8 || item.getCstPis() == 9){
-//	                if (contador >9 && contador <100 ){
-//	                    todosOsProdutos = todosOsProdutos +"[PIS"+"0"+contador+"]"+"\n";
-//	                }else if (contador <= 9){
-//	                    todosOsProdutos = todosOsProdutos +"[PIS"+"00"+contador+"]"+"\n";
-//	                }else{
-//	                    todosOsProdutos = todosOsProdutos +"[PIS"+contador+"]"+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos + "CST=0"+item.getCstPis()+"\n";
-//	            }else{
-//	                if (item.getTributo().getPis().getCalculo()  == TipoCalculo.TP){
-//	                    if (contador >9 && contador <100 ){
-//	                        todosOsProdutos = todosOsProdutos +"[PIS"+"0"+contador+"]"+"\n";
-//	                    }else if (contador <= 9){
-//	                        todosOsProdutos = todosOsProdutos +"[PIS"+"00"+contador+"]"+"\n";
-//	                    }else{
-//	                        todosOsProdutos = todosOsProdutos +"[PIS"+contador+"]"+"\n";
-//	                    }
-//	                    todosOsProdutos = todosOsProdutos +
-//	                            "CST="+item.getCstPis()+"\n"+
-//	                            "vBC="+item.getBasePis()+"\n"+
-//	                            "pPIS="+item.getAliqPis()+"\n"+
-//	                            "vPIS="+item.getValorPis()+"\n";
-//	                }else{
-//	                    if (contador >9 && contador <100 ){
-//	                        todosOsProdutos =todosOsProdutos + "[PIS"+"0"+contador+"]"+"\n";
-//	                    }else if (contador <= 9){
-//	                        todosOsProdutos =todosOsProdutos + "[PIS"+"00"+contador+"]"+"\n";
-//	                    }else{
-//	                        todosOsProdutos =todosOsProdutos + "[PIS"+contador+"]"+"\n";
-//	                    }
-//	                    todosOsProdutos = todosOsProdutos +
-//	                            "CST="+item.getCstPis()+"\n"+
-//	                            "qBCProd="+item.getQuantidade()+"\n"+
-//	                            "vAliqProd="+item.getTributo().getPis().getValor()+"\n"+
-//	                            "vPIS="+item.getValorPis()+"\n";
-//	                }
-//	            }
-//
-//	            // COFINS
-//	            if (item.getCstCofins() == 1 || item.getCstCofins() == 2 ){
-//	                if (contador >9 && contador <100 ){
-//	                    todosOsProdutos = todosOsProdutos +"[COFINS"+"0"+contador+"]"+"\n";
-//	                }else if (contador <= 9){
-//	                    todosOsProdutos = todosOsProdutos +"[COFINS"+"00"+contador+"]"+"\n";
-//	                }else{
-//	                    todosOsProdutos = todosOsProdutos +"[COFINS"+contador+"]"+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos +
-//	                        "CST=0"+item.getCstCofins()+"\n"+
-//	                        "vBC="+item.getBasePis().setScale(2, java.math.RoundingMode.HALF_EVEN)+"\n"+
-//	                        "pCOFINS="+item.getAliqCofins()+"\n"+
-//	                        "vCOFINS="+item.getValorCofins()+"\n";
-//	            }else if (item.getCstCofins() == 3){
-//	                if (contador >9 && contador <100 ){
-//	                    todosOsProdutos = todosOsProdutos +"[COFINS"+"0"+contador+"]"+"\n";
-//	                }else if (contador <= 9){
-//	                    todosOsProdutos =todosOsProdutos + "[COFINS"+"00"+contador+"]"+"\n";
-//	                }else{
-//	                    todosOsProdutos = todosOsProdutos +"[COFINS"+contador+"]"+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos +
-//	                        "CST=0"+item.getCstCofins()+"\n"+
-//	                        "vBC="+item.getBaseCofins()+"\n"+
-//	                        "qBCProd="+item.getQuantidade()+"\n"+
-//	                        "vAliqProd="+item.getTributo().getCofins().getValor()+"\n"+
-//	                        "vCOFINS="+item.getValorCofins()+"\n";
-//	            }else if (item.getCstCofins() == 4 || item.getCstCofins() == 5 || item.getCstCofins() == 6 || item.getCstCofins() == 7|| item.getCstCofins() == 8 || item.getCstCofins() == 9){
-//	                if (contador >9 && contador <100 ){
-//	                    todosOsProdutos = todosOsProdutos +"[COFINS"+"0"+contador+"]"+"\n";
-//	                }else if (contador <= 9){
-//	                    todosOsProdutos = todosOsProdutos +"[COFINS"+"00"+contador+"]"+"\n";
-//	                }else{
-//	                    todosOsProdutos = todosOsProdutos +"[COFINS"+contador+"]"+"\n";
-//	                }
-//	                todosOsProdutos = todosOsProdutos + "CST=0"+item.getCstCofins()+"\n";
-//	            }else{
-//	                if (item.getTributo().getCofins().getCalculo()  == TipoCalculo.TP){
-//	                    if (contador >9 && contador <100 ){
-//	                        todosOsProdutos = "[COFINS"+"0"+contador+"]"+"\n";
-//	                    }else if (contador <= 9){
-//	                        todosOsProdutos = "[COFINS"+"00"+contador+"]"+"\n";
-//	                    }else{
-//	                        todosOsProdutos = "[COFINS"+contador+"]"+"\n";
-//	                    }
-//	                    todosOsProdutos = todosOsProdutos +
-//	                            "CST="+item.getCstCofins()+"\n"+
-//	                            "vBC="+item.getBaseCofins()+"\n"+
-//	                            "pCOFINS="+item.getAliqCofins()+"\n"+
-//	                            "vCOFINS="+item.getValorCofins()+"\n";
-//	                }else{
-//	                    if (contador >9 && contador <100 ){
-//	                        todosOsProdutos = todosOsProdutos +"[COFINS"+"0"+contador+"]"+"\n";
-//	                    }else if (contador <= 9){
-//	                        todosOsProdutos = todosOsProdutos +"[COFINS"+"00"+contador+"]"+"\n";
-//	                    }else{
-//	                        todosOsProdutos = todosOsProdutos +"[COFINS"+contador+"]"+"\n";
-//	                    }
-//	                    todosOsProdutos = todosOsProdutos +
-//	                            "CST="+item.getCstCofins()+"\n"+
-//	                            "qBCProd="+item.getQuantidade()+"\n"+
-//	                            "vAliqProd="+item.getTributo().getCofins().getValor()+"\n"+
-//	                            "vCOFINS="+item.getValorCofins()+"\n";
-//	                }
-//	            }
-//
-//	            this.produtoPreenchido = this.produtoPreenchido+todosOsProdutos;
-//	            contador ++;
-//	            System.out.println("8- Loop item nfe  " + contador);
-//	        }
-//
-//	        if (nota.getDadosAdicionais() != null ){
-//	            this.infEmitente = this.infEmitente + nota.getDadosAdicionais();
-//	        }
-//	        if (this.isSimples && this.is101 == true && !nota.getFinalidadeEmissao().equals(FinalidadeNfe.DV)){
-//	            this.infFisco = this.menInt.getSimplesNacional() + this.menInt.getMensagem101(calcula.geraIcms(nota.getValorTotalNota(), new java.math.BigDecimal(emissor.getBaseReducao())).toString(), emissor.getBaseReducao())+this.infFisco ;
-//	        }
-//	        if (this.isSimples && this.is101 == true && nota.getFinalidadeEmissao().equals(FinalidadeNfe.DV)){
-//	            this.infFisco = this.menInt.getSimplesNacional();
-//	        }
-//	        if (this.isSimples && this.is101 == false && !nota.getFinalidadeEmissao().equals(FinalidadeNfe.DV)){
-//	            this.infFisco =this.menInt.getSimplesNacional() + this.menInt.getMensagem102()+this.infFisco;
-//	        }
-//	        if (this.isSimples && this.is101 == false && nota.getFinalidadeEmissao().equals(FinalidadeNfe.DV)){
-//	            this.infFisco = this.menInt.getSimplesNacional();
-//	        }
-//	        if (this.isSimples == false && this.destino.isPermiteReducao()) {
-//	            this.infFisco = this.menInt.getReducaoBaseICMS();
-//	        }
-//	        if (this.isSimples == false && this.is50 ) {
-//	            this.infFisco = this.menInt.getCst50();
-//	        }
-//	        if (!nota.isImportacao()) {
-//	            this.infEmitente = this.menInt.getTotalTributos(nota.getValorTotalTributos().toString()) + " | " + this.infEmitente;
-//	        }
-//
-//	        String adicionais = "[DadosAdicionais]"+"\n";
-//	        if (this.infFisco != null && !this.infFisco.isEmpty() ){
-//	            adicionais = adicionais + "infAdFisco="+removerAcentos(this.infFisco)+"\n";
-//	        }
-//	        if (this.infEmitente != null){
-//	            adicionais = adicionais + "infCpl="+removerAcentos(this.infEmitente)+"\n";
-//	        }
-//	        System.out.println("Fim dados adicionais - linha 857");
-//	        System.out.println("8- Fim Item NFE ");
-//	        System.out.println("finalizado a montagem");
-//	        System.out.println("iniciado a criação do arquivo");
-//	        System.out.println("IntNfe: "+infNfe);
-//	        System.out.println("Identificacao: "+identificacao);
-//	        System.out.println("Emitente: "+emitente);
-//	        System.out.println("Destinatario: "+destinatario);
-//	        System.out.println("AutXML : "+autXml);
-//	        System.out.println("Total NFE: "+total);
-//	        System.out.println("Tranportadora : "+transportador);
-//	        System.out.println("Produtos: "+this.produtoPreenchido);
-//	        if (!nota.getFinalidadeEmissao().equals(FinalidadeNfe.NO)){
-//	            infArquivo = infNfe+identificacao+emitente+destinatario+this.notaReferencia+autXml+this.produtoPreenchido+total+transportador+volume+lacre+this.pagamentoPreenchido+adicionais;
-//	        }else{
-//	            infArquivo = infNfe+identificacao+emitente+destinatario+autXml+this.produtoPreenchido+total+transportador+volume+lacre+fatura+this.pagamentoPreenchido+adicionais;
-//	        }
-//	        System.out.println("finalizado a criação do arquivo na pasta c:\\ibrcomp\\temp\\"+ nomeArquivo);
-//	        criaConexao(dados);
-//	        return comandoAcbr("ACBr.SaveToFile(\"C:\\ibrcomp\\tmp\\"+nomeArquivo+".ini\",\""+infArquivo+"\",5)");
-//	    }catch (org.hibernate.HibernateException h) {
-//	        fechaTudo();
-//	        System.out.println("Erro consulta hibernate: " + h.getMessage() + " motivo: " + h.toString());
-//	        return h.getMessage();
-//	    }catch (Exception e) {
-//	        fechaTudo();
-//	        System.out.println("Erro: tentando conectar com o ACBrMonitor. Contate o suporte técnico: " + "\n\n" + e.getMessage() + " campo: " + e.toString());
-//	        return e.getMessage();
-//	    }
-//	}
-//	// ====== FIM DO MÉTODO ======
-
-//	public String criarArqIniMaqRemota(DadosDeConexaoSocket dados,String nomeArquivo, Nfe nota, FinalidadeNfe finalidade,boolean isNFCEAtivo) throws IOException{
-//		try{
-//			System.out.println("Iniciando a montagem da nfe para acbr");
-//			int contador = 001;
-//			int secunContador = 001;
-//			String infArquivo;
-//			//			int indice = 0;
-//
-//			System.out.println("inicio de conversao Emissor");
-//			this.emissor = preencheEmitente(nota);
-//			System.out.println("Fim do emissor inicio da conversao do destino");
-//			this.destino = preencheDestino(nota);
-//			System.out.println("Fim do destino");
-//
-//
-//
-//			DateTimeFormatter formataData = DateTimeFormatter
-//					.ofLocalizedDate(FormatStyle.SHORT)
-//					.withLocale(new Locale("pt", "br"));
-//
-//			DateTimeFormatter formataAAMM = DateTimeFormatter
-//					.ofPattern("yy/MM");
-//
-//			DateTimeFormatter formataAaaaMmDd = DateTimeFormatter
-//					.ofPattern("dd/MM/yyyy");
-//
-//			System.out.println("1- inicio infNFE ");
-//			String infNfe = "[infNFE]"+"\n"+
-//					"versao="+ApplicationUtils.getConfiguration("versao.nfe")+"\n";
-//			System.out.println("1- Fim infNFE ");
-//			System.out.println("2- inicio Identificaco ");
-//			System.out.println(nota.getNumeroNota());
-//			System.out.println(nota.getNatOperacao().getDescricao());
-//			System.out.println(nota.getDataEmissao().format(formatoSimples));
-//			System.out.println(nota.getDataSaida().format(formatoSimples));
-//			System.out.println(nota.getNatOperacao().getTipoNF().getCodigo());
-//			System.out.println(nota.getFinalidadeEmissao().getCodigo());
-//			System.out.println(nota.getIndFinal());
-//			System.out.println("Pegando a versao do aplicativo");
-//			System.out.println(ApplicationUtils.getConfiguration("application.version"));
-//			String identificacao = "[Identificacao]"+ "\n"+
-//					"cNF="+nota.getNumeroNota()+"32"+"\n"+ //codigo aleatório gerado pelo sistema para controle da nfe
-//					"natOp="+removerAcentos(nota.getNatOperacao().getDescricao())+"\n"+
-//					// "indPag="+"0"+"\n"+ // forma de pagamento 0- avista - 1 a prazo 2 - outros ***abolido na versao 4.0 
-//					"mod="+"55"+"\n";
-//					if (this.emissor.getSerie().length() == 1) {
-//						identificacao = identificacao +
-//						"serie="+"00"+this.emissor.getSerie()+"\n";
-//					}else if(this.emissor.getSerie().length() == 2) {
-//						identificacao = identificacao +
-//						"serie="+"0"+this.emissor.getSerie() + "\n";
-//					}else {
-//						identificacao = identificacao +
-//						"serie="+this.emissor.getSerie()+"\n";
-//					}
-//					identificacao = identificacao +
-//					"nNF="+nota.getNumeroNota()+"\n"+
-//					"dhEmi="+nota.getDataEmissao().format(formatoSimples)+"\n"+
-//					"dhSaiEnt="+nota.getDataSaida().format(formatoSimples)+"\n"+
-//					"tpNF="+nota.getNatOperacao().getTipoNF().getCodigo()+"\n"+ //0-ENTRADA 1- SAÍDA
-//					"idDest="+defineIdDest(nota)+"\n"+
-//					"tpImp="+"2"+"\n"+
-//					"tpEmis="+"1"+"\n"+
-//					"finNFe="+nota.getFinalidadeEmissao().getCodigo()+"\n"+
-//					"indFinal="+nota.getIndFinal()+"\n"+
-//					"procEmi="+"0"+"\n"+
-//					"verProc="+ApplicationUtils.getConfiguration("application.version")+"\n";
-//			if (nota.isTipoOperacao()){
-//				identificacao = identificacao + "indPres=1"+"\n"; // venda presencial
-//			}else{
-//				identificacao = identificacao + "indPres=2"+"\n"; // consumidor final
-//			}
-//			System.out.println("2- Fim Identificaco ");
-//
-//			System.out.println("Linha 307 - AcbrComunica - Nota referenciada");
-//			contador = 1;
-//			String refer = "";
-//			if (!(nota.getFinalidadeEmissao().equals(FinalidadeNfe.NO))){
-//				for (int i = 0 ; nota.getListaChavesReferenciada().size() > i; i++){
-//					//				for (NfeReferenciada refer : nota.getListaChavesReferenciada()) {
-//
-//					if (contador >9 && contador <100 ){
-//						refer = "[NFRef"+"0"+contador+"]"+"\n";
-//					}else if (contador <= 9){
-//						refer = "[NFRef"+"00"+contador+"]"+"\n";
-//					}else{
-//						refer= "[NFRef"+contador+"]"+"\n";
-//					}
-//					refer = refer +
-//							"Tipo="+"NFe"+"\n"+  // pode ser NF NFe NFP CTe ECF
-//							"refNFe="+nota.getListaChavesReferenciada().get(i).getChaveReferenciada()+"\n"+
-//							"cUF="+this.destino.getCUF()+"\n"+
-//							"AAMM="+nota.getListaChavesReferenciada().get(i).getAaMM().format(formataAAMM)+"\n"+
-//							"CNPJ="+this.destino.getCNPJCPF()+"\n"+
-//							"mod="+"01"+"\n"+
-//							"Serie="+nota.getListaChavesReferenciada().get(i).getSerie()+"\n"+
-//							"nNF="+nota.getListaChavesReferenciada().get(i).getNNF()+"\n";
-//					//						"CNPJCPF="+"\n"+
-//					//						"IE="+"\n"+
-//					//						"refCTe="+"\n"+
-//					//						"ModECF="+"\n"+
-//					//						"nECF="+"\n";
-//					this.notaReferencia = this.notaReferencia+refer;
-//					contador++;
-//				}
-//
-//			}
-//
-//			System.out.println("3- inicio Emitente ");
-//			String emitente = "[Emitente]"+"\n"+
-//					"CNPJCPF="+this.emissor.getCnpjCpf()+"\n"+
-//					"xNome="+this.emissor.getXNome()+"\n";
-//			if (this.emissor.getXFant() != null){
-//				emitente = emitente +
-//						"xFant="+this.emissor.getXFant()+"\n";
-//			}
-//			emitente = emitente +
-//					"IE="+this.emissor.getIe()+"\n";
-//			if (this.emissor.getIeST() != null){
-//				emitente = emitente +
-//						"IEST="+this.emissor.getIeST()+"\n";
-//			}
-//			if (this.emissor.getIMunicipal() != null){
-//				emitente = emitente +
-//						"IM="+this.emissor.getIMunicipal()+"\n";
-//			}
-//			emitente = emitente +
-//					//"CNAE="+this.emissor.getCNAE()+"\n"+
-//					"CRT="+this.emissor.getCrt()+"\n"+
-//					"xLgr="+this.emissor.getXLgr()+"\n"+
-//					"nro="+this.emissor.getNro()+"\n";
-//			if (this.emissor.getXCpl() != null){
-//				emitente = emitente +
-//						"xCpl="+this.emissor.getXCpl()+"\n";
-//			}
-//			emitente = emitente +
-//					"xBairro="+this.emissor.getXBairro()+"\n"+
-//					"cMun="+this.emissor.getCMun()+"\n"+
-//					"xMun="+this.emissor.getXMun()+"\n"+
-//					"UF="+this.emissor.getUf().name()+"\n"+
-//					"CEP="+this.emissor.getCep()+"\n"+
-//					"cPais="+this.emissor.getCPais()+"\n"+
-//					"xPais="+this.emissor.getXPais()+"\n";
-//			if (this.emissor.getFone() != null){
-//				emitente = emitente +
-//						"Fone="+this.emissor.getFone()+"\n";
-//			}
-//
-//			System.out.println("3- Fim Emitente ");
-//			//"cUF="+this.emissor.getCUF()+"\n"+
-//			//"cMunFG="+this.emissor.getCMunFG()+"\n";
-//
-//			//			String avulsa = "[Avulsa]"+"\n"+
-//			//					"CNPJ="+"\n"+
-//			//					"xOrgao="+"\n"+
-//			//					"matr="+"\n"+
-//			//					"xAgente="+"\n"+
-//			//					"fone="+"\n"+
-//			//					"UF="+"\n"+
-//			//					"nDAR="+"\n"+
-//			//					"dEmi="+"\n"+
-//			//					"vDAR="+"\n"+
-//			//					"repEmi="+"\n"+
-//			//					"dPag="+"\n";
-//			System.out.println("4- inicio Destinatario ");
-//			String destinatario = "[Destinatario]"+"\n";
-//			if (nota.isImportacao()){
-//				if (this.destino.getIdEstrangeiro() != null) {
-//				destinatario= destinatario+
-//						"idEstrangeiro="+this.destino.getIdEstrangeiro()+"\n";
-//				}else {
-//					destinatario= destinatario+
-//							"idEstrangeiro="+"0"+"\n";
-//				}
-//			}else{
-//				if (this.destino.getIdEstrangeiro() != null) {
-//					destinatario= destinatario+
-//							"idEstrangeiro="+this.destino.getIdEstrangeiro()+"\n";
-//				}else {
-//					destinatario = destinatario+
-//							"CNPJCPF="+this.destino.getCNPJCPF()+"\n";
-//				}
-//			}
-//			destinatario = destinatario+
-//					"xNome="+this.destino.getXNome()+"\n"+
-//					"indIEDest="+this.destino.getIndIEDest()+"\n";
-//			if (this.destino.getIE() != null){
-//				destinatario = destinatario+
-//						"IE="+this.destino.getIE()+"\n";
-//			}
-//			if (this.destino.getISUF() != null){
-//				destinatario = destinatario+
-//						"ISUF="+this.destino.getISUF()+"\n";
-//			}
-//			if (this.destino.getEmail() != null){
-//				destinatario = destinatario+
-//						"Email="+this.destino.getEmail()+"\n";
-//			}
-//			destinatario = destinatario+
-//					"xLgr="+this.destino.getXLgr()+"\n"+
-//					"nro="+this.destino.getNro()+"\n";
-//			if (this.destino.getXCpl() != null){
-//				destinatario = destinatario+
-//						"xCpl="+this.destino.getXCpl()+"\n";
-//			}
-//			destinatario = destinatario+
-//					"xBairro="+this.destino.getXBairro()+"\n"+
-//					"cMun="+this.destino.getCMun()+"\n"+
-//					"xMun="+this.destino.getXMun()+"\n"+
-//					"UF="+this.destino.getUf()+"\n"+
-//					"CEP="+this.destino.getCep()+"\n"+
-//					"cPais="+this.destino.getCPais()+"\n"+
-//					"xPais="+this.destino.getXPais()+"\n";
-//			if (this.destino.getFone() != null){
-//				destinatario = destinatario+
-//						"Fone="+this.destino.getFone()+"\n";
-//			}
-//			System.out.println("4- Fim Destinatario ");
-//
-//			//			String retirada = "[Retirada]"+"\n"+
-//			//					"CNPJCPF="+"\n"+
-//			//					"xLgr="+"\n"+
-//			//					"nro="+"\n"+
-//			//					"xCpl="+"\n"+
-//			//					"xBairro="+"\n"+
-//			//					"cMun="+"\n"+
-//			//					"xMun="+"\n"+
-//			//					"UF="+"\n";
-//			//
-//			//			String entrega = "[Entrega]"+"\n"+
-//			//					"CNPJCPF="+"\n"+
-//			//					"xLgr="+"\n"+
-//			//					"nro="+"\n"+
-//			//					"xCpl="+"\n"+
-//			//					"xBairro="+"\n"+
-//			//					"cMun="+"\n"+
-//			//					"xMun="+"\n"+
-//			//					"UF="+"\n";
-//			System.out.println("5- inicio autXML ");
-//			String autXml = "";
-//			if (this.destino.getCNPJCPF() != null) {
-//				contador =1;
-//				 autXml = autXml + "[autXML"+contador+"]"+ "\n" +
-//				 "CNPJCPF="+this.destino.getCNPJCPF()+"\n";
-//			}
-//			System.out.println("5- Fim autXML ");
-//			//			String produto = "[Produto"+contador+"]"+"\n"+
-//			//					"cProd="+nota.getListaItemNfe().get(indice).getProduto().getReferencia()+"\n"+
-//			//					//"cEAN="+nota.getListaItemNfe().get(indice).getProduto().getEan"\n"+
-//			//					"xProd="+nota.getListaItemNfe().get(indice).getProduto().getDescricao()+"\n"+
-//			//					"NCM="+nota.getListaItemNfe().get(indice).getProduto().getNcm().getNcm()+"\n"+
-//			//					"EXTIPI="+nota.getListaItemNfe().get(indice).getProduto().getNcm().getExTipi()+"\n"+
-//			//					"CFOP="+nota.getListaItemNfe().get(indice).getCfopItem().getCfop()+"\n"+
-//			//					"uCom="+nota.getListaItemNfe().get(indice).getProduto().getMedida().getSigla()+"\n"+
-//			//					"qCom="+nota.getListaItemNfe().get(indice).getQuantidade()+"\n"+
-//			//					"vUnCom="+nota.getListaItemNfe().get(indice).getValorUnitario()+"\n"+
-//			//					"vProd="+nota.getListaItemNfe().get(indice).getValorTotal()+"\n"+
-//			//					//"cEANTrib="+"\n"+
-//			//					"uTrib="+nota.getListaItemNfe().get(indice).getProduto().getMedida().getSigla()+"\n"+
-//			//					"qTrib="+nota.getListaItemNfe().get(indice).getQuantidade()+"\n"+
-//			//					"vUnTrib="+nota.getListaItemNfe().get(indice).getValorUnitario()+"\n"+
-//			//					"vFrete="+nota.getListaItemNfe().get(indice).getValorFrete()+"\n"+
-//			//					"vSeg="+nota.getListaItemNfe().get(indice).getValorSeguro()+"\n"+
-//			//					"vDesc="+nota.getListaItemNfe().get(indice).getDesconto()+"\n"+
-//			//					"vOutro="+nota.getListaItemNfe().get(indice).getValorDespesas()+"\n"+
-//			//					"indTot="+"1"+"\n"+
-//			//					"vTotTrib="+nota.getListaItemNfe().get(indice).getValorTotalTributoItem()+"\n";
-//			//"infAdProd="+"\n"+
-//			//"CNPJFab="+"\n"+
-//			//"cBenef="+"\n";
-//			//	"xPed="+"\n"+
-//			//	"nItemPed="+"\n"+
-//			//	"nFCI="+"\n"+
-//			//	"nRECOPI="+"\n"+
-//
-//			//			String produtoDevolucao ="pDevol="+"\n"+ // acrescentar este ao produto em caso de devolução
-//			//					"vIPIDevol="+"\n";
-//
-//
-//			//String nve = "[NVE"+"XXX"+secunContador+"]"+"\n"+
-//			//	"NVE="+"\n";
-//			 
-//			// importação
-//			//
-//			//			String export = "[detExport"+"XXX"+secunContador+"]"+"\n"+  // exportação (precisa ter registro)
-//			//					"nDraw="+"\n"+
-//			//					"nRE="+"\n"+
-//			//					"chNFe="+"\n"+
-//			//					"qExport="+"\n";
-//			//
-//			//			String impostoDevolvido = "[impostoDevol"+"XXX"+"]"+"\n"+ // no caso de devolucao
-//			//					"pDevol="+"\n"+
-//			//					"vIPIDevol="+"\n";
-//
-//			//			String veiculo = "[Veiculo"+"XXX"+"]"+"\n"+ // venda de veiculos
-//			//					"chassi="+"\n"+
-//			//					"tpOP="+"\n"+
-//			//					"cCor="+"\n"+
-//			//					"xCor="+"\n"+
-//			//					"pot="+"\n"+
-//			//					"Cilin="+"\n"+
-//			//					"pesoL="+"\n"+
-//			//					"pesoB="+"\n"+
-//			//					"nSerie="+"\n"+
-//			//					"tpComb="+"\n"+
-//			//					"nMotor="+"\n"+
-//			//					"CMT="+"\n"+
-//			//					"dist="+"\n"+
-//			//					"anoMod="+"\n"+
-//			//					"anoFab="+"\n"+
-//			//					"tpPint="+"\n"+
-//			//					"tpVeic="+"\n"+
-//			//					"espVeic="+"\n"+
-//			//					"VIN="+"\n"+
-//			//					"condVeic="+"\n"+
-//			//					"cMod="+"\n"+
-//			//					"cCorDENATRAN="+"\n"+
-//			//					"lota="+"\n"+
-//			//					"tpRest="+"\n";
-//			//
-//			//			String rastro = "[rastro"+"XXX"+secunContador+"]"+"\n"+ // para produtos que necessitam de recal ou algo do genero
-//			//					"nLote="+"\n"+
-//			//					"qLote="+"\n"+
-//			//					"dFab="+"\n"+
-//			//					"dVal="+"\n"+
-//			//					"cAgreg="+"\n";
-//			//
-//			//			String icmsInter = "[ICMSInter"+contador+"]"+"\n"+
-//			//					"vBCICMSSTDest="+"\n"+
-//			//					"vICMSSTDest="+"\n";
-//			//
-//			//			String icmsCons = "[ICMSCons"+contador+"]"+"\n"+
-//			//					"vBCICMSSTCons="+"\n"+
-//			//					"vICMSSTCons="+"\n"+
-//			//					"UFCons="+"\n";
-//			//			String icms = "[ICMS"+contador+"]"+"\n"+
-//			//					"orig="+"\n"+
-//			//					"CST="+"\n"+
-//			//					"CSOSN="+"\n"+
-//			//					"modBC="+"\n"+
-//			//					"pRedBC="+"\n"+
-//			//					"vBC="+"\n"+
-//			//					"pICMS="+"\n"+
-//			//					"vICMS="+"\n"+
-//			//					"modBCST="+"\n"+
-//			//					"pMVAST="+"\n"+
-//			//					"pRedBCST="+"\n"+
-//			//					"vBCST="+"\n"+
-//			//					"pICMSST="+"\n"+
-//			//					"vICMSST="+"\n"+
-//			//					"UFST="+"\n"+
-//			//					"pBCOp="+"\n"+
-//			//					"vBCSTRet="+"\n"+
-//			//					"vICMSSTRet="+"\n"+
-//			//					"motDesICMS="+"\n"+
-//			//					"pCredSN="+"\n"+
-//			//					"vCredICMSSN="+"\n"+
-//			//					"vBCSTDest="+"\n"+
-//			//					"vICMSSTDest="+"\n"+
-//			//					"vICMSDeson="+"\n"+
-//			//					"vICMSOp="+"\n"+
-//			//					"pDif="+"\n"+
-//			//					"vICMSDif="+"\n"+
-//			//					"pST="+"\n"+
-//			//					"vBCFCP="+"\n"+
-//			//					"pFCP="+"\n"+
-//			//					"vFCP="+"\n"+
-//			//					"vBCFCPST="+"\n"+
-//			//					"pFCPST="+"\n"+
-//			//					"vFCPST="+"\n"+
-//			//					"vBCFCPSTRet="+"\n"+
-//			//					"pFCPSTRet="+"\n"+
-//			//					"vFCPSTRet="+"\n";
-//			//
-//			//			String icmsUfDest = "[ICMSUFDEST"+contador+"]"+"\n"+
-//			//					"pICMSUFDest="+"\n"+
-//			//					"pICMSInter="+"\n"+
-//			//					"pICMSInterPart="+"\n"+
-//			//					"vICMSUFDest="+"\n"+
-//			//					"vICMSUFRemet="+"\n"+
-//			//					"pFCPUFDest="+"\n"+
-//			//					"vFCPUFDest="+"\n"+
-//			//					"vBCFCPUFDest="+"\n";
-//			//
-//			//			String ipi = "[IPI"+contador+"]"+"\n"+
-//			//					"CST="+"\n"+
-//			//					"clEnq="+"\n"+
-//			//					"CNPJProd="+"\n"+
-//			//					"cSelo="+"\n"+
-//			//					"qSelo="+"\n"+
-//			//					"cEnq="+"\n"+
-//			//					"vBC="+"\n"+
-//			//					"qUnid="+"\n"+
-//			//					"vUnid="+"\n"+
-//			//					"pIPI="+"\n"+
-//			//					"vIPI="+"\n";
-//			//
-//			//			String ii = "[II"+contador+"]"+"\n"+ // utilizado para importação
-//			//					"vBC="+"\n"+
-//			//					"vDespAdu="+"\n"+
-//			//					"vII="+"\n"+
-//			//					"vIOF="+"\n";
-//			//
-//			//			String pis=	"[PIS"+contador+"]"+"\n"+
-//			//					"CST="+"\n"+
-//			//					"vBC="+"\n"+
-//			//					"pPIS="+"\n"+
-//			//					"qBCProd="+"\n"+
-//			//					"vAliqProd="+"\n"+
-//			//					"vPIS="+"\n";
-//			//
-//			//			String pisSt="[PISST"+contador+"]"+"\n"+
-//			//					"vBC="+"\n"+
-//			//					"pPis="+"\n"+
-//			//					"qBCProd="+"\n"+
-//			//					"vAliqProd="+"\n"+
-//			//					"vPIS="+"\n";
-//			//
-//			//			String cofins = "[COFINS"+contador+"]"+"\n"+
-//			//					"CST="+"\n"+
-//			//					"vBC="+"\n"+
-//			//					"pCOFINS="+"\n"+
-//			//					"qBCProd="+"\n"+
-//			//					"vAliqProd="+"\n"+
-//			//					"vCOFINS="+"\n";
-//			//
-//			//			String cofinsSt = "[COFINSST"+contador+"]"+"\n"+
-//			//					"vBC="+"\n"+
-//			//					"pCOFINS="+"\n"+
-//			//					"qBCProd="+"\n"+
-//			//					"vAliqProd="+"\n"+
-//			//					"vCOFINS="+"\n";
-//			//
-//			//			String issqn ="[ISSQN"+contador+"]"+"\n"+
-//			//					"vBC="+"\n"+
-//			//					"vAliq="+"\n"+
-//			//					"vISSQN="+"\n"+
-//			//					"cMunFG="+"\n"+
-//			//					"cListServ="+"\n"+
-//			//					"cSitTrib="+"\n"+
-//			//					"vDeducao="+"\n"+
-//			//					"vDeducao="+"\n"+
-//			//					"vOutro="+"\n"+
-//			//					"vDescIncond="+"\n"+
-//			//					"vDescCond="+"\n"+
-//			//					"vISSRet="+"\n"+
-//			//					"indISS="+"\n"+
-//			//					"cServico="+"\n"+
-//			//					"cMun="+"\n"+
-//			//					"cPais="+"\n"+
-//			//					"nProcesso="+"\n"+
-//			//					"indIncentivo="+"\n";
-//			System.out.println("6- inicio Total ");
-//			String total= "[Total]"+"\n";
-//			if ((emissor.getRegime().equals(Enquadramento.SimplesNacional) || emissor.getRegime().equals(Enquadramento.SimplesNacionalMei))  && !nota.getFinalidadeEmissao().equals(FinalidadeNfe.DV)){
-//				total = total+
-//						"vBC="+"0.00"+"\n"+
-//						"vICMS="+"0.00"+"\n";
-//			}else if (nota.getFinalidadeEmissao().equals(FinalidadeNfe.DV) || emissor.getRegime().equals(Enquadramento.Normal)){
-//				total = total+
-//						"vBC="+nota.getBaseIcms().setScale(2, RoundingMode.HALF_EVEN)+"\n"+
-//						"vICMS="+nota.getValorIcms().setScale(2, RoundingMode.HALF_EVEN)+"\n";
-//			}
-//			total =total+
-//					"vICMSDeson="+nota.getValorIcmsDesonerado().setScale(2, RoundingMode.HALF_EVEN)+"\n"+
-//					"vBCST="+nota.getBaseIcmsSubstituicao().setScale(2, RoundingMode.HALF_EVEN)+"\n"+
-//					"vST="+nota.getValorIcmsSubstituicao().setScale(2, RoundingMode.HALF_EVEN)+"\n"+
-//					"vProd="+nota.getValorTotalProdutos().setScale(2, RoundingMode.HALF_EVEN)+"\n"+
-//					"vFrete="+nota.getValorFrete().setScale(2, RoundingMode.HALF_EVEN)+"\n"+
-//					"vSeg="+nota.getValorSeguro().setScale(2, RoundingMode.HALF_EVEN)+"\n"+
-//					"vDesc="+nota.getDesconto().setScale(2, RoundingMode.HALF_EVEN)+"\n";
-//					if (nota.isImportacao()) {
-//						total =total+ "vII="+nota.getValorTotalII()+"\n";
-//					}
-//					total =total+"vIPI="+nota.getValorTotalIpi().setScale(2, RoundingMode.HALF_EVEN)+"\n"+
-//					"vPIS="+nota.getValorTotalPis().setScale(2, RoundingMode.HALF_EVEN)+"\n"+
-//					"vCOFINS="+nota.getValorTotalCofins().setScale(2, RoundingMode.HALF_EVEN)+"\n"+
-//					"vOutro="+nota.getOutrasDespesas().setScale(2, RoundingMode.HALF_EVEN)+"\n"+
-//					"vNF="+nota.getValorTotalNota().setScale(2, RoundingMode.HALF_EVEN)+"\n"+
-//					"vTotTrib="+nota.getValorTotalTributos().setScale(2, RoundingMode.HALF_EVEN)+"\n";
-//			if (destino.getIndIEDest() == "9" ){
-//				total = total+
-//						"vFCPUFDest="+nota.getVFCPUFDest().setScale(2, RoundingMode.HALF_EVEN)+"\n"+
-//						"vICMSUFDest="+nota.getVICMSUFDest().setScale(2, RoundingMode.HALF_EVEN)+"\n"+
-//						"vICMSUFRemet="+nota.getVICMSUFRemet().setScale(2, RoundingMode.HALF_EVEN)+"\n";
-//
-//			}
-//			if (nota.getVFCP().compareTo(new BigDecimal("0")) == 1){
-//				total = total +
-//						"vFCP="+nota.getVFCP().setScale(2, RoundingMode.HALF_EVEN)+"\n"+
-//						"vFCPST="+nota.getVFCPST().setScale(2, RoundingMode.HALF_EVEN)+"\n"+
-//						"vFCPSTRet="+nota.getVFCPSTRet().setScale(2, RoundingMode.HALF_EVEN)+"\n";
-//				this.infFisco = this.infFisco+"vFCP="+nota.getVFCP().setScale(2, RoundingMode.HALF_EVEN)+
-//						"vFCPST="+nota.getVFCPST().setScale(2, RoundingMode.HALF_EVEN)+
-//						"vFCPSTRet="+nota.getVFCPSTRet().setScale(2, RoundingMode.HALF_EVEN);
-//			}
-//			//					"vIPIDevol="+nota.getVIPIDevol().setScale(2, RoundingMode.HALF_EVEN)+"\n";
-//			System.out.println("6- Fim Total ");
-//
-//			//			String issqnTotal = "[ISSQNtot]"+"\n"+
-//			//					"vServ="+"\n"+
-//			//					"vBC="+"\n"+
-//			//					"vISS="+"\n"+
-//			//					"vPIS="+"\n"+
-//			//					"vCOFINS="+"\n"+
-//			//					"dCompet="+"\n"+
-//			//					"vDeducao="+"\n"+
-//			//					"vOutro="+"\n"+
-//			//					"vDescIncond="+"\n"+
-//			//					"vDescCond="+"\n"+
-//			//					"vISSRet="+"\n"+
-//			//					"cRegTrib="+"\n";
-//
-//			//			String retTib = "[retTrib]"+"\n"+
-//			//					"vRetPIS="+"\n"+
-//			//					"vRetCOFINS="+"\n"+
-//			//					"vRetCSLL="+"\n"+
-//			//					"vBCIRRF="+"\n"+
-//			//					"vIRRF="+"\n"+
-//			//					"vBCRetPrev="+"\n"+
-//			//					"vRetPrev="+"\n";
-//			System.out.println("7- inicio Transportador ");
-//			String transportador = "[Transportador]"+"\n"+
-//					"modFrete="+nota.getTipoFrete().getCodigo()+"\n";
-//			if (nota.isClienteRetira() == false){
-//				if (nota.getTransportador().getTransportadora().getCnpj() == null){
-//					transportador = transportador +
-//							"CNPJCPF="+nota.getTransportador().getTransportadora().getCpf()+"\n";
-//				}else {
-//					transportador = transportador +
-//							"CNPJCPF="+nota.getTransportador().getTransportadora().getCnpj()+"\n";
-//				}
-//				transportador = transportador +
-//						"xNome="+removerAcentos(nota.getTransportador().getTransportadora().getRazaoSocial())+"\n"+
-//						"IE="+nota.getTransportador().getTransportadora().getInscEstadual()+"\n";
-//						if (nota.getTransportador().getTransportadora().getEndereco().getLogradouro() == "" || nota.getTransportador().getTransportadora().getEndereco().getLogradouro().isEmpty()) {
-//							transportador = transportador +
-//							"xEnder="+removerAcentos(nota.getTransportador().getTransportadora().getEndereco().getEndereco().getLogra())+"\n";
-//						}else {
-//							transportador = transportador +
-//									"xEnder="+removerAcentos(nota.getTransportador().getTransportadora().getEndereco().getLogradouro())+"\n";
-//						}
-//						transportador = transportador +
-//						"xMun="+removerAcentos(nota.getTransportador().getTransportadora().getEndereco().getEndereco().getLocalidade())+"\n"+
-//						"UF="+nota.getTransportador().getTransportadora().getEndereco().getEndereco().getUf().name()+"\n";
-//			}else{
-//				transportador = transportador +
-//						"CNPJCPF="+nota.getTransportador().getRetiraDoc()+"\n";
-//				transportador = transportador +
-//						"xNome="+removerAcentos(nota.getTransportador().getRetiraNome())+"\n"+
-//						"IE="+nota.getTransportador().getRetiraInsc()+"\n"+
-//						"xEnder="+removerAcentos(nota.getTransportador().getRetiraEnd())+"\n"+
-//						"xMun="+removerAcentos(nota.getTransportador().getRetiraMunicipio())+"\n"+
-//						"UF="+nota.getTransportador().getRetiraUf()+"\n";
-//			}
-//			//"vServ="+nota.getValorFrete()+"\n"+
-//			//"vBCRet="+"\n"+
-//			//"pICMSRet="+"\n"+
-//			//"vICMSRet="+"\n"+
-//			//"CFOP="+"\n"+
-//			//"cMunFG="+"\n"+
-//			if (nota.getTransportador().getPlaca() != null){
-//				transportador = transportador +
-//						"Placa="+nota.getTransportador().getPlaca().toUpperCase()+"\n"+
-//						"UFPlaca="+nota.getTransportador().getUfPlaca().name()+"\n";
-//			}
-//			if (nota.getTransportador().getCodigoAnnt() != null){
-//				transportador = transportador +
-//						"RNTC="+nota.getTransportador().getCodigoAnnt()+"\n";
-//			}
-//			if (nota.getTransportador().getVagao() != null){
-//				transportador = transportador +
-//						"vagao="+nota.getTransportador().getVagao()+"\n";
-//			}
-//			if (nota.getTransportador().getBalsa() != null){
-//				transportador = transportador +
-//						"balsa="+nota.getTransportador().getBalsa()+"\n";
-//			}
-//			System.out.println("7- Fim Transportador - Inicio Volume - linha 756");
-//
-//			//						String reboque = "[Reboque"+contador+"]"+"\n"+
-//			//								"placa="+"\n"+
-//			//								"UF="+"\n"+
-//			//								"RNTC="+"\n";
-//
-//
-//			String volume = "[Volume001]"+"\n"+
-//					"qVol="+nota.getTransportador().getQuantidade()+"\n"+
-//					"esp="+nota.getTransportador().getEspecie()+"\n";
-//			if (nota.getTransportador().getMarca() != null){
-//				volume = volume +"Marca="+nota.getTransportador().getMarca()+"\n";
-//			}
-//			if (nota.getTransportador().getNumeracao() != null){
-//				volume = volume+"nVol="+nota.getTransportador().getNumeracao()+"\n";
-//			}
-//			volume = volume+"pesoL="+nota.getTransportador().getPesoLiquido()+"\n"+
-//					"pesoB="+nota.getTransportador().getPesoBruto()+"\n";
-//			System.out.println(" Fim Volume - Inicio Lacres - linha 817");
-//			System.out.println("Lista lacres vazia? "+nota.getListaLacres().isEmpty());
-//			String lacre="";
-//			if (!nota.getListaLacres().isEmpty()){
-//				System.out.println("Dentro da lista lacres!");
-//				//							String lacreIni;
-//				int b = 001;
-//				for (int i = 0 ; i < nota.getListaLacres().size() ; i++){
-//					String numeroLocal;
-//					System.out.println("ante de tudo valor de I ***** " + i);
-//
-//					if (b <= 9){
-//						numeroLocal = "00"+b;
-//					}else if (b >9 && b <= 99){
-//						numeroLocal = "0"+b;
-//					}else{
-//						numeroLocal = ""+b;
-//					}
-//
-//					lacre = lacre +"[Lacre001"+numeroLocal+"]"+"\n"+
-//							"nLacre="+nota.getListaLacres().get(i).getLacre()+"\n";
-//					b++;
-//					//									lacre = lacre +lacreIni;
-//				}
-//			}
-//			System.out.println("Fim lacres");
-//			String fatura ="";
-//			if (nota.isImportacao() == false) {
-//			  fatura = "[Fatura]"+"\n"+
-//					"nFat="+nota.getNumeroNota()+"\n"+
-//					"vOrig="+nota.getValorTotalNota().add(nota.getDesconto())+"\n"+
-//					"vDesc="+nota.getDesconto()+"\n"+
-//					"vLiq="+nota.getValorTotalNota()+"\n";
-//			}
-//
-//			System.out.println("inicio do Pagamento - linha 807");
-//			String pag ="";
-//			String duplicata ="" ;
-//			contador = 001;
-//			if (!nota.getListaParcelas().isEmpty()){
-//		        
-//		        Map<TipoPagamento, List<Parcelas>> agrupado = nota.getListaParcelas().stream()
-//		                .filter(p -> p.getFormaPag() != null && p.getFormaPag().getTipoPagamento() != null)
-//		                .collect(Collectors.groupingBy(p -> p.getFormaPag().getTipoPagamento()));
-//
-//		        // Exibe quantidade e soma para cada tipo
-//		        for (Map.Entry<TipoPagamento, List<Parcelas>> entry : agrupado.entrySet()) {
-//		            TipoPagamento tipo = entry.getKey();
-//		            List<Parcelas> parcelas = entry.getValue();
-//
-//		            BigDecimal totalparc = parcelas.stream()
-//		                .map(Parcelas::getValorParcela)
-//		                .reduce(BigDecimal.ZERO, BigDecimal::add);
-//		            
-//		            if (contador >9 && contador <100 ){
-//						pag = "[PAG"+"0"+contador+"]"+"\n";
-//					}else if (contador <= 9){
-//						pag = "[PAG"+"00"+contador+"]"+"\n";
-//					}else{
-//						pag = "[PAG"+contador+"]"+"\n";
-//					}
-//		            
-//		            pag = pag+
-//							"tpag="+tipo.getCod()+"\n";
-//					
-//					if (tipo.getCod() == "99"){
-//						if ( parcelas.get(0).getFormaPag().getDescOutros() != null) {
-//							pag = pag+"xPag="+ parcelas.get(0).getFormaPag().getDescOutros()+"\n";
-//						}else {
-//							throw new NfeException("Tipo Pagamento definido como Outros. É necessário preencher o campo descrição de TIPO DE PAGAMENTO em formas de pagamento");
-//						}
-//					}
-//					if (tipo.getCod() == "90"){
-//						pag = pag+
-//								"vPag="+"0.00"+"\n";
-//					}else{
-//						pag = pag+
-//								"vPag="+totalparc.setScale(2, RoundingMode.HALF_EVEN)+"\n";
-//
-//					}
-//					if (tipo.getCod() == "01"){
-//						pag = pag+
-//								"vTroco="+"0.00"+"\n";
-//					}
-//					if (tipo.getCod() == "03" || tipo.getCod() == "04"){
-//						pag = pag + "tpIntegra="+ApplicationUtils.getConfiguration("integra.car")+"\n";
-//						//											"CNPJ="+"\n"+
-//						//											"tBand="+"\n"+
-//						//											"cAut="+"\n";
-//					}
-//					this.pagamentoPreenchido = this.pagamentoPreenchido + pag;
-//					contador++;
-//
-//		        }
-//			}
-//			//								pag= pag +
-//			//								"vTroco="++"\n";
-//			contador = 001;
-//			System.out.println("inserindo as duplicatas - linha 832");
-//			if (!nota.getListaParcelas().isEmpty()){
-////				identificacao = identificacao + "indPag="+"1"+"\n";
-//				for (int i = 0 ; i <nota.getListaParcelas().size(); i++){
-//					if (nota.getListaParcelas().get(i).getFormaPag().getTipoPagamento().getCod() == "14" ||nota.getListaParcelas().get(i).getFormaPag().getTipoPagamento().getCod() == "15"){
-//						if (contador >9 && contador <100 ){
-//							duplicata = "[Duplicata"+"0"+contador+"]"+"\n";
-//						}else if (contador <= 9){
-//							duplicata = "[Duplicata"+"00"+contador+"]"+"\n";
-//						}else{
-//							duplicata = "[Duplicata"+contador+"]"+"\n";
-//						}
-//						if (nota.getListaParcelas().get(i).getNumParcela() <= 9){
-//							duplicata = duplicata +
-//									"nDup=00"+nota.getListaParcelas().get(i).getNumParcela()+"\n";
-//						}else if (nota.getListaParcelas().get(i).getNumParcela() > 9 && nota.getListaParcelas().get(i).getNumParcela() < 100){
-//							duplicata = duplicata +
-//									"nDup=0"+nota.getListaParcelas().get(i).getNumParcela()+"\n";
-//						}else{
-//							duplicata = duplicata +
-//									"nDup="+nota.getListaParcelas().get(i).getNumParcela()+"\n";
-//						}
-//						duplicata = duplicata +
-//								"dVenc="+nota.getListaParcelas().get(i).getVencimento().format(formataAaaaMmDd)+"\n"+
-//								"vDup="+nota.getListaParcelas().get(i).getValorParcela()+"\n";
-//					}
-//				
-////					} else{
-////						identificacao = identificacao + "indPag="+"0"+"\n";
-////					}
-//					System.out.println("fim das duplicatas - linha 846");
-//					this.pagamentoPreenchido = this.pagamentoPreenchido + duplicata;
-//					contador++;
-//				}
-//				System.out.println("Adicionando as duplicatas ao pagamento");
-//
-//			}
-//			System.out.println("fim do pagamento - linha 852");
-//
-//
-//
-//			//						String infAdicional = "[InfAdic"+contador+"]"+"\n"+
-//			//								"xCampo="+""+"\n"+
-//			//								"xTexto="+"\n";
-//
-//			//			String obsFisco = "[ObsFisco"+contador+"]"+"\n"+
-//			//					"xCampo="+"\n"+
-//			//					"xTexto="+"\n";
-//
-//			//			String procRef= "[procRef"+contador+"]"+"\n"+
-//			//					"nProc="+"\n"+
-//			//					"indProc="+"\n";
-//
-//			//			String exporta = "[Exporta]"+"\n"+
-//			//					"UFSaidaPais="+"\n"+
-//			//					"xLocExporta="+"\n"+
-//			//					"xLocDespacho="+"\n";
-//
-//			//			String compra ="[Compra]"+"\n"+
-//			//					"xNEmp="+"\n"+
-//			//					"xPed="+"\n"+
-//			//					"xCont="+"\n";
-//			System.out.println("8- inicio Item NFE ");
-//			contador = 001;
-//			String todosOsProdutos = "";
-//
-//
-//			for (ItemNfe item : nota.getListaItemNfe()) {
-//				if (this.emissor.getRegime() == Enquadramento.Normal){
-//					System.out.println("Cliente Regime Normal");
-//					if (contador >9 && contador <100 ){
-//						todosOsProdutos = "[Produto"+"0"+contador+"]"+"\n";
-//					}else if (contador <= 9){
-//						todosOsProdutos = "[Produto"+"00"+contador+"]"+"\n";
-//					}else{
-//						todosOsProdutos = "[Produto"+contador+"]"+"\n";
-//					}
-//					todosOsProdutos = todosOsProdutos +
-//							"cProd="+item.getProduto().getReferencia()+"\n"+
-//							//"cEAN="+item.getProduto().getEan"\n"+ // caso tenha codigo de barras registrado no gtin
-//							"cEAN="+"SEM GTIN"+"\n";
-//							if (item.getBarras() != null) {
-//								if (item.getBarras().getCor() != null) {
-//									System.out.println("Estou dentro do item GetCOR ACBR");
-//									todosOsProdutos = todosOsProdutos +
-//											"xProd="+removerAcentos(item.getProduto().getDescricao())+" tam: "+item.getBarras().getTamanho().getTamanho()+" cor: "+item.getBarras().getCor().getNome()+"\n";
-//								}else {
-//									if (item.getBarras().getTamanho() != null) {
-//									System.out.println("Estou dentro do item getTamanho ACBR");
-//									todosOsProdutos = todosOsProdutos +
-//											"xProd="+removerAcentos(item.getProduto().getDescricao())+" tam: "+item.getBarras().getTamanho().getTamanho()+"\n";
-//									}else {
-//										System.out.println("item.getbarras = null ACBR");
-//										todosOsProdutos = todosOsProdutos +
-//										"xProd="+removerAcentos(item.getProduto().getDescricao())+"\n";
-//									}
-//								}
-//							}else {
-//								System.out.println("item.getbarras = null ACBR");
-//								todosOsProdutos = todosOsProdutos +
-//								"xProd="+removerAcentos(item.getProduto().getDescricao())+"\n";
-//							}
-//							todosOsProdutos = todosOsProdutos +
-//							"NCM="+item.getProduto().getNcm().getNcm()+"\n";
-//					System.out.println(todosOsProdutos + "inicio");
-//					if (item.getProduto().getNcm().getExTipi() != null){
-//						System.out.println("Estou dentro do EXTIPI");
-//						todosOsProdutos = todosOsProdutos + 	
-//								"EXTIPI="+item.getProduto().getNcm().getExTipi()+"\n";
-//					}
-//					todosOsProdutos = todosOsProdutos +
-//							"CFOP="+item.getCfopItem().getCfop()+"\n";
-//					System.out.println(todosOsProdutos + " linha 946");
-//					if (item.getProduto().getTipoMedida() == null){
-//						System.out.println("Medida == null");
-//						todosOsProdutos = todosOsProdutos +
-//								"uCom="+"UN"+"\n";
-//					}else{
-//						todosOsProdutos = todosOsProdutos +
-//								"uCom="+item.getProduto().getTipoMedida().getSigla()+"\n";
-//					}
-//					System.out.println("passei pelo medida  linha 955 ");
-//					todosOsProdutos = todosOsProdutos +
-//							"qCom="+item.getQuantidade()+"\n"+
-//							"vUnCom="+item.getValorUnitario()+"\n"+
-//							"vProd="+item.getValorTotalBruto()+"\n"+
-//							//"cEANTrib="+"\n"+ //caso tenha codigo de barras registrado no gtin
-//							"cEANTrib="+"SEM GTIN"+"\n";
-//					if (item.getProduto().getTipoMedida() == null){
-//						todosOsProdutos = todosOsProdutos +
-//								"uTrib="+"UN"+"\n";
-//					}else{
-//						todosOsProdutos = todosOsProdutos +
-//								"uTrib="+item.getProduto().getTipoMedida().getSigla()+"\n";
-//					}
-//					System.out.println(todosOsProdutos + "linha 968");
-//					todosOsProdutos = todosOsProdutos +
-//							"qTrib="+item.getQuantidade()+"\n"+
-//							"vUnTrib="+item.getValorUnitario()+"\n"+
-//							"vFrete="+item.getValorFrete()+"\n"+
-//							"vSeg="+item.getValorSeguro()+"\n"+
-//							"vDesc="+item.getDesconto()+"\n"+
-//							"vOutro="+item.getValorDespesas()+"\n"+
-//							"indTot="+"1"+"\n"+
-//							"vTotTrib="+item.getValorTotalTributoItem()+"\n";
-//					System.out.println(todosOsProdutos+"linha 978");
-//					if (item.getObsItem() != null){
-//						todosOsProdutos = todosOsProdutos+
-//								"infAdProd="+item.getObsItem()+"\n";
-//					}
-//					if (nota.isImportacao()) {
-//						if (nota.getDi() != null) {
-//								
-//							if (contador >9 && contador <100 ){
-//								todosOsProdutos = todosOsProdutos+ "[DI"+"0"+contador+"001]"+"\n";
-//							}else if (contador <= 9){
-//								todosOsProdutos = todosOsProdutos+ "[DI"+"00"+contador+"001]"+"\n";
-//							}else{
-//								todosOsProdutos = todosOsProdutos+ "[DI"+contador+"001]"+"\n";
-//							}
-//							todosOsProdutos = todosOsProdutos+
-//								"nDi="+nota.getDi().getNnDi()+"\n"+
-//								"dDi="+nota.getDi().getDDi().format(formatoSimplesDate)+"\n"+
-//								"xLocDesemb="+nota.getDi().getXLocDesemb()+"\n"+
-//								"UFDesemb="+nota.getDi().getUFDesemb()+"\n"+
-//								"dDesemb="+nota.getDi().getDdDesemb().format(formatoSimplesDate)+"\n"+
-//								"tpViaTransp="+nota.getDi().getTpViaTransp().getCodigo()+"\n"+
-//								"vAFRMM="+nota.getDi().getVAFRMM()+"\n"+
-//								"tpIntermedio="+nota.getDi().getTpIntermedio().getCodigo()+"\n";
-//								if (nota.getDi().getCnpjAdq() != null) {
-//									todosOsProdutos = todosOsProdutos+"CNPJ="+nota.getDi().getCnpjAdq()+"\n";
-//								}else {
-//									todosOsProdutos = todosOsProdutos+"CNPJ="+"\n";
-//								}
-//								if (nota.getDi().getUFTerceiro() != null) {
-//									todosOsProdutos = todosOsProdutos+ "UFTerceiro="+nota.getDi().getUFTerceiro()+"\n";
-//								}else {
-//									todosOsProdutos = todosOsProdutos+ "UFTerceiro="+"\n";
-//								}
-//								todosOsProdutos = todosOsProdutos+"cExportador="+nota.getDi().getCExportador()+"\n";
-//							
-//								if (contador >9 && contador <100 ){
-//									todosOsProdutos = todosOsProdutos + "[LADI"+"0"+contador+"001"+"001]"+"\n";
-//								}else if (contador <= 9){
-//									todosOsProdutos = todosOsProdutos+ "[LADI"+"00"+contador+"001"+"001]"+"\n";
-//								}else{
-//									todosOsProdutos = todosOsProdutos+"[LADI"+contador+"001"+"001]"+"\n";
-//								}
-//						 todosOsProdutos = todosOsProdutos +  
-//								"nAdicao="+nota.getDi().getListaAdicao().get(contador-1).getNAdicao()+"\n"+
-//								"nSeqAdi="+nota.getDi().getListaAdicao().get(contador-1).getNSeqAdic()+"\n"+
-//								"cFabricante="+nota.getDi().getListaAdicao().get(contador-1).getCFabricante()+"\n"+
-//								"vDescDI="+nota.getDi().getListaAdicao().get(contador-1).getVDescDI()+"\n";
-//						 		if (nota.getDi().getListaAdicao().get(contador-1) .getNDraw() != null) {
-//						 			todosOsProdutos = todosOsProdutos+"nDraw="+nota.getDi().getListaAdicao().get(contador-1).getNDraw()+"\n";
-//						 		}else {
-//						 			todosOsProdutos = todosOsProdutos+"nDraw="+"\n";
-//						 		}
-//						 if (contador >9 && contador <100 ){
-//								todosOsProdutos = todosOsProdutos +"[II"+"0"+contador+"]"+"\n";
-//							}else if (contador <= 9){
-//								todosOsProdutos = todosOsProdutos +"[II"+"00"+contador+"]"+"\n";
-//							}else{
-//								todosOsProdutos = todosOsProdutos +"[II"+contador+"]"+"\n";
-//							}
-//						 todosOsProdutos = todosOsProdutos+  
-//								 "vBC="+item.getIi().getVBC()+"\n"+
-//								 "vDespAdu="+item.getIi().getVDespAdu()+"\n"+
-//								 "vII="+item.getIi().getVII()+"\n"+
-//								 "vIOF="+item.getIi().getVIOF()+"\n";
-//						}
-//					}
-//					System.out.println(todosOsProdutos + "linha 983");
-//					if (contador >9 && contador <100 ){
-//						todosOsProdutos = todosOsProdutos +"[ICMS"+"0"+contador+"]"+"\n";
-//					}else if (contador <= 9){
-//						todosOsProdutos = todosOsProdutos +"[ICMS"+"00"+contador+"]"+"\n";
-//					}else{
-//						todosOsProdutos = todosOsProdutos +"[ICMS"+contador+"]"+"\n";
-//					}
-//					todosOsProdutos = todosOsProdutos+
-//							"orig="+item.getOrigem()+"\n"+
-//							"CST="+item.getCst()+"\n";
-//					System.out.println(todosOsProdutos+"linha 993");
-//					if (nota.isImportacao()) {
-//						if (item.getCst().equals("00")){
-//							todosOsProdutos = todosOsProdutos+
-//									"modBC="+item.getTributo().getIcms().getModICMSNormal().getCod()+"\n"+
-//
-//										"vBC="+item.getBaseICMS()+"\n"+
-//										"pICMS="+item.getAliqIcms()+"\n"+
-//										"vICMS="+item.getValorIcms()+"\n";
-//							System.out.println(todosOsProdutos+"linha 1001");
-//							if (item.getPFCP().compareTo(new BigDecimal("0")) == 1 ){
-//								todosOsProdutos = todosOsProdutos+
-//										"pFCP="+item.getPFCP()+"\n"+
-//										"vFCP="+item.getVFCP()+"\n"+
-//										"infAdProd="+"pFCP="+item.getPFCP()+
-//										"vFCP="+item.getVFCP()+"\n";
-//							}
-//						}
-//					}else {
-//						if (item.getCst().equals("00")){
-//							todosOsProdutos = todosOsProdutos+
-//									"modBC="+item.getTributo().getIcms().getModICMSNormal().getCod()+"\n"+
-//
-//										"vBC="+item.getBaseICMS()+"\n"+
-//										"pICMS="+item.getAliqIcms()+"\n"+
-//										"vICMS="+item.getValorIcms()+"\n";
-//							System.out.println(todosOsProdutos+"linha 1001");
-//							if (item.getPFCP().compareTo(new BigDecimal("0")) == 1 ){
-//								todosOsProdutos = todosOsProdutos+
-//										"pFCP="+item.getPFCP()+"\n"+
-//										"vFCP="+item.getVFCP()+"\n"+
-//										"infAdProd="+"pFCP="+item.getPFCP()+
-//										"vFCP="+item.getVFCP()+"\n";
-//							}
-//						}
-//					}
-//					if (item.getCst().equals("10")){
-//						todosOsProdutos = todosOsProdutos+
-//								"modBC="+item.getTributo().getIcmsSt().getModICMS().getCod()+"\n"+
-//
-//										"vBC="+item.getBaseICMS()+"\n"+
-//										"pICMS="+item.getAliqIcms()+"\n"+
-//										"vICMS="+item.getValorIcms()+"\n"+
-//										"modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+ //grupo st
-//										"pMVAST="+item.getMvaSt()+"\n";
-//						System.out.println("linha 1027 - " + todosOsProdutos);
-//						//"pRedBCST="+"\n"+
-//						todosOsProdutos= todosOsProdutos+
-//								"vBCST="+item.getBaseICMSSt()+"\n"+
-//								"pICMSST="+item.getAliqIcmsSt()+"\n"+
-//								"vICMSST="+item.getValorIcmsSt()+"\n";
-//						System.out.println(todosOsProdutos);
-//						if (item.getPFCP().compareTo(new BigDecimal("0")) == 0 ){
-//							todosOsProdutos = todosOsProdutos+
-//									"vBCFCP="+"0"+"\n"+
-//									"pFCP="+item.getPFCP()+"\n"+
-//									"vFCP="+item.getVFCP()+"\n"+
-//									"infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+
-//									"vFCP="+item.getVFCP()+"\n";
-//							//"vBCFCPST="+"\n"+
-//							//"pFCPST="+"\n"+
-//							//"vFCPST="+"\n"+
-//
-//						}else{
-//							todosOsProdutos = todosOsProdutos+
-//									"vBCFCP="+item.getBaseICMSSt()+"\n"+
-//									"pFCP="+item.getPFCP()+"\n"+
-//									"vFCP="+item.getVFCP()+"\n"+
-//									"infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+
-//									"vFCP="+item.getVFCP()+"\n";
-//							//"vBCFCPST="+"\n"+
-//							//"pFCPST="+"\n"+
-//							//"vFCPST="+"\n"+
-//						}
-//					}
-//					if (item.getCst().equals("20")){
-//						todosOsProdutos = todosOsProdutos+
-//								"modBC="+item.getTributo().getIcms().getModICMSNormal().getCod()+"\n"+
-//
-//										"vBC="+item.getBaseICMS()+"\n"+
-//										"pICMS="+item.getAliqIcms()+"\n"+
-//										"vICMS="+item.getValorIcms()+"\n";
-//						//						if (!destino.getISUF().isEmpty()){
-//						//todosOsProdutos = todosOsProdutos+
-//						//"vICMSDeson="+"\n"+
-//						//"motDesICMS="+"\n"+
-//						//						}
-//						if (item.getPFCP().compareTo(new BigDecimal("0")) == 1 ){
-//							todosOsProdutos = todosOsProdutos+
-//									"vBCFCP="+item.getBaseICMSSt()+"\n"+
-//									"pFCP="+item.getPFCP()+"\n"+
-//									"vFCP="+item.getVFCP()+"\n"+
-//									"infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+
-//									"vFCP="+item.getVFCP()+"\n";
-//						}
-//					}
-//					if (item.getCst().equals("30")){
-//						todosOsProdutos = todosOsProdutos+
-//								"modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+ //grupo st
-//								"pMVAST="+item.getMvaSt()+"\n"+
-//								//"pRedBCST="+"\n"+
-//								"vBCST="+item.getBaseICMSSt()+"\n"+
-//								"pICMSST="+item.getAliqIcmsSt()+"\n"+
-//								"vICMSST="+item.getValorIcmsSt()+"\n";
-//						if (!destino.getISUF().isEmpty()){
-//							//todosOsProdutos = todosOsProdutos+
-//							//"vICMSDeson="+"\n"+
-//							//"motDesICMS="+"\n"+
-//						}
-//						if (item.getPFCP().compareTo(new BigDecimal("0")) == 1 ){
-//							todosOsProdutos = todosOsProdutos+
-//									"vBCFCP="+item.getBaseICMSSt()+"\n"+
-//									"pFCP="+item.getPFCP()+"\n"+
-//									"vFCP="+item.getVFCP()+"\n"+
-//									"infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+
-//									"vFCP="+item.getVFCP()+"\n";
-//						}
-//
-//					}
-//					if (item.getCst().equals("40") || item.getCst().equals("41") || item.getCst().equals("50")){
-//						this.is50 = true;
-//						System.out.println("ERRO - ACBRComunica linha 1290" );
-////						System.out.println(" :" + this.destino.iSUF);
-//						if (!destino.iSUF.equals("")){
-//							todosOsProdutos = todosOsProdutos+
-//									"vICMSDeson="+"\n"+
-//									"motDesICMS="+"\n";
-//						}
-//					}
-//					if (item.getCst().equals("51")){
-//						todosOsProdutos = todosOsProdutos+
-//								"modBC="+item.getTributo().getIcms().getModICMSNormal().getCod()+"\n"+
-//								"pRedBC="+emissor.getBaseReducao()+"\n"+
-//								"vBC="+item.getBaseICMS()+"\n"+
-//								"pICMS="+item.getAliqIcms()+"\n"+
-//								"vICMSOp="+item.getValorIcms()+"\n"+
-//								//"pDif="+"\n"+
-//								//"vICMSDif="+"\n"+
-//								"vICMS="+item.getValorIcms()+"\n";
-//					}
-//					if (item.getCst().equals("60")){
-//						//"vBCSTRet="+"\n"+
-//						//"pST="+"\n"+
-//						//"vICMSSTRet="+"\n"+
-//						if (item.getPFCP().compareTo(new BigDecimal("0")) == 1 ){
-//							//todosOsProdutos = todosOsProdutos+
-//							//"vBCFCPSTRet="+"\n"+
-//							//"pFCPSTRet="+"\n"+
-//							//"vFCPSTRet="+"\n";
-//						}
-//					}
-//					if (item.getCst().equals("70")){
-//						todosOsProdutos = todosOsProdutos+
-//								"modBC="+item.getTributo().getIcms().getModICMSNormal().getCod()+"\n"+
-//								"pRedBC="+emissor.getBaseReducao()+"\n"+
-//								"vBC="+item.getBaseICMS()+"\n"+
-//								"pICMS="+item.getAliqIcms()+"\n"+
-//								"vICMS="+item.getValorIcms()+"\n"+
-//								"modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+ //grupo st
-//								"pMVAST="+item.getMvaSt()+"\n"+
-//								//"pRedBCST="+"\n"+
-//								"vBCST="+item.getBaseICMSSt()+"\n"+
-//								"pICMSST="+item.getAliqIcmsSt()+"\n"+
-//								"vICMSST="+item.getValorIcmsSt()+"\n";
-//						if (item.getPFCP().compareTo(new BigDecimal("0")) == 1 ){
-//							todosOsProdutos = todosOsProdutos+
-//									"vBCFCP="+item.getBaseICMSSt()+"\n"+
-//									"pFCP="+item.getPFCP()+"\n"+
-//									"vFCP="+item.getVFCP()+"\n"+
-//									"infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+
-//									"vFCP="+item.getVFCP()+"\n";
-//							//"vBCFCPST="+"\n"+
-//							//"pFCPST="+"\n"+
-//							//"vFCPST="+"\n"+
-//						}
-//						todosOsProdutos = todosOsProdutos+
-//								"vICMSDeson="+"\n"+
-//								"motDesICMS="+"\n";
-//
-//					}
-//					if (item.getCst().equals("90")){
-//						todosOsProdutos = todosOsProdutos+
-//								"modBC="+item.getTributo().getIcms().getModICMSNormal().getCod()+"\n"+
-//								"pRedBC="+emissor.getBaseReducao()+"\n"+
-//								"vBC="+item.getBaseICMS()+"\n"+
-//								"pICMS="+item.getAliqIcms()+"\n"+
-//								"vICMS="+item.getValorIcms()+"\n"+
-//								"vICMSDeson="+"\n"+
-//								"motDesICMS="+"\n";
-//						if (item.isItemST()){
-//							todosOsProdutos = todosOsProdutos+
-//									"modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+ //grupo st
-//									"pMVAST="+item.getMvaSt()+"\n"+
-//									//"pRedBCST="+"\n"+
-//									"vBCST="+item.getBaseICMSSt()+"\n"+
-//									"pICMSST="+item.getAliqIcmsSt()+"\n"+
-//									"vICMSST="+item.getValorIcmsSt()+"\n";
-//						}
-//						if (item.getPFCP().compareTo(new BigDecimal("0")) == 1 ){
-//							todosOsProdutos = todosOsProdutos+
-//									"vBCFCP="+item.getBaseICMSSt()+"\n"+
-//									"pFCP="+item.getPFCP()+"\n"+
-//									"vFCP="+item.getVFCP()+"\n"+
-//									"infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+
-//									"vFCP="+item.getVFCP()+"\n";
-//							if (item.isItemST()){
-//								//todosOsProdutos = todosOsProdutos+
-//								//"vBCFCPST="+"\n"+
-//								//"pFCPST="+"\n"+
-//								//"vFCPST="+"\n"+
-//							}
-//						}
-//					}
-//				}else{ // simples nacional 
-//					this.isSimples = true;
-//					System.out.println("Cliente Simples");
-//					if (contador >9 && contador <100 ){
-//						todosOsProdutos = "[Produto"+"0"+contador+"]"+"\n";
-//					}else if (contador <= 9){
-//						todosOsProdutos = "[Produto"+"00"+contador+"]"+"\n";
-//					}else{
-//						todosOsProdutos = "[Produto"+contador+"]"+"\n";
-//					}
-//					todosOsProdutos = todosOsProdutos +
-//							"cProd="+item.getProduto().getReferencia()+"\n"+
-//							//"cEAN="+item.getProduto().getEan"\n"+ // caso tenha codigo de barras registrado no gtin
-//							"cEAN="+"SEM GTIN" + "\n";
-//					if (item.getBarras() != null) {
-//						if (item.getBarras().getCor() != null) {
-//							System.out.println("Estou dentro do item GetCOR ACBR");
-//							todosOsProdutos = todosOsProdutos +
-//									"xProd="+removerAcentos(item.getProduto().getDescricao())+" tam: "+item.getBarras().getTamanho().getTamanho()+" cor: "+item.getBarras().getCor().getNome()+"\n";
-//						}else {
-//							if (item.getBarras().getTamanho() != null) {
-//							System.out.println("Estou dentro do item getTamanho ACBR");
-//							todosOsProdutos = todosOsProdutos +
-//									"xProd="+removerAcentos(item.getProduto().getDescricao())+" tam: "+item.getBarras().getTamanho().getTamanho()+"\n";
-//							}else {
-//								System.out.println("item.getbarras = null ACBR");
-//								todosOsProdutos = todosOsProdutos +
-//								"xProd="+removerAcentos(item.getProduto().getDescricao())+"\n";
-//							}
-//						}
-//					}else {
-//						System.out.println("item.getbarras = null ACBR");
-//						todosOsProdutos = todosOsProdutos +
-//						"xProd="+removerAcentos(item.getProduto().getDescricao())+"\n";
-//					}
-//							todosOsProdutos = todosOsProdutos +
-//							"NCM="+item.getProduto().getNcm().getNcm()+"\n";
-//					System.out.println(todosOsProdutos + "Inicio");
-//					if (item.getProduto().getNcm().getExTipi() != null){
-//						System.out.println("if EXTIPI");
-//						todosOsProdutos = todosOsProdutos + 	
-//								"EXTIPI="+item.getProduto().getNcm().getExTipi()+"\n";
-//					}
-//					todosOsProdutos = todosOsProdutos +
-//							"CFOP="+item.getCfopItem().getCfop()+"\n";
-//					if (item.getProduto().getTipoMedida() == null){
-//						System.out.println("Medida == null");
-//						todosOsProdutos = todosOsProdutos +
-//								"uCom="+"UN"+"\n";
-//					}else{
-//						System.out.println("Medida");
-//						todosOsProdutos = todosOsProdutos +
-//								"uCom="+item.getProduto().getTipoMedida().getSigla()+"\n";
-//					}
-//					System.out.println("Passei pelo medida linha 1028");
-//					todosOsProdutos = todosOsProdutos +
-//							"qCom="+item.getQuantidade()+"\n"+
-//							"vUnCom="+item.getValorUnitario()+"\n"+
-//							"vProd="+item.getValorTotalBruto()+"\n"+
-//							"cEANTrib="+"SEM GTIN"+"\n";
-//					System.out.println("Monstrando os itens ate o momento  - linha 1033");
-//					//"cEANTrib="+"\n"+ //caso tenha codigo de barras registrado no gtin
-//					if (item.getProduto().getTipoMedida() == null){
-//						todosOsProdutos = todosOsProdutos +
-//								"uTrib="+"UN"+"\n";
-//					}else{
-//						todosOsProdutos = todosOsProdutos +
-//								"uTrib="+item.getProduto().getTipoMedida().getSigla()+"\n";
-//					}
-//					System.out.println("Passei pelo segundo medida - linha 1042");
-//					todosOsProdutos = todosOsProdutos +
-//							"qTrib="+item.getQuantidade()+"\n"+
-//							"vUnTrib="+item.getValorUnitario()+"\n"+
-//							"vFrete="+item.getValorFrete()+"\n"+
-//							"vSeg="+item.getValorSeguro()+"\n"+
-//							"vDesc="+item.getDesconto()+"\n"+
-//							"vOutro="+item.getValorDespesas()+"\n"+
-//							"indTot="+"1"+"\n"+
-//							"vTotTrib="+item.getValorTotalTributoItem()+"\n";
-//					System.out.println("Exibindo os produtos até o momento linha 1052 : "+todosOsProdutos);
-//					if (item.getObsItem() != null){
-//						todosOsProdutos = todosOsProdutos+
-//								"infAdProd="+item.getObsItem()+"\n";
-//					}
-//					System.out.println("Inicio ICMS item - Linha 1059");
-//
-//					if (contador >9 && contador <100 ){
-//						todosOsProdutos = todosOsProdutos +"[ICMS"+"0"+contador+"]"+"\n";
-//					}else if (contador <= 9){
-//						todosOsProdutos = todosOsProdutos +"[ICMS"+"00"+contador+"]"+"\n";
-//					}else{
-//						todosOsProdutos = todosOsProdutos +"[ICMS"+contador+"]"+"\n";
-//					}
-//					todosOsProdutos = todosOsProdutos +
-//							"orig="+item.getOrigem()+"\n"+
-//							"CSOSN="+item.getCst()+"\n";// quando simples nacional
-//
-//					if (item.getCst().equals("101")){
-//						this.is101 = true;
-//						todosOsProdutos = todosOsProdutos +
-//								"pCredSN="+emissor.getBaseReducao()+"\n"+
-//								"vCredICMSSN="+item.getValorIcms()+"\n";
-//					}
-//					if (item.getCst().equals("201")){
-//						this.is101 = true;
-//						System.out.println(todosOsProdutos + " linha 1046");
-//						System.out.println("Estou no cst 201");
-//						todosOsProdutos = todosOsProdutos +
-//								"modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+ //grupo st
-//								"pMVAST="+item.getMvaSt()+"\n"+
-//								//"pRedBCST="+"\n"+
-//								"vBCST="+item.getBaseICMSSt()+"\n"+
-//								"pICMSST="+item.getAliqIcmsSt()+"\n"+
-//								"vICMSST="+item.getValorIcmsSt()+"\n"+
-//								"pCredSN="+emissor.getBaseReducao()+"\n"+
-//								"vCredICMSSN="+item.getValorIcms()+"\n";
-//						if (destino.getIndIEDest() != "2"){
-//							if (item.getPFCP().compareTo(new BigDecimal("0")) == 0){
-//								todosOsProdutos = todosOsProdutos +
-//										"vBCFCPST="+"0"+"\n"+
-//										"pFCPST="+item.getPFCP()+"\n"+
-//										"vFCPST="+item.getVFCP()+"\n"+
-//										"infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+
-//										"vFCP="+item.getVFCP()+"\n";
-//							}else{
-//								todosOsProdutos = todosOsProdutos +
-//										"vBCFCPST="+item.getBaseICMSSt()+"\n"+
-//										"pFCPST="+item.getPFCP()+"\n"+
-//										"vFCPST="+item.getVFCP()+"\n"+
-//										"infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+
-//										"vFCP="+item.getVFCP()+"\n";
-//							}
-//						}
-//					}
-//					if (item.getCst().equals("202") || item.getCst().equals("203")){
-//						todosOsProdutos = todosOsProdutos +
-//								"modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+ //grupo st
-//								"pMVAST="+item.getMvaSt()+"\n"+
-//								//"pRedBCST="+"\n"+
-//								"vBCST="+item.getBaseICMSSt()+"\n"+
-//								"pICMSST="+item.getAliqIcmsSt()+"\n"+
-//								"vICMSST="+item.getValorIcmsSt()+"\n";
-//						if (destino.getIndIEDest() != "2"){
-//							if (item.getPFCP().compareTo(new BigDecimal("0")) == 0){
-//								todosOsProdutos = todosOsProdutos +
-//										"vBCFCPST="+"0"+"\n"+
-//										"pFCPST="+item.getPFCP()+"\n"+
-//										"vFCPST="+item.getVFCP()+"\n"+
-//										"infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+
-//										"vFCP="+item.getVFCP()+"\n";
-//							}else{
-//								todosOsProdutos = todosOsProdutos +
-//										"vBCFCPST="+item.getBaseICMSSt()+"\n"+
-//										"pFCPST="+item.getPFCP()+"\n"+
-//										"vFCPST="+item.getVFCP()+"\n"+
-//										"infAdProd="+"vBCFCP="+item.getBaseICMSSt()+"pFCP="+item.getPFCP()+
-//										"vFCP="+item.getVFCP()+"\n";
-//							}
-//						}
-//					}
-//					if (item.getCst().equals("500")){
-//						todosOsProdutos = todosOsProdutos +
-//								"pRedBCST="+"0"+"\n"+
-//								"pST="+"0"+"\n"+
-//								"vICMSSTRet="+"0"+"\n"+
-//								"vBCFCPSTRet="+"0"+"\n"+
-//								"pFCPSTRet="+"0"+"\n"+
-//								"vFCPSTRet="+"0"+"\n";
-//					}
-//					if (item.getCst().equals("900")){
-//						System.out.println("Linha 1350 - CST 900");
-//						if (this.destino.getRegime().equals(Enquadramento.Normal) && nota.getFinalidadeEmissao().equals(FinalidadeNfe.DV) ){
-//							System.out.println("dentro do if regime normal");
-//							this.is101 = true;
-//							todosOsProdutos = todosOsProdutos +
-//									"modBC="+item.getTributo().getIcms().getModICMSNormal().getCod()+"\n";
-//							System.out.println("modBC=" +item.getTributo().getIcms().getModICMSNormal().getCod());
-//							todosOsProdutos = todosOsProdutos +
-//									"pRedBC="+destino.getReducaoBase()+"\n"+
-//									"vBC="+item.getBaseICMS()+"\n";
-//							System.out.println("vBC = " + item.getBaseICMS());
-//							todosOsProdutos = todosOsProdutos +
-//									"pICMS="+item.getAliqIcms()+"\n";
-//							System.out.println("pICMS= "+ item.getAliqIcms());
-//							todosOsProdutos = todosOsProdutos +
-//									"vICMS="+item.getValorIcms()+"\n";
-//							System.out.println("vICMS = " + item.getValorIcms());
-//							//"pCredSN="+emissor.getBaseReducao()+"\n"+
-//							//"vCredICMSSN="+item.getValorIcms()+"\n";
-//							if (item.isItemST()){
-//								todosOsProdutos = todosOsProdutos +
-//										"modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+ //grupo st
-//										"pMVAST="+item.getMvaSt()+"\n"+
-//										//"pRedBCST="+"\n"+
-//										"vBCST="+item.getBaseICMSSt()+"\n"+
-//										"pICMSST="+item.getAliqIcmsSt()+"\n"+
-//										"vICMSST="+item.getValorIcmsSt()+"\n";
-//							}
-//						}else{
-//							if (this.destino.getRegime().equals(Enquadramento.Normal)){
-//								this.is101 = true;
-//								todosOsProdutos = todosOsProdutos +
-//										"modBC="+item.getTributo().getIcms().getModICMSNormal().getCod()+"\n"+
-//										"pRedBC="+emissor.getBaseReducao()+"\n"+
-//										"vBC="+item.getBaseICMS()+"\n"+
-//										"pICMS="+item.getAliqIcms()+"\n"+
-//										"vICMS="+item.getValorIcms()+"\n"+
-//										"pCredSN="+emissor.getBaseReducao()+"\n"+
-//										"vCredICMSSN="+item.getValorIcms()+"\n";
-//								if (item.isItemST()){
-//									todosOsProdutos = todosOsProdutos +
-//											"modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+ //grupo st
-//											"pMVAST="+item.getMvaSt()+"\n"+
-//											//"pRedBCST="+"\n"+
-//											"vBCST="+item.getBaseICMSSt()+"\n"+
-//											"pICMSST="+item.getAliqIcmsSt()+"\n"+
-//											"vICMSST="+item.getValorIcmsSt()+"\n"+
-//											"pCredSN="+emissor.getBaseReducao()+"\n"+
-//											"vCredICMSSN="+item.getValorIcms()+"\n";
-//
-//								}
-//							}else{
-//								this.is101 = false;
-//								todosOsProdutos = todosOsProdutos +
-//										//	"modBC="+item.getTributo().getIcms().getModICMSNormal().getCod()+"\n"+
-//										//	"pRedBC="+emissor.getBaseReducao()+"\n"+
-//										//	"vBC="+item.getBaseICMS()+"\n"+
-//										//	"pICMS="+item.getAliqIcms()+"\n"+
-//										//	"vICMS="+item.getValorIcms()+"\n";
-//										"pCredSN="+emissor.getBaseReducao()+"\n"+
-//										"vCredICMSSN="+item.getValorIcms()+"\n";
-//								if (item.isItemST()){
-//									todosOsProdutos = todosOsProdutos +
-//											"modBCST="+item.getTributo().getIcmsSt().getModICMSST().getCod()+"\n"+ //grupo st
-//											"pMVAST="+item.getMvaSt()+"\n"+
-//											//"pRedBCST="+"\n"+
-//											"vBCST="+item.getBaseICMSSt()+"\n"+
-//											"pICMSST="+item.getAliqIcmsSt()+"\n"+
-//											"vICMSST="+item.getValorIcmsSt()+"\n";
-//								}
-//							}
-//						}
-//					}
-//				}
-//
-//
-//
-//				// grupo difal partilha
-//				//				nota.isTipoOperacao() == false &&
-//				if ( emissor.getRegime().equals(Enquadramento.Normal)){
-//					if (destino.getIndIEDest() == "9"){
-//					if (nota.isImportacao() == false) {
-//						if (contador >9 && contador <100 ){
-//							todosOsProdutos = todosOsProdutos +"[ICMSUFDest"+"0"+contador+"]"+"\n";
-//						}else if (contador <= 9){
-//							todosOsProdutos = todosOsProdutos +"[ICMSUFDest"+"00"+contador+"]"+"\n";
-//						}else{
-//							todosOsProdutos = todosOsProdutos +"[ICMSUFDest"+contador+"]"+"\n";
-//						}
-//						todosOsProdutos = todosOsProdutos +
-//								"vBCUFDest="+item.getBaseICMS()+"\n"+
-//								"vBCFCPUFDest="+item.getVBCUFDest()+"\n"+
-//								"pFCPUFDest="+item.getPFCPUFDest()+"\n"+
-//								"pICMSUFDest="+item.getPICMSUFDest()+"\n"+
-//								"pICMSInter="+item.getPICMSInter()+"\n"+
-//								"pICMSInterPart="+item.getPICMSInterPart()+"\n"+
-//								"vFCPUFDest="+item.getVFCPUFDest()+"\n"+
-//								"vICMSUFDest="+item.getVICMSUFDest()+"\n"+
-//								"vICMSUFRemet="+item.getVICMSUFRemet()+"\n";
-//
-//					}
-//					}
-//				}
-//
-//
-//
-//				// grupo IPI
-//
-//				if (item.getCstIpi().equals("00") || item.getCstIpi().equals("49") || item.getCstIpi().equals("50") || item.getCstIpi().equals("99")){
-//					if (contador >9 && contador <100 ){
-//						todosOsProdutos = todosOsProdutos +"[IPI"+"0"+contador+"]"+"\n";
-//					}else if (contador <= 9){
-//						todosOsProdutos = todosOsProdutos +"[IPI"+"00"+contador+"]"+"\n";
-//					}else{
-//						todosOsProdutos = todosOsProdutos +"[IPI"+contador+"]"+"\n";
-//					}
-//					todosOsProdutos = todosOsProdutos + 
-//							"CST="+item.getCstIpi()+"\n"+
-//							"cEnq="+item.getTributo().getIpi().getCodigoEnquadramento()+"\n";
-//					if (item.getTributo().getIpi().getCalculo().equals(TipoCalculo.TP)) {
-//						todosOsProdutos = todosOsProdutos + 
-//								"vBC="+item.getBaseIPI()+"\n"+
-//								"pIPI="+item.getAliqIPI()+"\n";
-//					}else {
-//						todosOsProdutos = todosOsProdutos + 
-//								"qUnid="+item.getQuantidade()+"\n"+
-//								"vUnid="+item.getValorUnitario()+"\n";
-//					}
-//					todosOsProdutos = todosOsProdutos + 
-//					"vIPI="+item.getValorIPI()+"\n";
-//				}else {
-//					if (contador >9 && contador <100 ){
-//						todosOsProdutos = todosOsProdutos +"[IPI"+"0"+contador+"]"+"\n";
-//					}else if (contador <= 9){
-//						todosOsProdutos = todosOsProdutos +"[IPI"+"00"+contador+"]"+"\n";
-//					}else{
-//						todosOsProdutos = todosOsProdutos +"[IPI"+contador+"]"+"\n";
-//					}
-//					todosOsProdutos = todosOsProdutos + 
-//							"CST="+item.getCstIpi()+"\n"+
-//							"cEnq="+item.getTributo().getIpi().getCodigoEnquadramento()+"\n";
-//				}
-//
-//				// grupo PIS
-//				if (item.getCstPis() == 01 || item.getCstPis() == 02  ){
-//					if (contador >9 && contador <100 ){
-//						todosOsProdutos =todosOsProdutos + "[PIS"+"0"+contador+"]"+"\n";
-//					}else if (contador <= 9){
-//						todosOsProdutos =todosOsProdutos + "[PIS"+"00"+contador+"]"+"\n";
-//					}else{
-//						todosOsProdutos =todosOsProdutos + "[PIS"+contador+"]"+"\n";
-//					}
-//					todosOsProdutos = todosOsProdutos + 
-//							"CST=0"+item.getCstPis()+"\n"+
-//							"vBC="+item.getBasePis()+"\n"+ 
-//							"pPIS="+item.getAliqPis()+"\n"+
-//							"vPIS="+item.getValorPis()+"\n";
-//				}else if (item.getCstPis() == 03){
-//					if (contador >9 && contador <100 ){
-//						todosOsProdutos =todosOsProdutos + "[PIS"+"0"+contador+"]"+"\n";
-//					}else if (contador <= 9){
-//						todosOsProdutos =todosOsProdutos + "[PIS"+"00"+contador+"]"+"\n";
-//					}else{
-//						todosOsProdutos =todosOsProdutos + "[PIS"+contador+"]"+"\n";
-//					}
-//					todosOsProdutos = todosOsProdutos +
-//							"CST=0"+item.getCstPis()+"\n"+
-//							"vBC="+item.getBasePis()+"\n"+
-//							"qBCProd="+item.getQuantidade()+"\n"+
-//							"vAliqProd="+item.getTributo().getPis().getValor()+"\n"+
-//							"vPIS="+item.getValorPis()+"\n";
-//				}else if (item.getCstPis() == 4 || item.getCstPis() == 5 || item.getCstPis() == 6 || item.getCstPis() == 7|| item.getCstPis() == 8 || item.getCstPis() == 9){
-//					if (contador >9 && contador <100 ){
-//						todosOsProdutos = todosOsProdutos +"[PIS"+"0"+contador+"]"+"\n";
-//					}else if (contador <= 9){
-//						todosOsProdutos = todosOsProdutos +"[PIS"+"00"+contador+"]"+"\n";
-//					}else{
-//						todosOsProdutos = todosOsProdutos +"[PIS"+contador+"]"+"\n";
-//					}
-//					todosOsProdutos = todosOsProdutos +
-//							"CST=0"+item.getCstPis()+"\n";
-//
-//				}else{
-//					if (item.getTributo().getPis().getCalculo()  == TipoCalculo.TP){
-//						if (contador >9 && contador <100 ){
-//							todosOsProdutos = todosOsProdutos +"[PIS"+"0"+contador+"]"+"\n";
-//						}else if (contador <= 9){
-//							todosOsProdutos = todosOsProdutos +"[PIS"+"00"+contador+"]"+"\n";
-//						}else{
-//							todosOsProdutos = todosOsProdutos +"[PIS"+contador+"]"+"\n";
-//						}
-//						todosOsProdutos = todosOsProdutos +
-//								"CST="+item.getCstPis()+"\n"+
-//								"vBC="+item.getBasePis()+"\n"+
-//								"pPIS="+item.getAliqPis()+"\n"+
-//								"vPIS="+item.getValorPis()+"\n";
-//					}else{
-//						if (contador >9 && contador <100 ){
-//							todosOsProdutos =todosOsProdutos + "[PIS"+"0"+contador+"]"+"\n";
-//						}else if (contador <= 9){
-//							todosOsProdutos =todosOsProdutos + "[PIS"+"00"+contador+"]"+"\n";
-//						}else{
-//							todosOsProdutos =todosOsProdutos + "[PIS"+contador+"]"+"\n";
-//						}
-//						todosOsProdutos = todosOsProdutos +
-//								"CST="+item.getCstPis()+"\n"+
-//								"qBCProd="+item.getQuantidade()+"\n"+
-//								"vAliqProd="+item.getTributo().getPis().getValor()+"\n"+
-//								"vPIS="+item.getValorPis()+"\n";
-//					}
-//
-//				}
-//				// grupo Cofins
-//				if (item.getCstCofins() == 01 || item.getCstCofins() == 02  ){
-//					if (contador >9 && contador <100 ){
-//						todosOsProdutos = todosOsProdutos +"[COFINS"+"0"+contador+"]"+"\n";
-//					}else if (contador <= 9){
-//						todosOsProdutos = todosOsProdutos +"[COFINS"+"00"+contador+"]"+"\n";
-//					}else{
-//						todosOsProdutos = todosOsProdutos +"[COFINS"+contador+"]"+"\n";
-//					}
-//					todosOsProdutos = todosOsProdutos + 
-//							"CST=0"+item.getCstCofins()+"\n"+
-//							"vBC="+item.getBasePis().setScale(2, RoundingMode.HALF_EVEN)+"\n"+
-//							"pCOFINS="+item.getAliqCofins()+"\n"+
-//							"vCOFINS="+item.getValorCofins()+"\n";
-//				}else if (item.getCstCofins() == 03){
-//					if (contador >9 && contador <100 ){
-//						todosOsProdutos = todosOsProdutos +"[COFINS"+"0"+contador+"]"+"\n";
-//					}else if (contador <= 9){
-//						todosOsProdutos =todosOsProdutos + "[COFINS"+"00"+contador+"]"+"\n";
-//					}else{
-//						todosOsProdutos = todosOsProdutos +"[COFINS"+contador+"]"+"\n";
-//					}
-//					todosOsProdutos = todosOsProdutos +
-//							"CST=0"+item.getCstCofins()+"\n"+
-//							"vBC="+item.getBaseCofins()+"\n"+
-//							"qBCProd="+item.getQuantidade()+"\n"+
-//							"vAliqProd="+item.getTributo().getCofins().getValor()+"\n"+
-//							"vCOFINS="+item.getValorCofins()+"\n";
-//				}else if (item.getCstCofins() == 4 || item.getCstCofins() == 5 || item.getCstCofins() == 6 || item.getCstCofins() == 7|| item.getCstCofins() == 8 || item.getCstCofins() == 9){
-//					if (contador >9 && contador <100 ){
-//						todosOsProdutos = todosOsProdutos +"[COFINS"+"0"+contador+"]"+"\n";
-//					}else if (contador <= 9){
-//						todosOsProdutos = todosOsProdutos +"[COFINS"+"00"+contador+"]"+"\n";
-//					}else{
-//						todosOsProdutos = todosOsProdutos +"[COFINS"+contador+"]"+"\n";
-//					}
-//					todosOsProdutos = todosOsProdutos +
-//							"CST=0"+item.getCstCofins()+"\n";
-//
-//				}else{
-//					if (item.getTributo().getCofins().getCalculo()  == TipoCalculo.TP){
-//						if (contador >9 && contador <100 ){
-//							todosOsProdutos = "[COFINS"+"0"+contador+"]"+"\n";
-//						}else if (contador <= 9){
-//							todosOsProdutos = "[COFINS"+"00"+contador+"]"+"\n";
-//						}else{
-//							todosOsProdutos = "[COFINS"+contador+"]"+"\n";
-//						}
-//						todosOsProdutos = todosOsProdutos +
-//								"CST="+item.getCstCofins()+"\n"+
-//								"vBC="+item.getBaseCofins()+"\n"+
-//								"pCOFINS="+item.getAliqCofins()+"\n"+
-//								"vCOFINS="+item.getValorCofins()+"\n";
-//					}else{
-//						if (contador >9 && contador <100 ){
-//							todosOsProdutos = todosOsProdutos +"[COFINS"+"0"+contador+"]"+"\n";
-//						}else if (contador <= 9){
-//							todosOsProdutos = todosOsProdutos +"[COFINS"+"00"+contador+"]"+"\n";
-//						}else{
-//							todosOsProdutos = todosOsProdutos +"[COFINS"+contador+"]"+"\n";
-//						}
-//						todosOsProdutos = this.produtoPreenchido +
-//								"CST="+item.getCstCofins()+"\n"+
-//								"qBCProd="+item.getQuantidade()+"\n"+
-//								"vAliqProd="+item.getTributo().getCofins().getValor()+"\n"+
-//								"vCOFINS="+item.getValorCofins()+"\n";
-//					}
-//
-//				}
-//
-//				this.produtoPreenchido = this.produtoPreenchido+todosOsProdutos;
-//				contador ++;
-//				System.out.println("8- Loop item nfe  " + contador);
-//			}
-//			if (nota.getDadosAdicionais() != null ){
-//				this.infEmitente = this.infEmitente + nota.getDadosAdicionais();
-//			}
-//			if (this.isSimples && this.is101 == true && !nota.getFinalidadeEmissao().equals(FinalidadeNfe.DV)){
-//				this.infFisco = this.menInt.getSimplesNacional() + this.menInt.getMensagem101(calcula.geraIcms(nota.getValorTotalNota(), new BigDecimal(emissor.getBaseReducao())).toString(), emissor.getBaseReducao())+this.infFisco ;
-//			}
-//			if (this.isSimples && this.is101 == true && nota.getFinalidadeEmissao().equals(FinalidadeNfe.DV)){
-//				this.infFisco = this.menInt.getSimplesNacional();
-//			}
-//			if (this.isSimples && this.is101 == false && !nota.getFinalidadeEmissao().equals(FinalidadeNfe.DV)){
-//				this.infFisco =this.menInt.getSimplesNacional() + this.menInt.getMensagem102()+this.infFisco;
-//			}
-//			if (this.isSimples && this.is101 == false && nota.getFinalidadeEmissao().equals(FinalidadeNfe.DV)){
-//				this.infFisco = this.menInt.getSimplesNacional();
-//			}
-//			if (this.isSimples == false && this.destino.isPermiteReducao()) {
-//				this.infFisco = this.menInt.getReducaoBaseICMS();
-//			}
-//			if (this.isSimples == false && this.is50 ) {
-//				this.infFisco = this.menInt.getCst50();
-//			}
-//			if (nota.isImportacao() == false) {
-//				this.infEmitente = this.menInt.getTotalTributos(nota.getValorTotalTributos().toString()) + " | " + this.infEmitente;
-//			}
-//
-//			String adicionais = "[DadosAdicionais]"+"\n";
-//			if (!this.infFisco.isEmpty() ){
-//				adicionais = adicionais +
-//						"infAdFisco="+removerAcentos(this.infFisco)+"\n";
-//			}
-//			if (this.infEmitente != null){
-//				adicionais = adicionais +
-//						"infCpl="+removerAcentos(this.infEmitente)+"\n";
-//			}
-//			System.out.println("Fim dados adicionais - linha 857");
-//			System.out.println("8- Fim Item NFE ");
-//			System.out.println("finalizado a montagem");
-//			System.out.println("iniciado a criação do arquivo");
-//			System.out.println("IntNfe: "+infNfe);
-//			System.out.println("Identificacao: "+identificacao);
-//			System.out.println("Emitente: "+emitente);
-//			System.out.println("Destinatario: "+destinatario);
-//			System.out.println("AutXML : "+autXml);
-//			System.out.println("Total NFE: "+total);
-//			System.out.println("Tranportadora : "+transportador);
-//			System.out.println("Produtos: "+this.produtoPreenchido);
-//			if (!(nota.getFinalidadeEmissao().equals(FinalidadeNfe.NO))){
-//				infArquivo = infNfe+identificacao+emitente+destinatario+this.notaReferencia+autXml+this.produtoPreenchido+total+transportador+volume+lacre+this.pagamentoPreenchido+adicionais;
-//			}else{
-//				infArquivo = infNfe+identificacao+emitente+destinatario+autXml+this.produtoPreenchido+total+transportador+volume+lacre+fatura+this.pagamentoPreenchido+adicionais;
-//			}
-//			//			System.out.println("ACBr.SaveToFile(\"C:\\ibrcomp\\tmp\\"+nomeArquivo+".ini\",\""+infArquivo+"\")");
-//			System.out.println("finalizado a criação do arquivo na pasta c:\\ibrcomp\\temp\\"+ nomeArquivo);
-//			criaConexao(dados);
-//			return comandoAcbr("ACBr.SaveToFile(\"C:\\ibrcomp\\tmp\\"+nomeArquivo+".ini\",\""+infArquivo+"\",5)");
-//		}catch (HibernateException h) {
-//			// TODO: handle exception
-//			fechaTudo();
-//			System.out.println("Erro consulta hibernate: " + h.getMessage() + " motivo: " + h.toString());
-//			return h.getMessage();
-//		}catch (Exception e) {
-//			fechaTudo();
-//			//			this.retorno = "Erro: tentando conectar com o ACBrMonitor. Contate o suporte técnico: " + "\n\n" + e.getMessage();
-//			System.out.println("Erro: tentando conectar com o ACBrMonitor. Contate o suporte técnico: " + "\n\n" + e.getMessage() + " campo: " + e.toString());
-//			return e.getMessage();
-//		}
-
-
-//	}
-
 	public String criaCCe(CartaCorrecao correcao,DadosDeConexaoSocket dados, String nomeArquivo) throws IOException{
 		String cce;
 
@@ -6884,6 +4179,785 @@ public class AcbrComunica {
 			return null;
 		}
 	}
+
+	/* =============================================================
+	 * NFC-e (Modelo 65)
+	 * =============================================================
+	 *
+	 * O patch NFC-e utiliza reflection para chamar estes métodos.
+	 * Para evitar dúvidas, disponibilizamos nomes "alias" também
+	 * (ex.: criarArqIniNfceCaixaMaqRemota / nfeCriarEnviarNfce etc.).
+	 *
+	 * Observação: QRCode/CSC, ambiente e impressora são configurados
+	 * diretamente no ACBrMonitor.
+	 */
+
+	/**
+	 * Gera o INI da NFC-e (modelo 65) a partir de um DTO neutro do caixa (fluxo novo).
+	 * @throws IOException 
+	 */
+	public String criarArqIniNfce(DadosDeConexaoSocket dados, String nomeArquivo, CupomFiscalCaixa venda, Nfce nfce,List<RecebimentoParcial> lista) throws IOException {
+		try {
+			if (venda == null) {
+				throw new IllegalArgumentException("CupomFiscalCaixa não informado.");
+			}
+			if (venda.getEmitente() == null) {
+				throw new IllegalArgumentException("Emitente da venda não informado.");
+			}
+			if (venda.getListaRecebimentosAgrupados() == null) {
+				throw new IllegalArgumentException("Forma de pagamento não informado.");
+			}
+
+			// Emissor/endereços
+			this.emissor = preencheEmissor(venda.getEmitente());
+
+			// Reset acumuladores
+			this.produtoPreenchido = "";
+			this.pagamentoPreenchido = "";
+
+			String infNfe = new StringBuilder()
+					.append("[infNFE]\n")
+					.append(kv("versao", ApplicationUtils.getConfiguration("versao.nfe")))
+					.toString();
+
+			String ide = buildIdentificacaoNfce(venda, nfce);
+			String emitente = buildEmitenteNfce();
+			String destinatario = buildDestinatarioNfce(venda);
+
+			// Produtos + impostos
+			AtomicInteger seq = new AtomicInteger(1);
+			if (venda.getItens() != null) {
+				for (ItemCFe item : venda.getItens()) {
+					int idx = seq.getAndIncrement();
+					this.produtoPreenchido += buildProdutoNfce(item, idx);
+				}
+			}
+
+			String total = buildTotalNfce(venda);
+			String transporte = buildTransporteNfceSemFrete();
+			String pagamentos = buildPagamentosNfce(venda,lista);
+
+			String adicionais = new StringBuilder()
+					.append("[DadosAdicionais]\n")
+					.append(kvIfNotNull("infCpl", ""))
+					.toString();
+
+			String infArquivo = infNfe + ide + emitente + destinatario + this.produtoPreenchido + total + transporte + pagamentos + adicionais;
+
+			System.out.println("finalizado a criação do arquivo NFC-e na pasta c:\\ibrcomp\\tmp\\" + nomeArquivo);
+			criaConexao(dados);
+			return comandoAcbr("ACBr.SaveToFile(\"C:\\ibrcomp\\tmp\\" + nomeArquivo + ".ini\",\"" + infArquivo + "\",5)");
+		} catch (Exception e) {
+			fechaTudo();
+			System.out.println("Erro criando INI NFC-e: " + e.getMessage());
+			return "ERRO: " + e.getMessage();
+		}
+	}
+
+	// Aliases (CupomFiscalCaixa)
+	public String criarArqIniNfceCaixaMaqRemota(DadosDeConexaoSocket dados, String nomeArquivo, CupomFiscalCaixa venda, Nfce nfce,List<RecebimentoParcial> lista) throws IOException {
+		return criarArqIniNfce(dados, nomeArquivo, venda, nfce,lista);
+	}
+	public String criarArqIniNfceMaqRemota(DadosDeConexaoSocket dados, String nomeArquivo, CupomFiscalCaixa venda, Nfce nfce,List<RecebimentoParcial> lista) throws IOException {
+		return criarArqIniNfce(dados, nomeArquivo, venda, nfce,lista);
+	}
+
+	/**
+	 * Gera o INI da NFC-e (modelo 65) a partir da venda do caixa (CFe)
+	 * e do registro {@link Nfce} (número/série).
+	 * @throws IOException 
+	 */
+	public String criarArqIniNfce(DadosDeConexaoSocket dados, String nomeArquivo, CFe venda, Nfce nfce) throws IOException {
+		try {
+			if (venda == null) {
+				throw new IllegalArgumentException("Venda (CFe) não informada.");
+			}
+			if (venda.getEmitente() == null) {
+				throw new IllegalArgumentException("Emitente da venda não informado.");
+			}
+
+			// Emissor/endereços
+			this.emissor = preencheEmissor(venda.getEmitente());
+
+			// Reset acumuladores
+			this.produtoPreenchido = "";
+			this.pagamentoPreenchido = "";
+
+			String infNfe = new StringBuilder()
+					.append("[infNFE]\n")
+					.append(kv("versao", ApplicationUtils.getConfiguration("versao.nfe")))
+					.toString();
+
+			String ide = buildIdentificacaoNfce(venda, nfce);
+			String emitente = buildEmitenteNfce();
+			String destinatario = buildDestinatarioNfce(venda);
+
+			// Produtos + impostos
+			AtomicInteger seq = new AtomicInteger(1);
+			if (venda.getListaItem() != null) {
+				for (ItemCFe item : venda.getListaItem()) {
+					int idx = seq.getAndIncrement();
+					this.produtoPreenchido += buildProdutoNfce(item, idx);
+				}
+			}
+
+			String total = buildTotalNfce(venda);
+			String transporte = buildTransporteNfceSemFrete();
+			String pagamentos = buildPagamentosNfce(venda);
+
+			String adicionais = new StringBuilder()
+					.append("[DadosAdicionais]\n")
+					.append(kvIfNotNull("infCpl", ""))
+					.toString();
+
+			String infArquivo = infNfe + ide + emitente + destinatario + this.produtoPreenchido + total + transporte + pagamentos + adicionais;
+
+
+			System.out.println("finalizado a criação do arquivo NFC-e na pasta c:\\ibrcomp\\tmp\\" + nomeArquivo);
+			criaConexao(dados);
+			return comandoAcbr("ACBr.SaveToFile(\"C:\\ibrcomp\\tmp\\" + nomeArquivo + ".ini\",\"" + infArquivo + "\",5)");
+		} catch (Exception e) {
+			fechaTudo();
+			System.out.println("Erro criando INI NFC-e: " + e.getMessage());
+			return "ERRO: " + e.getMessage();
+		}
+	}
+
+	// Aliases (para compatibilidade com versões anteriores do patch)
+	public String criarArqIniNfceCaixaMaqRemota(DadosDeConexaoSocket dados, String nomeArquivo, CFe venda, Nfce nfce) throws IOException {
+		return criarArqIniNfce(dados, nomeArquivo, venda, nfce);
+	}
+	public String criarArqIniNfceMaqRemota(DadosDeConexaoSocket dados, String nomeArquivo, CFe venda, Nfce nfce) throws IOException {
+		return criarArqIniNfce(dados, nomeArquivo, venda, nfce);
+	}
+
+	/** Envia a NFC-e via ACBrMonitor (NFe.CriarEnviarNFe usando o INI gerado). */
+	public String nfceCriarEnviarNfce(DadosDeConexaoSocket dados, String nomeArquivo) throws IOException {
+		String ini = "C:\\ibrcomp\\tmp\\" + nomeArquivo + ".ini";
+		String[] comandos = new String[] {
+				// Preferimos síncrono e SEM impressão aqui (impressão pode ser feita depois via NFe.ImprimirDANFENFCe)
+		        "NFe.CriarEnviarNFe(\"" + ini + "\",1,0,1)",
+		        "NFE.CriarEnviarNFe(\"" + ini + "\",1,0,1)",
+		        // Alternativa: síncrono e já imprime (use se você NÃO chamar a impressão depois)
+		        "NFe.CriarEnviarNFe(\"" + ini + "\",1,1,1)",
+		        "NFE.CriarEnviarNFe(\"" + ini + "\",1,1,1)",
+		        // Fallbacks (podem depender da versão do ACBrMonitor)
+		        "NFe.CriarEnviarNFe(\"" + ini + "\")",
+		        "NFE.CriarEnviarNFe(\"" + ini + "\")",
+		        "NFe.CriarEnviarNFe(\"" + ini + "\",1,1)",
+		        "NFE.CriarEnviarNFe(\"" + ini + "\",1,1)",
+		        "NFe.CriarEnviarNFe(\"" + ini + "\",1)",
+		        "NFE.CriarEnviarNFe(\"" + ini + "\",1)"
+		};
+		String ultimo = "";
+		for (String cmd : comandos) {
+			ultimo = enviaComandoACBr(dados, cmd);
+			if (!isErroAcbr(ultimo)) {
+				return ultimo;
+			}
+		}
+		return ultimo;
+	}
+	public String nfeCriarEnviarNfce(DadosDeConexaoSocket dados, String nomeArquivo) throws IOException { return nfceCriarEnviarNfce(dados, nomeArquivo); }
+	public String nfeCriarEnviarNFe(DadosDeConexaoSocket dados, String nomeArquivo) throws IOException { return nfceCriarEnviarNfce(dados, nomeArquivo); }
+	public String nfeCriarEnviar(DadosDeConexaoSocket dados, String nomeArquivo) throws IOException { return nfceCriarEnviarNfce(dados, nomeArquivo); }
+
+	/** Imprime DANFCE (se o ACBr estiver configurado). */
+	public String nfceImprimiDanfceVenda(DadosDeConexaoSocket dados, String caminhoXmlOuChave) throws IOException {
+		String alvo = nz(caminhoXmlOuChave).trim();
+		if (alvo.isEmpty()) return "";
+		String[] comandos = new String[] {
+				"NFe.ImprimirDANFENFCe(\"" + alvo + "\")",
+				"NFe.ImprimirDanfce(\"" + alvo + "\")",
+				"NFe.ImprimirDanfe(\"" + alvo + "\")",
+				"NFE.ImprimirDANFENFCe(\"" + alvo + "\")"
+		};
+		String ultimo = "";
+		for (String cmd : comandos) {
+			ultimo = enviaComandoACBr(dados, cmd);
+			if (!isErroAcbr(ultimo)) return ultimo;
+		}
+		return ultimo;
+	}
+	public String nfeImprimirDanfce(DadosDeConexaoSocket dados, String caminhoXmlOuChave) throws IOException { return nfceImprimiDanfceVenda(dados, caminhoXmlOuChave); }
+	public String nfeImprimirDanfceVenda(DadosDeConexaoSocket dados, String caminhoXmlOuChave) throws IOException { return nfceImprimiDanfceVenda(dados, caminhoXmlOuChave); }
+
+	/** Gera PDF do DANFCE (se o ACBr estiver configurado). */
+	public String geraPDFDanfceVenda(DadosDeConexaoSocket dados, String caminhoXmlOuChave, String nomePdf) throws IOException {
+		String alvo = nz(caminhoXmlOuChave).trim();
+		if (alvo.isEmpty()) return "";
+		String pdf = "C:\\ibrcomp\\pdfNfce\\" + (nomePdf == null || nomePdf.trim().isEmpty() ? "nfce.pdf" : nomePdf.trim());
+		String[] comandos = new String[] {
+				"NFe.GerarPDFDanfeNFCe(\"" + alvo + "\",\"" + pdf + "\")",
+				"NFe.GerarPDFDANFENFCe(\"" + alvo + "\",\"" + pdf + "\")",
+				"NFe.GerarPDFDanfe(\"" + alvo + "\",\"" + pdf + "\")",
+				"NFE.GerarPDFDanfe(\"" + alvo + "\",\"" + pdf + "\")"
+		};
+		String ultimo = "";
+		for (String cmd : comandos) {
+			ultimo = enviaComandoACBr(dados, cmd);
+			if (!isErroAcbr(ultimo)) return ultimo;
+		}
+		return ultimo;
+	}
+	public String geraPDFDanfeNfceVenda(DadosDeConexaoSocket dados, String caminhoXmlOuChave, String nomePdf) throws IOException { return geraPDFDanfceVenda(dados, caminhoXmlOuChave, nomePdf); }
+	public String geraPDFDanfeNfce(DadosDeConexaoSocket dados, String caminhoXmlOuChave, String nomePdf) throws IOException { return geraPDFDanfceVenda(dados, caminhoXmlOuChave, nomePdf); }
+	public String geraPDFDanfe(DadosDeConexaoSocket dados, String caminhoXmlOuChave, String nomePdf) throws IOException { return geraPDFDanfceVenda(dados, caminhoXmlOuChave, nomePdf); }
+
+	/* --------------------------- Helpers --------------------------- */
+	private boolean isErroAcbr(String retorno) {
+		if (retorno == null) return true;
+		String up = retorno.toUpperCase();
+		return up.contains("ERRO") || up.contains("EXCEPTION") || up.contains("FALHA") || up.contains("INVALID");
+	}
+
+	private String gerarCNF8() {
+		int n = java.util.concurrent.ThreadLocalRandom.current().nextInt(0, 100000000);
+		return String.format(java.util.Locale.ROOT, "%08d", n);
+	}
+
+	private String resolveCUF(String ufSigla) {
+		if (ufSigla == null || ufSigla.trim().isEmpty()) return "";
+		try {
+			return String.valueOf(Uf.valueOf(ufSigla.trim().toUpperCase()).getIbgeUf());
+		} catch (Exception e) {
+			return "";
+		}
+	}
+
+	private String buildIdentificacaoNfce(CFe venda, Nfce nfce) {
+		Long numero = (nfce != null ? nfce.getNumero() : null);
+		Integer serie = (nfce != null ? nfce.getSerie() : null);
+		String cUF = resolveCUF(this.emissor != null ? this.emissor.getUf().name() : null);
+		return new StringBuilder()
+				.append("[Identificacao]\n")
+				.append(kv("cUF", cUF))
+				.append(kv("cNF", gerarCNF8()))
+				.append(kv("natOp", "VENDA"))
+				.append(kv("mod", "65"))
+				.append(kv("serie", serie == null ? 1 : serie))
+				.append(kv("nNF", numero == null ? "" : numero))
+				.append(kv("dhEmi", LocalDateTime.now().format(this.formatoSimples)))
+				.append(kv("tpNF", "1"))
+				.append(kv("idDest", "1"))
+				.append(kv("cMunFG", this.emissor != null ? this.emissor.getCMun() : ""))
+				.append(kv("tpImp", "4"))
+				.append(kv("tpEmis", "1"))
+				.append(kv("finNFe", "1"))
+				.append(kv("indFinal", "1"))
+				.append(kv("indPres", "1"))
+				.append(kv("procEmi", "0"))
+				.append(kv("verProc", "nsym"))
+				.toString();
+	}
 	
+	private String buildTransporteNfceSemFrete() {
+	    return new StringBuilder()
+	            .append("[Transportador]\n")
+	            .append(kv("modFrete", "9"))
+	            .toString();
+	}
+
+	private String buildIdentificacaoNfce(CupomFiscalCaixa venda, Nfce nfce) {
+		// mesma regra do CFe; o cupom não é usado aqui (mantido por compatibilidade)
+		Long numero = (nfce != null ? nfce.getNumero() : null);
+		Integer serie = (nfce != null ? nfce.getSerie() : null);
+		String cUF = resolveCUF(this.emissor != null ? this.emissor.getUf().name() : null);
+		return new StringBuilder()
+				.append("[Identificacao]\n")
+				.append(kv("cUF", cUF))
+				.append(kv("cNF", gerarCNF8()))
+				.append(kv("natOp", "VENDA"))
+				.append(kv("mod", "65"))
+				.append(kv("serie", serie == null ? 1 : serie))
+				.append(kv("nNF", numero == null ? "" : numero))
+				.append(kv("dhEmi", LocalDateTime.now().format(this.formatoSimples)))
+				.append(kv("tpNF", "1"))
+				.append(kv("idDest", "1"))
+				.append(kv("cMunFG", this.emissor != null ? this.emissor.getCMun() : ""))
+				.append(kv("tpImp", "4"))
+				.append(kv("tpEmis", "1"))
+				.append(kv("finNFe", "1"))
+				.append(kv("indFinal", "1"))
+				.append(kv("indPres", "1"))
+				.append(kv("procEmi", "0"))
+				.append(kv("verProc", "nsym"))
+				.toString();
+	}
+
+	private String buildEmitenteNfce() {
+		if (this.emissor == null) return "[Emitente]\n";
+		return new StringBuilder()
+				.append("[Emitente]\n")
+				.append(kv("CNPJ", this.emissor.getCnpjCpf()))
+				.append(kv("xNome", removerAcentos(this.emissor.getXNome())))
+				.append(kvIfNotNull("xFant", removerAcentos(this.emissor.getXFant())))
+				.append(kvIfNotNull("IE", this.emissor.getIe()))
+				.append(kvIfNotNull("IM", this.emissor.getIMunicipal()))
+				.append(kvIfNotNull("CNAE", this.emissor.getCNAE()))
+				.append(kv("CRT", this.emissor.getCrt()))
+				.append(kv("xLgr", removerAcentos(this.emissor.getXLgr())))
+				.append(kv("nro", this.emissor.getNro()))
+				.append(kvIfNotNull("xCpl", removerAcentos(this.emissor.getXCpl())))
+				.append(kv("xBairro", removerAcentos(this.emissor.getXBairro())))
+				.append(kv("cMun", this.emissor.getCMun()))
+				.append(kv("xMun", removerAcentos(this.emissor.getXMun())))
+				.append(kv("UF", this.emissor.getUf().name()))
+				.append(kv("CEP", this.emissor.getCep()))
+				.append(kv("cPais", this.emissor.getCPais()))
+				.append(kv("xPais", removerAcentos(this.emissor.getXPais())))
+				.append(kvIfNotNull("Fone", this.emissor.getFone()))
+				.toString();
+	}
 	
+	private String buildDestinatarioNfce(CFe venda) {
+		StringBuilder d = new StringBuilder();
+		d.append("[Destinatario]\n");
+		if (venda != null && venda.getDestinatario() != null) {
+			String cnpj = nz(venda.getDestinatario().getCnpj()).trim();
+			String cpf = nz(venda.getDestinatario().getCpf()).trim();
+			String doc = !cnpj.isEmpty() ? cnpj : cpf;
+			d.append(kv("CNPJCPF", doc));
+			d.append(kv("xNome", removerAcentos(nz(venda.getDestinatario().getNome()))));
+		} else {
+			d.append(kv("CNPJCPF", ""));
+			d.append(kv("xNome", "CONSUMIDOR"));
+		}
+		// Consumidor final normalmente sem IE
+		d.append(kv("indIEDest", "9"));
+		return d.toString();
+	}
+
+	private String buildDestinatarioNfce(CupomFiscalCaixa venda) {
+		StringBuilder d = new StringBuilder();
+		d.append("[Destinatario]\n");
+		if (venda != null && venda.getDestinatario() != null) {
+			String cnpj = nz(venda.getDestinatario().getCnpj()).trim();
+			String cpf = nz(venda.getDestinatario().getCpf()).trim();
+			String doc = !cnpj.isEmpty() ? cnpj : cpf;
+			d.append(kv("CNPJCPF", doc));
+			d.append(kv("xNome", removerAcentos(nz(venda.getDestinatario().getNome()))));
+		} else {
+			d.append(kv("CNPJCPF", ""));
+			d.append(kv("xNome", "CONSUMIDOR"));
+		}
+		// Consumidor final normalmente sem IE
+		d.append(kv("indIEDest", "9"));
+		return d.toString();
+	}
+
+	private String buildProdutoNfce(ItemCFe item, int idx) {
+		if (item == null) return "";
+		StringBuilder sb = new StringBuilder();
+
+		// Produto
+		sb.append(section("Produto", idx))
+		  .append(kv("cProd", item.getProduto() != null ? item.getProduto().getReferencia() : ""))
+		  .append(kv("xProd", item.getProduto() != null ? removerAcentos(item.getProduto().getDescricao()) : ""));
+		if (item.getProduto() != null && item.getProduto().getNcm() != null) {
+			sb.append(kv("NCM", item.getProduto().getNcm().getNcm()));
+		}
+		if (item.getProduto() != null && item.getProduto().getNcm().getCest() != null) {
+			sb.append(kvIfNotNull("CEST", item.getProduto().getNcm().getCest()));
+		}
+		if (item.getCfopItem() != null) {
+			sb.append(kv("CFOP", item.getCfopItem().getCfop()));
+		}
+		if (item.getUnidade() != null) {
+			sb.append(kv("uCom", item.getUnidade()));
+		}
+		sb.append(kv("qCom", item.getQuantidade()))
+		  .append(kv("vUnCom", item.getValorUnitario()))
+//		  .append(kv("vProd", item.getValorTotalBruto()))
+//		  .append(kvIfNotNull("vDesc", item.getDesconto()))
+//		  .append(kvIfNotNull("vFrete", item.getValorFrete()))
+//		  .append(kvIfNotNull("vSeg", item.getValorSeguro()))
+//		  .append(kvIfNotNull("vOutro", item.getValorDespesas()))
+		  .append(kv("vProd", scale2(item.getValorTotalBruto())))
+		  .append(kvIfNotNull("vDesc", scale2Nullable(item.getDesconto())))
+		  .append(kvIfNotNull("vOutro", scale2Nullable(item.getValorDespesas())))
+
+		  .append(kv("indTot", "1"));
+		// Lei 12.741/2012
+		sb.append(kvIfNotNull("vTotTrib", item.getValorTotalTributoItem()));
+
+		// ICMS
+		sb.append(section("ICMS", idx))
+		  .append(kv("orig", item.getOrigem()))
+		  .append(kv(EmissorEnquadradoNormal(this.emissor) ? "CST" : "CSOSN", item.getCst()))
+		  .append(kvIfNotNull("vBC", item.getBaseICMS()))
+		  .append(kvIfNotNull("pICMS", item.getAliqIcmsSat()))
+		  .append(kvIfNotNull("vICMS", item.getValorIcms()));
+		if (item.isItemST()) {
+			sb.append(kvIfNotNull("vBCST", item.getBaseICMSSt()))
+			  .append(kvIfNotNull("pICMSST", item.getAliqIcmsSt()))
+			  .append(kvIfNotNull("vICMSST", item.getValorIcmsSt()));
+		}
+
+		// IPI (se existir)
+		if (item.getValorIPI() != null && item.getValorIPI().doubleValue() > 0.0) {
+			sb.append(section("IPI", idx))
+			  .append(kvIfNotNull("vIPI", item.getValorIPI()))
+			  .append(kvIfNotNull("pIPI", item.getAliqIPI()));
+		}
+
+		// PIS
+		sb.append(section("PIS", idx))
+		  .append(kvIfNotNull("CST", item.getCstPis()))
+		  .append(kvIfNotNull("vBC", item.getValorTotal()))
+		  .append(kvIfNotNull("pPIS", item.getAliqPis()))
+		  .append(kvIfNotNull("vPIS", item.getValorPis()));
+
+		// COFINS
+		sb.append(section("COFINS", idx))
+		  .append(kvIfNotNull("CST", item.getCstCofins()))
+		  .append(kvIfNotNull("vBC", item.getValorTotal()))
+		  .append(kvIfNotNull("pCOFINS", item.getAliqCofins()))
+		  .append(kvIfNotNull("vCOFINS", item.getValorCofins()));
+
+		return sb.toString();
+	}
+
+	private String buildTotalNfce(CFe venda) {
+		if (venda == null) {
+			return section("Total");
+		}
+
+		java.math.BigDecimal vProd = java.math.BigDecimal.ZERO;
+		java.math.BigDecimal vDesc = java.math.BigDecimal.ZERO;
+		java.math.BigDecimal vOutro = java.math.BigDecimal.ZERO;
+		java.math.BigDecimal vTotTribItens = java.math.BigDecimal.ZERO;
+
+		if (venda.getListaItem() != null) {
+			for (ItemCFe it : venda.getListaItem()) {
+				if (it == null) continue;
+				vProd = vProd.add(nzbd(it.getValorTotalBruto()));
+				vDesc = vDesc.add(nzbd(it.getDesconto()));
+				vOutro = vOutro.add(nzbd(it.getValorDespesas()));
+				vTotTribItens = vTotTribItens.add(nzbd(it.getValorTotalTributoItem()));
+			}
+		}
+
+		// NFC-e não pode ter frete/seguro (rejeição 753)
+		java.math.BigDecimal vFrete = java.math.BigDecimal.ZERO;
+		java.math.BigDecimal vSeg = java.math.BigDecimal.ZERO;
+
+		java.math.BigDecimal vNF = vProd.subtract(vDesc).add(vOutro).add(vFrete).add(vSeg);
+
+		java.math.BigDecimal vTotTrib = (venda.getValorTotalTributos() != null)
+				? venda.getValorTotalTributos()
+						: vTotTribItens;
+
+		java.math.BigDecimal vDescOut = (vDesc.signum() != 0 ? scale2(vDesc) : null);
+		java.math.BigDecimal vOutroOut = (vOutro.signum() != 0 ? scale2(vOutro) : null);
+		java.math.BigDecimal vTotTribOut = (vTotTrib.signum() != 0 ? scale2(vTotTrib) : null);
+
+		return new StringBuilder()
+				.append(section("Total"))
+				.append(kvIfNotNull("vBC", scale2Nullable(venda.getBaseIcms())))
+				.append(kvIfNotNull("vICMS", scale2Nullable(venda.getValorIcms())))
+				.append(kvIfNotNull("vBCST", scale2Nullable(venda.getBaseIcmsSubstituicao())))
+				.append(kvIfNotNull("vST", scale2Nullable(venda.getValorIcmsSubstituicao())))
+				.append(kv("vProd", scale2(vProd)))
+				.append(kv("vFrete", scale2(vFrete)))
+				.append(kv("vSeg", scale2(vSeg)))
+				.append(kvIfNotNull("vDesc", vDescOut))
+				.append(kvIfNotNull("vOutro", vOutroOut))
+				.append(kv("vNF", scale2(vNF)))
+				.append(kvIfNotNull("vTotTrib", vTotTribOut))
+				.toString();
+
+	}
+
+	private String buildTotalNfce(CupomFiscalCaixa venda) {
+		if (venda == null) {
+			return section("Total");
+		}
+
+		java.math.BigDecimal vProd = java.math.BigDecimal.ZERO;
+		java.math.BigDecimal vDesc = java.math.BigDecimal.ZERO;
+		java.math.BigDecimal vOutro = java.math.BigDecimal.ZERO;
+		java.math.BigDecimal vTotTribItens = java.math.BigDecimal.ZERO;
+
+		if (venda != null && venda.getItens() != null) {
+			for (ItemCFe it : venda.getItens()) {
+				if (it == null) continue;
+				vProd = vProd.add(nzbd(it.getValorTotalBruto()));
+				vDesc = vDesc.add(nzbd(it.getDesconto()));
+				vOutro = vOutro.add(nzbd(it.getValorDespesas()));
+				vTotTribItens = vTotTribItens.add(nzbd(it.getValorTotalTributoItem()));
+			}
+		}
+
+		// NFC-e não pode ter frete/seguro (rejeição 753)
+		java.math.BigDecimal vFrete = java.math.BigDecimal.ZERO;
+		java.math.BigDecimal vSeg = java.math.BigDecimal.ZERO;
+		java.math.BigDecimal vNF = vProd.subtract(vDesc).add(vOutro).add(vFrete).add(vSeg);
+
+		java.math.BigDecimal vTotTrib = (venda != null && venda.getValorTotalTributos() != null)
+				? venda.getValorTotalTributos()
+						: vTotTribItens;
+		java.math.BigDecimal vDescOut = (vDesc.signum() != 0 ? scale2(vDesc) : null);
+		java.math.BigDecimal vOutroOut = (vOutro.signum() != 0 ? scale2(vOutro) : null);
+		java.math.BigDecimal vTotTribOut = (vTotTrib.signum() != 0 ? scale2(vTotTrib) : null);
+		
+
+		return new StringBuilder()
+				.append(section("Total"))
+				.append(kvIfNotNull("vBC", scale2Nullable(venda.getBaseIcms())))
+				.append(kvIfNotNull("vICMS", scale2Nullable(venda.getValorIcms())))
+				.append(kvIfNotNull("vBCST", scale2Nullable(venda.getBaseIcmsSt())))
+				.append(kvIfNotNull("vST", scale2Nullable(venda.getValorIcmsSt())))
+				.append(kv("vProd", scale2(vProd)))
+				.append(kv("vFrete", scale2(vFrete)))
+				.append(kv("vSeg", scale2(vSeg)))
+				.append(kvIfNotNull("vDesc", vDescOut))
+				.append(kvIfNotNull("vOutro", vOutroOut))
+				.append(kv("vNF", scale2(vNF)))
+				.append(kvIfNotNull("vTotTrib", vTotTribOut))
+
+				.toString();
+	}
+	
+	private String buildPagamentosNfce(CFe venda) {
+		if (venda == null) {
+			return section("Pag001");
+		}
+
+		// Total da NF-e calculado a partir dos itens (mantém consistência com [Total])
+		java.math.BigDecimal vProd = java.math.BigDecimal.ZERO;
+		java.math.BigDecimal vDesc = java.math.BigDecimal.ZERO;
+		java.math.BigDecimal vOutro = java.math.BigDecimal.ZERO;
+		if (venda.getListaItem() != null) {
+			for (ItemCFe it : venda.getListaItem()) {
+				if (it == null) continue;
+				vProd = vProd.add(nzbd(it.getValorTotalBruto()));
+				vDesc = vDesc.add(nzbd(it.getDesconto()));
+				vOutro = vOutro.add(nzbd(it.getValorDespesas()));
+			}
+		}
+		java.math.BigDecimal vNF = vProd.subtract(vDesc).add(vOutro);
+
+		java.util.List<RecebimentoParcial> lista = venda.getListaRecebimentosAgrupados();
+		if (lista == null || lista.isEmpty()) {
+			lista = new java.util.ArrayList<>();
+			if (venda.getListaParcelas() != null) {
+				for (Parcelas p : venda.getListaParcelas()) {
+					if (p == null || p.getFormaPag() == null || p.getFormaPag().getTipoPagamento() == null) continue;
+					RecebimentoParcial r = new RecebimentoParcial();
+					r.setTipoPagamento(p.getFormaPag().getTipoPagamento());
+					r.setValorRecebido(p.getValorRecebido());
+					r.setFormaPagamento(p.getFormaPag());
+					lista.add(r);
+				}
+			}
+		}
+
+		// Soma de pagamentos (para calcular troco corretamente)
+		java.math.BigDecimal totalPago = java.math.BigDecimal.ZERO;
+		for (RecebimentoParcial r : lista) {
+			if (r == null) continue;
+			totalPago = totalPago.add(nzbd(r.getValorRecebido()));
+		}
+		final java.math.BigDecimal trocoCalc =
+		        scale2(totalPago.subtract(vNF).max(java.math.BigDecimal.ZERO));
+
+		java.util.Map<String, java.util.List<RecebimentoParcial>> recebimentosAgrupados = lista.stream()
+				.collect(java.util.stream.Collectors.groupingBy(r -> r.getTipoPagamento().getCod()));
+
+		java.util.concurrent.atomic.AtomicInteger seq = new java.util.concurrent.atomic.AtomicInteger(1);
+		StringBuilder sb = new StringBuilder();
+
+		recebimentosAgrupados.entrySet().stream()
+				.sorted(java.util.Map.Entry.comparingByKey())
+				.forEach(entry -> {
+					String tPag = entry.getKey();
+					java.util.List<RecebimentoParcial> parcelas = entry.getValue();
+					if (parcelas == null || parcelas.isEmpty()) return;
+
+					java.math.BigDecimal vPag = parcelas.stream()
+							.filter(r -> r != null && r.getValorRecebido() != null)
+							.map(RecebimentoParcial::getValorRecebido)
+							.reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+					vPag = scale2(vPag);
+
+					sb.append(section("PAG", seq.getAndIncrement()))
+						.append(kv("tPag", tPag))
+						.append(kv("vPag", vPag));
+
+					if ("99".equals(tPag)) {
+						String xPag = parcelas.get(0).getFormaPagamento().getDescOutros();
+						sb.append(kv("xPag", xPag));
+					}
+
+					if ("03".equals(tPag) || "04".equals(tPag) || "17".equals(tPag)) {
+						String tpIntegra = ApplicationUtils.getConfiguration("integra.car");
+						if (isBlank(tpIntegra)) tpIntegra = "2";
+						sb.append(kv("tpIntegra", tpIntegra));
+
+						Object forma = parcelas.get(0).getFormaPagamento();
+						Object oper = tryInvoke(forma, "getOperadoraCartao");
+
+						String cnpj = firstNonBlank(
+								tryInvokeStr(oper, "getCnpj"),
+								tryInvokeStr(oper, "getCnpjOperadora"),
+								tryInvokeStr(oper, "getCnpjCredenciadora"),
+								ApplicationUtils.getConfiguration("cartao.cnpjCredenciadora"),
+								ApplicationUtils.getConfiguration("cartao.cnpj"));
+
+						String tBand = firstNonBlank(
+								tryInvokeStr(forma, "getTBandeira"),
+								tryInvokeStr(forma, "getTBandeiraNfe"),
+								tryInvokeStr(forma, "gettBand"),
+								ApplicationUtils.getConfiguration("cartao.tBand"));
+
+						String cAut = firstNonBlank(
+								tryInvokeStr(parcelas.get(0), "getCAut"),
+								tryInvokeStr(parcelas.get(0), "getcAut"),
+								ApplicationUtils.getConfiguration("cartao.cAut"),
+								"999999");
+
+						if (!isBlank(cnpj)) sb.append(kv("CNPJ", cnpj));
+						if (!isBlank(tBand)) sb.append(kv("tBand", tBand));
+						if (!isBlank(cAut)) sb.append(kv("cAut", cAut));
+					}
+
+					if ("01".equals(tPag) && trocoCalc.signum() > 0) {
+						sb.append(kv("vTroco", trocoCalc));
+					}
+				});
+
+		return sb.toString();
+	}
+
+
+
+	private String buildPagamentosNfce(CupomFiscalCaixa venda,List<RecebimentoParcial> lista) {
+		System.out.println("estou preenchendo campo Pagxxx");
+		if (venda == null) {
+			return section("Pag001");
+		}
+
+		// Total da NF-e calculado a partir dos itens (mantém consistência com [Total])
+		java.math.BigDecimal vProd = java.math.BigDecimal.ZERO;
+		java.math.BigDecimal vDesc = java.math.BigDecimal.ZERO;
+		java.math.BigDecimal vOutro = java.math.BigDecimal.ZERO;
+		if (venda.getItens() != null) {
+			System.out.println("Itens != null");
+			for (ItemCFe it : venda.getItens()) {
+				if (it == null) continue;
+				vProd = vProd.add(nzbd(it.getValorTotalBruto()));
+				vDesc = vDesc.add(nzbd(it.getDesconto()));
+				vOutro = vOutro.add(nzbd(it.getValorDespesas()));
+			}
+		}
+		java.math.BigDecimal vNF = vProd.subtract(vDesc).add(vOutro);
+
+		// Soma de pagamentos (para calcular troco corretamente)
+		java.math.BigDecimal totalPago = java.math.BigDecimal.ZERO;
+		if (venda.getListaRecebimentosAgrupados() != null && !venda.getListaRecebimentosAgrupados().isEmpty() ) {
+			System.out.println("ListaRecebimentosAgrupados != null tamanho da lista" + venda.getListaRecebimentosAgrupados().size());
+			for (RecebimentoParcial r : venda.getListaRecebimentosAgrupados()) {
+				if (r == null) continue;
+				totalPago = totalPago.add(nzbd(r.getValorRecebido()));
+			}
+		}else {
+			if (lista != null) {
+				System.out.println("nfce.ListaRecebimentosAgrupados != null" + lista.size());
+				for (RecebimentoParcial r : lista) {
+					if (r == null) continue;
+					totalPago = totalPago.add(nzbd(r.getValorRecebido()));
+				}
+			}
+		}
+		
+		java.util.Map<String, java.util.List<RecebimentoParcial>> recebimentosAgrupados = new java.util.HashMap<>();
+		final java.math.BigDecimal trocoCalc =
+		        scale2(totalPago.subtract(vNF).max(java.math.BigDecimal.ZERO));
+		if (venda.getListaRecebimentosAgrupados() == null && venda.getListaRecebimentosAgrupados().isEmpty() ) {
+			 recebimentosAgrupados = (venda.getListaRecebimentosAgrupados() == null || venda.getListaRecebimentosAgrupados().isEmpty())
+					? new java.util.HashMap<>()
+							: venda.getListaRecebimentosAgrupados().stream()
+							.collect(java.util.stream.Collectors.groupingBy(r -> r.getFormaPagamento().getTipoPagamento().getCod()));
+		}else {
+			 recebimentosAgrupados = (lista == null ||lista.isEmpty())
+					? new java.util.HashMap<>()
+							: lista.stream()
+							.collect(java.util.stream.Collectors.groupingBy(r -> r.getFormaPagamento().getTipoPagamento().getCod()));
+		}
+		System.out.println("Passei pelo HasMap PegaFormaPagamento tipoPagamento cod");
+		System.out.println("recebimentosAgrupados lista tamanho: "+ recebimentosAgrupados.size());
+		java.util.concurrent.atomic.AtomicInteger seq = new java.util.concurrent.atomic.AtomicInteger(1);
+
+		System.out.println("depois do atomic" );
+		StringBuilder sb = new StringBuilder();
+		recebimentosAgrupados.entrySet().stream()
+				.sorted(java.util.Map.Entry.comparingByKey())
+				.forEach(entry -> {
+					String tPag = entry.getKey();
+					java.util.List<RecebimentoParcial> parcelas = entry.getValue();
+					if (parcelas == null || parcelas.isEmpty()) return;
+					System.out.println("Passei pelo parcela nulo");
+					java.math.BigDecimal vPag = parcelas.stream()
+							.filter(r -> r != null && r.getValorRecebido() != null)
+							.map(RecebimentoParcial::getValorRecebido)
+							.reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+					vPag = scale2(vPag);
+					
+					System.out.println("Peguei a informacao tPag: " + tPag);
+					System.out.println("Peguei a informacao vPag: " + vPag);
+					sb.append(section("PAG", seq.getAndIncrement()))
+						.append(kv("tPag", tPag))
+						.append(kv("vPag", vPag));
+
+					if ("99".equals(tPag)) {
+						String xPag = parcelas.get(0).getFormaPagamento().getDescOutros();
+						sb.append(kv("xPag", xPag));
+					}
+
+					if ("03".equals(tPag) || "04".equals(tPag) || "17".equals(tPag)) {
+						String tpIntegra = ApplicationUtils.getConfiguration("integra.car");
+						if (isBlank(tpIntegra)) tpIntegra = "2";
+						sb.append(kv("tpIntegra", tpIntegra));
+
+					}
+
+					if ("01".equals(tPag) && trocoCalc.signum() > 0) {
+						sb.append(kv("vTroco", trocoCalc));
+					}
+				});
+
+		return sb.toString();
+	}
+	// Dados do cartão: tenta pegar do cadastro; se não existir, usa configurações
+//	Object forma = parcelas.get(0).getFormaPagamento();
+//	Object oper = tryInvoke(forma, "getOperadoraCartao");
+//
+//	String cnpj = firstNonBlank(
+//			tryInvokeStr(oper, "getCnpj"),
+//			tryInvokeStr(oper, "getCnpjOperadora"),
+//			tryInvokeStr(oper, "getCnpjCredenciadora"),
+//			ApplicationUtils.getConfiguration("cartao.cnpjCredenciadora"),
+//			ApplicationUtils.getConfiguration("cartao.cnpj"));
+//
+//	String tBand = firstNonBlank(
+//			tryInvokeStr(forma, "getTBandeira"),
+//			tryInvokeStr(forma, "getTBandeiraNfe"),
+//			tryInvokeStr(forma, "gettBand"),
+//			ApplicationUtils.getConfiguration("cartao.tBand"));
+//
+//	String cAut = firstNonBlank(
+//			tryInvokeStr(parcelas.get(0), "getCAut"),
+//			tryInvokeStr(parcelas.get(0), "getcAut"),
+//			ApplicationUtils.getConfiguration("cartao.cAut"),
+//			"999999");
+//
+//	if (!isBlank(cnpj)) sb.append(kv("CNPJ", cnpj));
+//	if (!isBlank(tBand)) sb.append(kv("tBand", tBand));
+//	if (!isBlank(cAut)) sb.append(kv("cAut", cAut));
+
+/* ============================================================= */
+
 }

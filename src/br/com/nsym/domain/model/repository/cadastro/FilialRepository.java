@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 
 import javax.enterprise.context.Dependent;
+import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -14,13 +15,17 @@ import javax.persistence.criteria.Root;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 
-import br.com.nsym.domain.model.entity.cadastro.Cliente;
 import br.com.nsym.domain.model.entity.cadastro.Filial;
 import br.com.nsym.domain.model.repository.GenericRepositoryEmpDS;
 
 @Dependent
 public class FilialRepository extends GenericRepositoryEmpDS<Filial, Long>{
 	
+	/**
+	 *
+	 */
+	private static final long serialVersionUID = 830657041353154691L;
+
 	public List<Filial> listFilialAtiva(){
 		final Criteria criteria = this.createCriteria();
 
@@ -75,5 +80,9 @@ public class FilialRepository extends GenericRepositoryEmpDS<Filial, Long>{
 		TypedQuery<Filial> typedQuery = this.getEntityManager().createQuery(criteria);
 		
 		return typedQuery.getResultList();
+    }
+    
+    public Filial lockById(Long id) {
+    	return this.getEntityManager().find(Filial.class, id, LockModeType.PESSIMISTIC_WRITE);
     }
 }

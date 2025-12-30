@@ -219,12 +219,14 @@ public class CFe extends PersistentEntity {
 	@Setter
 	private String vMP;
 	
+	// preenchido quando cupom emitido em modo avulso
 	@Getter
 	@Setter
 	@ManyToOne
 	@JoinColumn(name="Pagamento_ID")
 	private FormaDePagamento formaPagamento;
 	
+	// Preenchido quando o cupom é emitido pelo caixa
 	@Getter
 	@Setter
 	@OneToMany(fetch = FetchType.LAZY)
@@ -248,6 +250,35 @@ public class CFe extends PersistentEntity {
 	@Getter
 	@Setter
 	private String caminho;
+	
+	@Getter
+	@Setter
+	@Column(precision = 20 , scale = 5)
+	private BigDecimal valorCSLL= new BigDecimal("0");
+	@Getter
+	@Setter
+	@Column(precision = 20 , scale = 5)
+	private BigDecimal aliqCSLL= new BigDecimal("0");
+	@Getter
+	@Setter
+	@Column(precision = 20 , scale = 5)
+	private BigDecimal valorIRRF= new BigDecimal("0");
+	@Getter
+	@Setter
+	@Column(precision = 20 , scale = 5)
+	private BigDecimal aliqIRRF= new BigDecimal("0");
+	@Getter
+	@Setter
+	@Column(precision = 20 , scale = 5)
+	private BigDecimal vTrfIcms= new BigDecimal("0");
+	@Getter
+	@Setter
+	@Column(precision = 20 , scale = 5)
+	private BigDecimal vFundoAmpara= new BigDecimal("0");
+	@Getter
+	@Setter
+	@Column(precision = 20 , scale = 5)
+	private BigDecimal valorOutro= new BigDecimal("0");
 
 	
 
@@ -257,7 +288,8 @@ public class CFe extends PersistentEntity {
 		int result = super.hashCode();
 		result = prime * result + Objects.hash(BaseIcms, ValorIcms, baseIcmsSubstituicao, cMP, caminho, dataEmissao,
 				desconto, destinatario, emitente, emitido, formaPagamento, listaItem, listaParcelas,
-				listaRecebimentosAgrupados, mc, numeroNota, outrasDespesas, statusEmissao, vAcresSubtot, vCFe,
+				listaRecebimentosAgrupados,
+				mc, numeroNota, outrasDespesas, statusEmissao, vAcresSubtot, vCFe,
 				vCFeLei12741, vDescSubtot, vFCP, vFCPST, vFCPSTRet, vFCPUFDest, vICMSUFDest, vICMSUFRemet, vIPIDevol,
 				vMP, vTroco, valorFrete, valorIcmsDesonerado, valorIcmsSubstituicao, valorSeguro, valorTotalCofins,
 				valorTotalCofinsSt, valorTotalIpi, valorTotalNota, valorTotalPis, valorTotalPisST, valorTotalProdutos,

@@ -3,14 +3,12 @@ package br.com.nsym.domain.model.repository.fiscal.sat;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.enterprise.context.Dependent;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.From;
 import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
@@ -85,44 +83,40 @@ public class CFeRepository extends GenericRepositoryEmpDS<CFe, Long>{
 		
 	}
 	
-	public CFe pegaCfeLazy (Long id, Long idEmpresa, Long idFilial) {
-	CriteriaBuilder builder = this.getEntityManager().getCriteriaBuilder();
-	CriteriaQuery<CFe> criteria = builder.createQuery(CFe.class);
+	public CFe pegaCfeLazy(Long id, Long idEmpresa, Long idFilial) {
+	    CriteriaBuilder cb = this.getEntityManager().getCriteriaBuilder();
+	    CriteriaQuery<CFe> cq = cb.createQuery(CFe.class);
 
-	Root<CFe> fromCFe = criteria.from(CFe.class);	
-	From<?,?> parcelasJoin = (From<?, ?>) fromCFe.join("listaParcelas",JoinType.INNER);
-	fromCFe.fetch("listaItem",JoinType.INNER);
-	
+	    Root<CFe> root = cq.from(CFe.class);
 
-	List<Predicate> conditions = new ArrayList<>();
+	    // carrega listas (evita LazyInitialization + N+1)
+	    root.fetch("listaItem", JoinType.LEFT);
 
+	    List<Predicate> conditions = new ArrayList<>();
+	    conditions.add(cb.equal(root.get("id"), id));
 
-	conditions.add(builder.equal(fromCFe.get("id"), id));
-	conditions.add(builder.equal(parcelasJoin.get("cfe"), id));
-	if (idEmpresa == null){
-		conditions.add(builder.isNull(fromCFe.get("idEmpresa")));
-	}else{ 
-		if (idFilial == null) {
-			conditions.add(builder.equal(fromCFe.get("idEmpresa"),idEmpresa));
-			conditions.add(builder.isNull(fromCFe.get("idFilial")));
-		}else {
-			conditions.add(builder.equal(fromCFe.get("idEmpresa"),idEmpresa));
-			conditions.add(builder.equal(fromCFe.get("idFilial"),idFilial));
-		}
+	    if (idEmpresa == null) {
+	        conditions.add(cb.isNull(root.get("idEmpresa")));
+	    } else {
+	        conditions.add(cb.equal(root.get("idEmpresa"), idEmpresa));
+	        if (idFilial == null) {
+	            conditions.add(cb.isNull(root.get("idFilial")));
+	        } else {
+	            conditions.add(cb.equal(root.get("idFilial"), idFilial));
+	        }
+	    }
+
+	    cq.select(root).where(conditions.toArray(new Predicate[0]));
+	    cq.distinct(true);
+
+	    CFe cfe = this.getEntityManager().createQuery(cq).getSingleResult();
+		// garante inicialização das coleções LAZY ainda dentro do contexto/persistência
+		if (cfe.getListaItem() != null) { cfe.getListaItem().size(); }
+		if (cfe.getListaParcelas() != null) { cfe.getListaParcelas().size(); }
+		return cfe;
+
 	}
 
-	criteria.select(fromCFe.alias("p"));
-	criteria.where(conditions.toArray(new Predicate[]{}));
-	criteria.distinct(true);
-	TypedQuery<CFe> typedQuery = this.getEntityManager().createQuery(criteria); //.setLockMode(LockModeType.PESSIMISTIC_WRITE);
-	
-	
-	
-	// montamos o resultado paginado
-	return  (CFe) typedQuery.getSingleResult();
-
-
-}
 
 	
 	public CFe pegaCFe(Long id, Long idEmpresa){
@@ -139,45 +133,45 @@ public class CFeRepository extends GenericRepositoryEmpDS<CFe, Long>{
 	}
 
 	public BigDecimal totalCfePeriodo(LocalDate dataIni, LocalDate dataFim, Long pegaIdEmpresa, Long pegaIdFilial) {
-		CriteriaBuilder builder = this.getEntityManager().getCriteriaBuilder();
-		CriteriaQuery<CFe> criteria = builder.createQuery(CFe.class);
+	    CriteriaBuilder builder = this.getEntityManager().getCriteriaBuilder();
 
-		Root<CFe> fromCFe = criteria.from(CFe.class);
+	    CriteriaQuery<BigDecimal> cq = builder.createQuery(BigDecimal.class);
+	    Root<CFe> root = cq.from(CFe.class);
 
-		List<Predicate> conditions = new ArrayList<>();
+	    List<Predicate> conditions = new ArrayList<>();
 
-		Predicate cfe = builder.between(fromCFe.get("dataEmissao"),dataIni,dataFim);
+	    // dataEmissao é LocalDate
+	    if (dataIni != null && dataFim != null) {
+	        conditions.add(builder.between(root.get("dataEmissao"), dataIni, dataFim));
+	    } else if (dataIni != null) {
+	        conditions.add(builder.greaterThanOrEqualTo(root.get("dataEmissao"), dataIni));
+	    } else if (dataFim != null) {
+	        conditions.add(builder.lessThanOrEqualTo(root.get("dataEmissao"), dataFim));
+	    }
 
+	    // empresa/filial (mesma regra do list)
+	    if (pegaIdEmpresa == null) {
+	        conditions.add(builder.isNull(root.get("idEmpresa")));
+	    } else {
+	        conditions.add(builder.equal(root.get("idEmpresa"), pegaIdEmpresa));
 
-		conditions.add(cfe);
-		if (pegaIdEmpresa == null){
-			conditions.add(builder.isNull(fromCFe.get("idEmpresa")));
-		}else{
-			if (pegaIdFilial == null){
-				conditions.add(builder.equal(fromCFe.get("idEmpresa"),pegaIdEmpresa));
-			}else{
-				conditions.add(builder.equal(fromCFe.get("idEmpresa"),pegaIdEmpresa));
-				conditions.add(builder.equal(fromCFe.get("idFilial"),pegaIdFilial));
-			}
-		}
-		
-//		CriteriaQuery<Long> cq = builder.createQuery(Long.class);
-//		cq.select(builder.count(cq.from(CFe.class)));
-//		this.getEntityManager().createQuery(cq);
-//		cq.where(conditions.toArray(new Predicate[0]));
+	        if (pegaIdFilial == null) {
+	            conditions.add(builder.isNull(root.get("idFilial")));
+	        } else {
+	            conditions.add(builder.equal(root.get("idFilial"), pegaIdFilial));
+	        }
+	    }
 
-		criteria.select(fromCFe.alias("cf"));
-		criteria.where(conditions.toArray(new Predicate[]{}));
-		
-		criteria.distinct(true);
-		TypedQuery<CFe> typedQuery = this.getEntityManager().createQuery(criteria);
-		BigDecimal total = new BigDecimal("0");
-		Iterator<CFe> it =  typedQuery.getResultList().iterator();
-		while (it.hasNext()) {
-			total = total.add(it.next().getValorTotalNota());
-		}
-		return  total;
-	} 
+	    // SUM(vNf) no banco (coalesce para não voltar null)
+	    cq.select(builder.coalesce(builder.sum(root.get("valorTotalNota")), BigDecimal.ZERO));
+
+	    if (!conditions.isEmpty()) {
+	        cq.where(conditions.toArray(new Predicate[0]));
+	    }
+
+	    BigDecimal total = this.getEntityManager().createQuery(cq).getSingleResult();
+	    return total != null ? total : BigDecimal.ZERO;
+	}
 	
 	
 }

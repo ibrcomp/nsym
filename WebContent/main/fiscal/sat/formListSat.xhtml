@@ -65,25 +65,18 @@
 										disabled="#{userSessionBean.hasRole(authorization.SAT_INSERT) eq 'false'}"
 										oncomplete="PF('formBlock').unblock()" rendered="true" />
 
-									<!-- 										<p:commandButton update="empresaForm" process="empresaForm" -->
-									<!-- 										value="#{menu.view}" action="#{satBean.changeToEdit(satBean.cfe.id)}" -->
-									<!-- 										onstart="PF('formBlock').block()" -->
-									<!-- 										styleClass="btn btn-flat btn-warning" icon="ui-icon-document" -->
-									<!-- 										disabled="#{userSessionBean.hasRole(authorization.SAT_INSERT) eq 'false'}" -->
-									<!-- 										oncomplete="PF('formBlock').unblock()" rendered="true" /> -->
-
 									<span class="ui-separator"> <span
 										class="ui-icon ui-icon-grip-dotted-vertical" />
 									</span>
 
-									<p:commandButton process="empresaForm"
-										value="Consuta Status Sat"
-										action="#{satBean.consultaStatusSat()}"
-										onstart="PF('formBlock').block()"
-										update="empresaForm pageDescription respSefazList"
-										styleClass="btn btn-flat btn-success"
-										oncomplete="PF('formBlock').unblock()"
-										disabled="#{userSessionBean.hasRole(authorization.SAT_VIEW) eq 'false'}" />
+<!-- 									<p:commandButton process="empresaForm" -->
+<!-- 										value="Consuta Status Sat" -->
+<!-- 										action="#{satBean.consultaStatusSat()}" -->
+<!-- 										onstart="PF('formBlock').block()" -->
+<!-- 										update="empresaForm pageDescription respSefazList" -->
+<!-- 										styleClass="btn btn-flat btn-success" -->
+<!-- 										oncomplete="PF('formBlock').unblock()" -->
+<!-- 										disabled="#{userSessionBean.hasRole(authorization.SAT_VIEW) eq 'false'}" /> -->
 
 
 
@@ -167,74 +160,140 @@
 							</div>
 						</div>
 						<div class="form-group col-md-12">
-							<p:dataTable id="cfe" var="lista" widgetVar="listaCFe"
-								value="#{satBean.cfeModel}"
-								paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							<p:tabView id="tabCupons">
+								<p:tab title="SAT (CFe)">
+									<p:dataTable id="cfe" var="lista" widgetVar="listaCFe"
+										value="#{satBean.cfeModel}"
+										paginatorTemplate="{CurrentPageReport} {FirstPageLink}
 							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
-								paginator="true" rows="10" selection="#{satBean.cfe}"
-								selectionMode="single" lazy="true" rowKey="#{lista.id}"
-								sortBy="#{lista.id}" sortOrder="descending" styleClass="table"
-								rowStyleClass="#{lista.statusEmissao == 'EN' ? 'en' : lista.statusEmissao == 'SA' ? 'sa': lista.statusEmissao == 'EE' ? 'ee' : lista.statusEmissao == 'CA' ? 'ca': lista.statusEmissao == 'IN' ? 'in' : null}">
+										paginator="true" rows="10" selection="#{satBean.cfe}"
+										selectionMode="single" lazy="true" rowKey="#{lista.id}"
+										sortBy="#{lista.id}" sortOrder="descending" styleClass="table"
+										rowStyleClass="#{lista.statusEmissao == 'EN' ? 'en' : lista.statusEmissao == 'SA' ? 'sa': lista.statusEmissao == 'EE' ? 'ee' : lista.statusEmissao == 'CA' ? 'ca': lista.statusEmissao == 'IN' ? 'in' : null}">
 
-								<p:ajax event="rowSelect" listener="#{satBean.onRowSelect}"
-									process="empresaForm" update="navegador" />
+										<p:ajax event="rowSelect" listener="#{satBean.onRowSelect}"
+											process="empresaForm" update="navegador" />
 
-								<p:column headerText="Número cfe" rendered="true"
-									sortBy="#{lista.numeroNota}" style="width:30%">
-									<h:outputLabel value="#{lista.numeroNota}" />
-								</p:column>
-
-								<p:column headerText="Emissão" rendered="true"
-									sortBy="#{lista.dataEmissao}" style="width:10%">
-									<h:outputLabel value="#{lista.dataEmissao.toString()}" />
-								</p:column>
-
-								<p:column sortBy="#{lista.destinatario.nome}"
-									headerText="Razão Social" filterBy="#{lista.destinatario.nome}"
-									filterMatchMode="contains">
-									<h:outputText value="#{lista.destinatario.nome}" />
-								</p:column>
-
-								<p:column sortBy="#{lista.statusEmissao}"
-									headerText="#{label['label.nfe.item.valorTotal']}"
-									style="width:15%">
-									<h:outputText value="#{lista.VCFe}">
-										<f:convertNumber type="currency" currencyCode="BRL" />
-									</h:outputText>
-								</p:column>
-
-								<p:column sortBy="#{lista.statusEmissao}" headerText="Status"
-									style="width:15%">
-									<h:outputText value="#{lista.statusEmissao.toString()}" />
-								</p:column>
-
-								<p:columnGroup type="footer">
-									<p:row>
-										<p:column colspan="3"
-											style="text-align:right;font-size:18px;font-weight:bold;"
-											footerText="#{label['label.nfe.item.valorTotal']}:" />
-										<p:column>
-											<f:facet name="footer">
-												<h:outputText value="#{satBean.totalListaCFe}"
-													style="font-size:18px;color:blue;font-weight:bold;">
-													<f:convertNumber type="currency" currencySymbol="R$"
-														maxFractionDigits="2" currencyCode="BRL" />
-												</h:outputText>
-											</f:facet>
+										<p:column headerText="Número cfe" rendered="true"
+											sortBy="#{lista.numeroNota}" style="width:30%">
+											<h:outputLabel value="#{lista.numeroNota}" />
 										</p:column>
-									</p:row>
-								</p:columnGroup>
 
-							</p:dataTable>
-							<p:outputLabel value="Exportar:" />
-							<h:commandLink>
-								<p:graphicImage name="/nsym/img/download-pdf.png" width="26"
-									style="right:0;" />
-								<p:dataExporter type="pdf" target="cfe" fileName="listaDecfe"
-									options="#{satBean.criaPdfOpt()}"
-									preProcessor="#{satBean.preProcessPDF}" />
-							</h:commandLink>
+										<p:column headerText="Emissão" rendered="true"
+											sortBy="#{lista.dataEmissao}" style="width:10%">
+											<h:outputLabel value="#{lista.dataEmissao.toString()}" />
+										</p:column>
 
+										<p:column sortBy="#{lista.destinatario.nome}"
+											headerText="Razão Social"
+											filterBy="#{lista.destinatario.nome}"
+											filterMatchMode="contains">
+											<h:outputText value="#{lista.destinatario.nome}" />
+										</p:column>
+
+										<p:column sortBy="#{lista.statusEmissao}"
+											headerText="#{label['label.nfe.item.valorTotal']}"
+											style="width:15%">
+											<h:outputText value="#{lista.VCFe}">
+												<f:convertNumber type="currency" currencyCode="BRL" />
+											</h:outputText>
+										</p:column>
+
+										<p:column sortBy="#{lista.statusEmissao}" headerText="Status"
+											style="width:15%">
+											<h:outputText value="#{lista.statusEmissao.toString()}" />
+										</p:column>
+
+										<p:columnGroup type="footer">
+											<p:row>
+												<p:column colspan="3"
+													style="text-align:right;font-size:18px;font-weight:bold;"
+													footerText="#{label['label.nfe.item.valorTotal']}:" />
+												<p:column>
+													<f:facet name="footer">
+														<h:outputText value="#{satBean.totalListaCFe}"
+															style="font-size:18px;color:blue;font-weight:bold;">
+															<f:convertNumber type="currency" currencySymbol="R$"
+																maxFractionDigits="2" currencyCode="BRL" />
+														</h:outputText>
+													</f:facet>
+												</p:column>
+											</p:row>
+										</p:columnGroup>
+
+									</p:dataTable>
+									<p:outputLabel value="Exportar:" />
+									<h:commandLink>
+										<p:graphicImage name="/nsym/img/download-pdf.png" width="26"
+											style="right:0;" />
+										<p:dataExporter type="pdf" target="cfe" fileName="listaDecfe"
+											options="#{satBean.criaPdfOpt()}"
+											preProcessor="#{satBean.preProcessPDF}" />
+									</h:commandLink>
+								</p:tab>
+								<p:tab title="NFC-e">
+									<p:dataTable id="nfce" var="lista" value="#{satBean.nfceModel}"
+										paginatorTemplate="{CurrentPageReport} {FirstPageLink}
+							{PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+										paginator="true" rows="10" selection="#{satBean.nfce}"
+										selectionMode="single" lazy="true" rowKey="#{lista.id}"
+										sortBy="#{lista.id}" sortOrder="descending" styleClass="table"
+										rowStyleClass="#{lista.statusEmissao == 'EN' ? 'en' : lista.statusEmissao == 'SA' ? 'sa': lista.statusEmissao == 'EE' ? 'ee' : lista.statusEmissao == 'CA' ? 'ca': lista.statusEmissao == 'IN' ? 'in' : null}">
+
+										<p:ajax event="rowSelect"
+											listener="#{satBean.onRowSelectNfce}" process="empresaForm"
+											update="navegador" />
+
+										<p:column headerText="Número" sortBy="#{lista.numero} " style="width:10%">
+											<h:outputText value="#{lista.numero}" />
+										</p:column>
+
+										<p:column headerText="Série" sortBy="#{lista.serie}" style="width:10%">
+											<h:outputText value="#{lista.serie}" />
+										</p:column>
+
+										<p:column headerText="Emissão" rendered="true"
+											sortBy="#{lista.dataEmissao}" style="width:10%">
+											<h:outputLabel value="#{lista.dataEmissao.toString()}" />
+										</p:column>
+
+										<p:column headerText="Valor" sortBy="#{lista.VNf}">
+											<h:outputText value="#{lista.VNf}">
+												<f:convertNumber type="currency" currencyCode="BRL" />
+											</h:outputText>
+										</p:column>
+
+										<p:column headerText="Chave" style="width:30%">
+											<h:outputText value="#{lista.chaveAcesso}" />
+										</p:column>
+
+										<!-- se você tiver status na NFC-e -->
+										<p:column sortBy="#{lista.statusEmissao}" headerText="Status"
+											style="width:15%">
+											<h:outputText value="#{lista.statusEmissao.toString()}" />
+										</p:column>
+
+										<p:columnGroup type="footer">
+											<p:row>
+												<p:column colspan="3"
+													style="text-align:right;font-size:18px;font-weight:bold;"
+													footerText="#{label['label.nfe.item.valorTotal']}:" />
+												<p:column>
+													<f:facet name="footer">
+														<h:outputText value="#{satBean.totalListaCFe}"
+															style="font-size:18px;color:blue;font-weight:bold;">
+															<f:convertNumber type="currency" currencySymbol="R$"
+																maxFractionDigits="2" currencyCode="BRL" />
+														</h:outputText>
+													</f:facet>
+												</p:column>
+											</p:row>
+										</p:columnGroup>
+
+									</p:dataTable>
+								</p:tab>
+
+							</p:tabView>
 						</div>
 					</div>
 				</div>

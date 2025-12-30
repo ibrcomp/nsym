@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 
 import javax.enterprise.context.Dependent;
+import javax.persistence.LockModeType;
 
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
@@ -58,6 +59,9 @@ public class EmpresaRepository extends GenericRepositoryEmpDS<Empresa, Long> {
 						Restrictions.eqOrIsNull("idEmpresa", idEmpresa),
 						Restrictions.eqOrIsNull("idFilial", idFilial)));
 		return criteria.list();
+	}
+	public Empresa lockById(Long id) {
+		return this.getEntityManager().find(Empresa.class, id, LockModeType.PESSIMISTIC_WRITE);
 	}
 	
 	

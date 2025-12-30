@@ -253,4 +253,24 @@ public class Empresa extends PersistentEntity{
 	@Setter
 	private String cnaePrincipal;
 	
+	@Getter
+	@Setter
+	private Long serieNfc;
+	
+	@Getter
+	@Setter
+	private Long numeroNfce;
+	
+	@Getter
+	@Setter
+	private String csc;
+	
+	@Getter
+	@Setter
+	private String idToken;
+	
+	@Getter
+	@Setter
+	private Boolean modoProducao = false;
+	
 }

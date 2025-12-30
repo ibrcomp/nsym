@@ -599,6 +599,38 @@ public abstract class AbstractBeanEmpDS<T> implements IBean<T>,Serializable {
 		return conexao;
 	}
 	
+	public  DadosDeConexaoSocket pegaConexaoNFce(){
+		DadosDeConexaoSocket conexao; 
+		Empresa emp = new Empresa();
+		Filial fil = new Filial();
+		if (this.getUsuarioAutenticado().getIdFilial() == null){
+			if (this.getUsuarioAutenticado().getIdEmpresa() == null) {
+				if (ApplicationUtils.isStageRunning(ProjectStage.Production)){
+					System.out.println("Stagio Producao");
+					conexao = new DadosDeConexaoSocket("ibrcomp.no-ip.org",3434);
+				}else {
+					System.out.println("Stagio Teste");
+					conexao = new DadosDeConexaoSocket("127.0.0.1",3434);
+				}
+			}else {
+				emp = this.empresaDao.findById(this.getUsuarioAutenticado().getIdEmpresa(), false);
+			}
+			if (emp.getIpAcbr() == null) {
+				conexao = new DadosDeConexaoSocket(meuIP().trim(),emp.getPortaAcbr(),emp.getCsc(),emp.getIdToken());
+			}else {
+				conexao = new DadosDeConexaoSocket(emp.getIpAcbr().trim(),emp.getPortaAcbr(),emp.getCsc(),emp.getIdToken());
+			}
+		}else{
+			fil = this.filialDao.findById(this.getUsuarioAutenticado().getIdFilial(), false);
+			if (fil.getIpAcbr() == null) {
+				conexao = new DadosDeConexaoSocket(meuIP().trim(),fil.getPortaAcbr(),fil.getCsc(),fil.getIdToken());
+			}else {
+				conexao = new DadosDeConexaoSocket(fil.getIpAcbr().trim(),fil.getPortaAcbr(),fil.getCsc(),fil.getIdToken());
+			}
+		}
+		return conexao;
+	}
+	
 	public EmpUser configEmpUser() {
 		EmpUser emp = new EmpUser();
 		if (this.usuarioAutenticado.getIdFilial() != null) {

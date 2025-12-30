@@ -43,6 +43,37 @@ public class NfceItem  extends Item{
 	@Setter
 	@Column(precision = 20 , scale = 5)
 	private BigDecimal vRatAcr= new BigDecimal("0");
+	
+	@Getter
+	@Setter
+	@Column(precision = 20 , scale = 5)
+	private BigDecimal valorCSLL= new BigDecimal("0");
+	@Getter
+	@Setter
+	@Column(precision = 20 , scale = 5)
+	private BigDecimal aliqCSLL= new BigDecimal("0");
+	@Getter
+	@Setter
+	@Column(precision = 20 , scale = 5)
+	private BigDecimal valorIRRF= new BigDecimal("0");
+	@Getter
+	@Setter
+	@Column(precision = 20 , scale = 5)
+	private BigDecimal aliqIRRF= new BigDecimal("0");
+	@Getter
+	@Setter
+	@Column(precision = 20 , scale = 5)
+	private BigDecimal vTrfIcms= new BigDecimal("0");
+	@Getter
+	@Setter
+	@Column(precision = 20 , scale = 5)
+	private BigDecimal vFundoAmpara= new BigDecimal("0");
+	@Getter
+	@Setter
+	@Column(precision = 20 , scale = 5)
+	private BigDecimal valorOutro= new BigDecimal("0");
+	
+	
 
 	
 }

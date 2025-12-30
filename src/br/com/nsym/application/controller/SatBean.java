@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.annotation.PostConstruct;
 import javax.faces.context.FacesContext;
@@ -20,17 +21,17 @@ import javax.persistence.Transient;
 import javax.servlet.ServletContext;
 import javax.transaction.Transactional;
 
-import org.hibernate.HibernateException;
-import org.primefaces.component.export.PDFOptions;
-import org.primefaces.event.SelectEvent;
-import org.primefaces.model.SortOrder;
-
 import com.lowagie.text.BadElementException;
 import com.lowagie.text.Chunk;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Image;
 import com.lowagie.text.Paragraph;
+
+import org.hibernate.HibernateException;
+import org.primefaces.component.export.PDFOptions;
+import org.primefaces.event.SelectEvent;
+import org.primefaces.model.SortOrder;
 
 import br.com.ibrcomp.exception.EstoqueException;
 import br.com.ibrcomp.exception.TotaisCFeException;
@@ -41,17 +42,23 @@ import br.com.nsym.application.component.table.AbstractDataModel;
 import br.com.nsym.application.component.table.AbstractLazyModel;
 import br.com.nsym.application.component.table.Page;
 import br.com.nsym.application.component.table.PageRequest;
-import br.com.nsym.application.controller.AbstractBeanEmpDS.EmpUser;
-import br.com.nsym.application.controller.AbstractBeanEmpDS.ViewState;
 import br.com.nsym.application.controller.nfe.tools.CalculaTributos;
+import br.com.nsym.application.controller.nfe.tools.CupomFiscalCaixa;
+import br.com.nsym.application.controller.nfe.tools.CupomFiscalFactory;
+import br.com.nsym.application.controller.nfe.tools.NfceEmissaoResultado;
+import br.com.nsym.application.controller.nfe.tools.NfceEmissaoService;
+import br.com.nsym.application.controller.nfe.tools.NfceService;
 import br.com.nsym.domain.misc.CpfCnpjUtils;
 import br.com.nsym.domain.misc.EstoqueUtil;
 import br.com.nsym.domain.misc.FinanceiroTools;
 import br.com.nsym.domain.misc.LocalizaRegex;
 import br.com.nsym.domain.model.entity.cadastro.BarrasEstoque;
+import br.com.nsym.domain.model.entity.cadastro.Empresa;
+import br.com.nsym.domain.model.entity.cadastro.Filial;
 import br.com.nsym.domain.model.entity.cadastro.Produto;
 import br.com.nsym.domain.model.entity.estoque.Estoque;
 import br.com.nsym.domain.model.entity.financeiro.FormaDePagamento;
+import br.com.nsym.domain.model.entity.financeiro.RecebimentoParcial;
 import br.com.nsym.domain.model.entity.financeiro.produto.ProdutoCusto;
 import br.com.nsym.domain.model.entity.financeiro.tools.ParcelasNfe;
 import br.com.nsym.domain.model.entity.financeiro.tools.TabelaPreco;
@@ -59,9 +66,9 @@ import br.com.nsym.domain.model.entity.fiscal.Cfe.CFe;
 import br.com.nsym.domain.model.entity.fiscal.Cfe.DestinatarioCFe;
 import br.com.nsym.domain.model.entity.fiscal.Cfe.EmitenteCFe;
 import br.com.nsym.domain.model.entity.fiscal.Cfe.ItemCFe;
+import br.com.nsym.domain.model.entity.fiscal.Cfe.Nfce;
 import br.com.nsym.domain.model.entity.fiscal.tools.StatusNfe;
 import br.com.nsym.domain.model.entity.tools.Configuration;
-import br.com.nsym.domain.model.entity.venda.ItemPedido;
 import br.com.nsym.domain.model.repository.cadastro.BarrasEstoqueRepository;
 import br.com.nsym.domain.model.repository.cadastro.EmpresaRepository;
 import br.com.nsym.domain.model.repository.cadastro.FilialRepository;
@@ -70,6 +77,7 @@ import br.com.nsym.domain.model.repository.financeiro.CustoProdutoRepository;
 import br.com.nsym.domain.model.repository.financeiro.FormaDePagementoRepository;
 import br.com.nsym.domain.model.repository.financeiro.tools.ParcelasNfeRepository;
 import br.com.nsym.domain.model.repository.fiscal.NcmEstoqueRepository;
+import br.com.nsym.domain.model.repository.fiscal.nfce.NfceRepository;
 import br.com.nsym.domain.model.repository.fiscal.nfe.DestinatarioCFeRepository;
 import br.com.nsym.domain.model.repository.fiscal.sat.CFeRepository;
 import br.com.nsym.domain.model.repository.fiscal.sat.EmitenteCfeRepository;
@@ -276,6 +284,10 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 	
 	@Getter
 	@Setter
+	private BigDecimal totalListaNfce = new BigDecimal("0");
+	
+	@Getter
+	@Setter
 	@Transient
 	private List<BarrasEstoque> listaBarrasTemp = new ArrayList<>();
 	
@@ -290,6 +302,16 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 	@Inject
 	private BarrasEstoqueRepository barrasDao;
 	
+	@Inject
+	private NfceService nfceService;
+
+	@Inject
+	private NfceEmissaoService nfceEmissaoService;
+	
+	@Getter
+	@Setter
+	private Nfce nfce = new Nfce();
+	
 	@Getter
 	@Setter
 	private EmpUser empresaUsuario;
@@ -298,13 +320,23 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 	@Setter
 	private Configuration configUser;
 	
-	// Utilitario com todas as funï¿½ï¿½es de estoque
+	// Utilitario com todas as fun  es de estoque
 	@Inject
 	private EstoqueUtil estoqueUtil;
 	
 	//Estoque fiscal
 	@Inject
 	private NcmEstoqueRepository ncmDao;
+	
+	@Inject
+	private NfceRepository nfceDao;
+
+	@Getter
+	private AbstractLazyModel<Nfce> nfceModel;
+	
+	@Getter
+	private CupomFiscalCaixa cupomSelecionado;
+
 
 	@Override
 	public CFe setIdFilial(Long idFilial) {
@@ -315,8 +347,10 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 	public void initializeListing() {
 		this.viewState = ViewState.ADDING;
 		this.cfeModel = getLazycfe();
+		this.nfceModel = getLazyNfce();
 		this.nomeArquivo = "sat" + removerAcentos(this.getUsuarioAutenticado().getName()+this.getUsuarioAutenticado().getIdEmpresa()).replace(" ", "").trim();
 		this.totalListaCFe = cfeDao.totalCfePeriodo(dataIncial, dataFinal, pegaIdEmpresa(), pegaIdFilial());
+		this.totalListaNfce = nfceDao.totalNfcePeriodo(dataIncial, dataFinal, pegaIdEmpresa(), pegaIdFilial());
 	}
 
 	@Override
@@ -362,6 +396,31 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 		return cfeModel;
 	}
 	
+	public AbstractLazyModel<Nfce> getLazyNfce() {
+	    this.nfceModel = new AbstractLazyModel<Nfce>() {
+	        private static final long serialVersionUID = 1L;
+
+	        @Override
+	        public List<Nfce> load(int first, int pageSize, String sortField, SortOrder sortOrder,
+	                               Map<String, Object> filters) {
+
+	            PageRequest pageRequest = new PageRequest();
+	            pageRequest.setFirstResult(first)
+	                       .withPageSize(pageSize)
+	                       .sortingBy(sortField, "inclusion")
+	                       .withDirection(sortOrder.name());
+
+	            // IDEAL: ter método no repositório igual ao do CFeRepository
+	            Page<Nfce> page = nfceDao.listaNfceEmitidoPorIntervaloData(
+	                    dataIncial, dataFinal, pegaIdEmpresa(), pegaIdFilial(), pageRequest);
+
+	            this.setRowCount(page.getTotalPagesInt());
+	            return page.getContent();
+	        }
+	    };
+	    return nfceModel;
+	}
+
 	/**
 	 * Exibe o dialog com a lista de produtos
 	 */
@@ -382,7 +441,7 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 	
 	public void preProcessPDF(Object document) throws IOException,
 	BadElementException, DocumentException {
-		System.out.println("Iniciando Insersï¿½o de imagem no PDF");
+		System.out.println("Iniciando Insers o de imagem no PDF");
 		Document pdf = (Document) document;
 		ServletContext servletContext = (ServletContext)
 		FacesContext.getCurrentInstance().getExternalContext().getContext();
@@ -397,7 +456,7 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 			pdf.add(Chunk.NEWLINE);
 			pdf.add(new Paragraph(" "));
 			pdf.add(Chunk.NEWLINE);
-			pdf.add(new Paragraph ("Relatï¿½rio de CFe"));
+			pdf.add(new Paragraph ("Relat rio de CFe"));
 			pdf.add(Chunk.NEWLINE);
 			pdf.add(new Paragraph("Total: R$ " + this.totalListaCFe.setScale(2,RoundingMode.HALF_EVEN).toString()));
 			pdf.add(Chunk.NEWLINE);
@@ -422,11 +481,29 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 	public void filtroPeriodoListaCfe() {
 		this.cfeModel = getLazycfe();
 		this.totalListaCFe = cfeDao.totalCfePeriodo(dataIncial, dataFinal, pegaIdEmpresa(), pegaIdFilial());
+		this.nfceModel = getLazyNfce();
+		this.totalListaCFe = nfceDao.totalNfcePeriodo(dataIncial, dataFinal, pegaIdEmpresa(), pegaIdFilial());
 	}
 
 
-	/**
-	 * Inicializaï¿½ï¿½o da pagina em modo de Adiï¿½ï¿½o ou Ediï¿½ï¿½o
+//	@Transactional
+//	public void geraNfce() {
+//		try {
+//			preencheCupom();
+//			NfceEmissaoResultado res = nfceEmissaoService.emitir(pegaConexaoNFce(), this.nomeArquivo, this.cfe, pegaIdEmpresa(), pegaIdFilial(), true);
+//			this.nfce = (res != null ? res.getNfce() : null);
+//			if (res == null || !res.isValido()) {
+//				this.addError(true, res != null ? res.getMotivo() : "Falha ao emitir NFC-e (retorno nulo)");
+//				return;
+//			}
+//			this.addInfo(true, "NFC-e emitida com sucesso: " + res.getNumero() + " (Série " + res.getSerie() + ")");
+//		} catch (Exception e) {
+//			this.addError(true, "exception.error.fatal", e.getLocalizedMessage());
+//		}
+//	}
+	
+	/** 
+	 * Inicializa  o da pagina em modo de Adi  o ou Edi  o
 	 * @param idCFe
 	 */
 	public void initializeForm(Long idCFe) {
@@ -439,6 +516,7 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 			this.documento = "";
 			this.listaParcelamento = new ArrayList<>();
 			this.cfe = new CFe();
+			this.nfce = new Nfce();
 			this.quantidade = new BigDecimal("0");
 			this.item = new ItemCFe();
 			this.desPercVal = new BigDecimal("0");
@@ -452,6 +530,7 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 			this.produto = new Produto();
 			this.viewState = ViewState.EDITING;
 			this.cfe = this.cfeDao.pegaCfeLazy(idCFe, getUsuarioAutenticado().getIdEmpresa(),getUsuarioAutenticado().getIdFilial());
+			this.nfce = new Nfce();
 			this.listaItemTemp = this.cfe.getListaItem();
 			this.totalCFe = this.cfe.getValorTotalProdutos();
 			this.totalDesconto = this.cfe.getDesconto();
@@ -486,7 +565,7 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 	}
 	
 	/**
-	 * Mï¿½todo para definir o preï¿½o do produto conforme seleï¿½ï¿½o da tabela de preï¿½os
+	 * M todo para definir o pre o do produto conforme sele  o da tabela de pre os
 	 */
 	public void definePreco() {
 		if (this.produto.getId() != null) {
@@ -494,23 +573,23 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 			switch (this.tabelaSelecionada) {
 			case TA:
 				this.precoVenda = this.produto.getListaCustoProduto().get(0).getPreco1();
-				System.out.println("Setando preï¿½o1");
+				System.out.println("Setando pre o1");
 				break;
 			case TB:
 				this.precoVenda = this.produto.getListaCustoProduto().get(0).getPreco2();
-				System.out.println("Setando preï¿½o2");
+				System.out.println("Setando pre o2");
 				break;
 			case TC:
 				this.precoVenda = this.produto.getListaCustoProduto().get(0).getPreco3();
-				System.out.println("Setando preï¿½o3");
+				System.out.println("Setando pre o3");
 				break;
 			case TD:
 				this.precoVenda = this.produto.getListaCustoProduto().get(0).getPreco4();
-				System.out.println("Setando preï¿½o4");
+				System.out.println("Setando pre o4");
 				break;
 			case TE:
 				this.precoVenda = this.produto.getListaCustoProduto().get(0).getPreco5();
-				System.out.println("Setando preï¿½o5");
+				System.out.println("Setando pre o5");
 				break;
 			case TZ:
 				this.precoVenda = this.produto.getListaCustoProduto().get(0).getCusto();
@@ -575,7 +654,7 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 	}
 	
 	/**
-	 * Mï¿½todo que seta o cï¿½digo de barras quando selecionado em uma lista
+	 * M todo que seta o c digo de barras quando selecionado em uma lista
 	 * @param event
 	 * @throws IOException
 	 */
@@ -584,10 +663,29 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 		this.item.setBarras(this.barrasEstoque);
 }
 
+	
 	@Transactional
-	public void onRowSelect(SelectEvent event) throws IOException{
-		this.cfe = (CFe) event.getObject();
-		System.out.println("preenchi a lista de itens");
+	public void onRowSelect(SelectEvent event) throws IOException {
+	    CFe selecionado = (CFe) event.getObject();
+	    this.nfce = null;
+	    if (selecionado == null || selecionado.getId() == null) {
+	        return;
+	    }
+
+	    this.cfe = cfeDao.pegaCfeLazy(selecionado.getId(), pegaIdEmpresa(), pegaIdFilial());
+	    this.cupomSelecionado = CupomFiscalFactory.fromCfe(this.cfe);
+
+	    this.viewState = ViewState.EDITING;
+	}
+
+	@Transactional
+	public void onRowSelectNfce(SelectEvent event) {
+		Nfce selecionado = (Nfce) event.getObject();
+		this.cfe = null;
+		if (selecionado == null || selecionado.getId() == null) return;
+
+		this.nfce = nfceDao.pegaNfceLazy(selecionado.getId(), pegaIdEmpresa(), pegaIdFilial());
+		this.cupomSelecionado = CupomFiscalFactory.fromNfce(this.nfce);
 		this.viewState = ViewState.EDITING;
 	}
 
@@ -882,7 +980,7 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 				}
 			}
 		}catch (Exception e) {
-			this.addError(true, "Erro na funï¿½ao de localizacao de produto: " +  e.getMessage() + " " + e.getCause());
+			this.addError(true, "Erro na fun ao de localizacao de produto: " +  e.getMessage() + " " + e.getCause());
 		}
 	}
 
@@ -906,14 +1004,30 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 	
 	@Transactional
 	public void doExcluir() {
+		if (this.cupomSelecionado == null) {
+			this.addError(true, "Selecione um cupom (CFe ou NFC-e) antes de imprimir.");
+			return;
+		}
+
 		try {
-			if (this.cfe.getId() != null) {
-				if (this.cfe.getStatusEmissao().equals(StatusNfe.SA)||this.cfe.getStatusEmissao().equals(StatusNfe.EE) )  {
-//					this.destinatarioDao.delete(this.cfe.getDestinatario());
-//					this.emitenteDao.delete(this.cfe.getEmitente());
-					this.cfeDao.delete(this.cfe);
-				}else {
-					this.addWarning(true, "error.delete.sat", this.cfe.getNumeroNota());
+			Long origemId = this.cupomSelecionado.getOrigemId();
+
+			boolean isNfceSelecionada = (this.nfce != null && this.nfce.getId() != null && Objects.equals(origemId, this.nfce.getId()));
+			if (isNfceSelecionada) {
+				if (!this.nfce.isEmitido()) { // Emissao NFCE
+					if (this.nfce.getStatusEmissao().equals(StatusNfe.SA)||this.nfce.getStatusEmissao().equals(StatusNfe.EE) )  {
+						this.nfceDao.delete(this.nfce);
+					}
+				}
+			}else {
+				if (this.cfe.getId() != null) {
+					if (this.cfe.getStatusEmissao().equals(StatusNfe.SA)||this.cfe.getStatusEmissao().equals(StatusNfe.EE) )  {
+						//					this.destinatarioDao.delete(this.cfe.getDestinatario());
+						//					this.emitenteDao.delete(this.cfe.getEmitente());
+						this.cfeDao.delete(this.cfe);
+					}else {
+						this.addWarning(true, "error.delete.sat", this.cfe.getNumeroNota());
+					}
 				}
 			}
 		}catch (HibernateException h) {
@@ -928,7 +1042,7 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 	}
 	
 	/**
-	 * Mï¿½todo que recebe o ESTOQUE do item do pedido 
+	 * M todo que recebe o ESTOQUE do item do pedido 
 	 *
 	 * @param item
 	 * @return
@@ -948,8 +1062,8 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 	}
 	
 	/**
-	 * Mï¿½todo que retira do estoque a quantidade informada, caso
-	 * BarrasEstoque ou NcmEstoque esteja nulo serï¿½ criado uma base com quantidade = 0 para depois negativar.
+	 * M todo que retira do estoque a quantidade informada, caso
+	 * BarrasEstoque ou NcmEstoque esteja nulo ser  criado uma base com quantidade = 0 para depois negativar.
 	 * @param listaItem
 	 * @throws HibernateException
 	 * @throws EstoqueException
@@ -979,7 +1093,7 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 	}
 	
 	/**
-	 * Mï¿½todo que devolve para o estoque a quantidade que anteriormente havia sido retirado.
+	 * M todo que devolve para o estoque a quantidade que anteriormente havia sido retirado.
 	 * @param listaItem
 	 */
 	
@@ -997,11 +1111,29 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 	@Transactional
 	public String doSalvar() {
 		try {
+			boolean nfceAtivado = AbstractBeanEmpDS.<Boolean>campoEmpUser(this.empresaUsuario,Filial::isNFCeAtivo,Empresa::isNFCeAtivo ).booleanValue();
+			preencheCupom();
+			if (nfceAtivado) { // NCFE Salvar 
+				for (ParcelasNfe parcelasNfe : this.listaParcelamento) {
+					parcelasNfe.setCfe(this.cfe);
+				}
+				this.cfe.getListaParcelas().addAll(this.listaParcelamento);
+				this.cfe.setStatusEmissao(StatusNfe.SA);
+				this.nfce = nfceEmissaoService.criaSalvaNfce(this.cfe,pegaIdEmpresa(),pegaIdFilial());
+				this.viewState = ViewState.EDITING;
+				
+				if (this.nfce == null ) {
+					this.addError(true,"Error.save.Nfce");
+					return null;
+				}
+				this.cfe = null;
+				return toListSat();
+			}
 		
 			if (this.cfe.getId() == null){
 				
 				if (this.cfe.getListaItem().size() > 0) {
-					this.listaItemTemp = calculaTributos.preencheListaDeItensCfe(this.cfe.getListaItem(), this.cfe,pegaIdEmpresa(),pegaIdFilial());
+					this.listaItemTemp = calculaTributos.preencheListaDeItensCfe(this.cfe.getListaItem(), pegaIdEmpresa(),pegaIdFilial());
 				}else {
 					throw new TributosException(this.translate("tributosException.listaEmpty"));
 				}
@@ -1066,7 +1198,7 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 				this.cfe.setDesconto(this.totalDesconto);
 				this.cfe.setFormaPagamento(this.formaPag);
 				//				}
-				//Persistindo as alteraï¿½ï¿½es nos itens da CFe
+				//Persistindo as altera  es nos itens da CFe
 				System.out.println("IBR - salvando os itens da cfe");
 				for (ItemCFe item : this.cfe.getListaItem()) {
 					if (this.item.getCfe() == null) {
@@ -1166,7 +1298,7 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 			inicio = resultadoUp.indexOf("CODIGODERETORNO");
 			fim = resultadoUp.indexOf("NUMEROSESSAO");
 			String codigoRetorno = resultadoUp.substring(inicio+16,fim);
-			System.out.println("Cï¿½digo: " + codigoRetorno);
+			System.out.println("C digo: " + codigoRetorno);
 			switch (codigoRetorno.trim()) {
 			case "6000":
 				inicio = resultadoUp.indexOf("ARQUIVO=");
@@ -1183,22 +1315,22 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 				break;
 			case "6001":
 				satResposta.setValido(false);
-				satResposta.setMotivo("Cï¿½digo de ativaï¿½ï¿½o invï¿½lido");
+				satResposta.setMotivo("C digo de ativa  o inv lido");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			case "6002":
 				satResposta.setValido(false);
-				satResposta.setMotivo("SAT ainda nï¿½o ativado.");
+				satResposta.setMotivo("SAT ainda n o ativado.");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			case "6003":
 				satResposta.setValido(false);
-				satResposta.setMotivo("SAT nï¿½o vinculado ao AC");
+				satResposta.setMotivo("SAT n o vinculado ao AC");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			case "6004":
 				satResposta.setValido(false);
-				satResposta.setMotivo("Vinculaï¿½ï¿½o do AC nï¿½o confere.");
+				satResposta.setMotivo("Vincula  o do AC n o confere.");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			case "6005":
@@ -1218,17 +1350,17 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 				break;
 			case "6008":
 				satResposta.setValido(false);
-				satResposta.setMotivo("SAT bloqueado por falta de comunicaï¿½ï¿½o");
+				satResposta.setMotivo("SAT bloqueado por falta de comunica  o");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			case "6009":
 				satResposta.setValido(false);
-				satResposta.setMotivo("SAT bloqueado, cï¿½digo de ativaï¿½ï¿½o incorreto");
+				satResposta.setMotivo("SAT bloqueado, c digo de ativa  o incorreto");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			case "6010":
 				satResposta.setValido(false);
-				satResposta.setMotivo("Erro de validaï¿½ï¿½o do conteï¿½do.");
+				satResposta.setMotivo("Erro de valida  o do conte do.");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			case "6011":
@@ -1238,7 +1370,7 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 				break;
 			case "6097":
 				satResposta.setValido(false);
-				satResposta.setMotivo("Nï¿½mero de sessï¿½o invï¿½lido");
+				satResposta.setMotivo("N mero de sess o inv lido");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			case "6098":
@@ -1248,7 +1380,7 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 				break;
 			case "6099":
 				satResposta.setValido(false);
-				satResposta.setMotivo("Erro desconhecido na emissï¿½o.");
+				satResposta.setMotivo("Erro desconhecido na emiss o.");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			default:
@@ -1274,28 +1406,136 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 	}
 
 	public void enviarEmailSat() {
-		if (this.cfe.isEmitido()) {
-			try {
-				this.respostaAcbrLocal = acbr.satEnviarEmailCFe(pegaConexao(), emailCfe, this.cfe.getCaminho(), this.cfe.getNumeroNota());
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				this.addError(true, "caixa.error", e.getMessage());
+
+		if (this.cupomSelecionado == null) {
+			this.addError(true, "Selecione um cupom (CFe ou NFC-e) antes de enviar o e-mail.");
+			return;
+		}
+		if (this.emailCfe == null || this.emailCfe.trim().isEmpty()) {
+			this.addError(true, "Informe o e-mail de destino.");
+			return;
+		}
+
+		try {
+			Long origemId = this.cupomSelecionado.getOrigemId();
+
+			// 1) Se o cupom selecionado vier de NFC-e (origemId == nfce.id), envia NFC-e
+			if (this.nfce != null && this.nfce.getId() != null && origemId != null && origemId.equals(this.nfce.getId())) {
+
+				String caminhoXml = (this.nfce.getCaminhoXml() != null ? this.nfce.getCaminhoXml().trim() : "");
+				if (caminhoXml.isEmpty()) {
+					this.addError(true, "Email com a NFC-e não foi enviado! XML da NFC-e não informado.");
+					return;
+				}
+
+				this.respostaAcbrLocal = acbr.nfeEnviarEmail(
+						pegaConexao(),
+						emailCfe,
+						caminhoXml,
+						true,   // envia PDF
+						"",     // assunto (opcional - usar configurado no ACBr)
+						"",     // cópia (opcional)
+						"",     // anexos adicionais (opcional)
+						""      // reply-to (opcional)
+				);
+				return;
 			}
-		}else {
-			this.addError(true, "Email com a CFe nï¿½o foi enviado!");
+
+			// 2) Se o cupom selecionado vier de CFe (origemId == cfe.id), envia CFe
+			if (this.cfe != null && this.cfe.getId() != null && origemId != null && origemId.equals(this.cfe.getId())) {
+
+				if (!this.cfe.isEmitido()) {
+					this.addError(true, "Email com a CFe não foi enviado! Cupom não emitido.");
+					return;
+				}
+
+				this.respostaAcbrLocal = acbr.satEnviarEmailCFe(
+						pegaConexao(),
+						emailCfe,
+						this.cfe.getCaminho(),
+						String.valueOf(this.cfe.getNumeroNota()));
+				return;
+			}
+
+			// 3) Fallback: tenta NFC-e se tiver id e xml, senão tenta CFe
+			if (this.nfce != null && this.nfce.getId() != null) {
+				String caminhoXml = (this.nfce.getCaminhoXml() != null ? this.nfce.getCaminhoXml().trim() : "");
+				if (!caminhoXml.isEmpty()) {
+					this.respostaAcbrLocal = acbr.nfeEnviarEmail(pegaConexao(), emailCfe, caminhoXml, true, "", "", "", "");
+					return;
+				}
+			}
+			if (this.cfe != null && this.cfe.getId() != null) {
+				if (this.cfe.isEmitido()) {
+					this.respostaAcbrLocal = acbr.satEnviarEmailCFe(pegaConexao(), emailCfe, this.cfe.getCaminho(), String.valueOf(this.cfe.getNumeroNota()));
+					return;
+				}
+			}
+
+			this.addError(true, "Não foi possível identificar o tipo de cupom selecionado (CFe/NFC-e).");
+
+		} catch (IOException e) {
+			this.addError(true, "caixa.error", e.getMessage());
 		}
 	}
 
+
 	public void imprimiSat() {
-		if (this.cfe.isEmitido()) {
-			try {
-				this.respostaAcbrLocal = acbr.satImprimiExtratoVenda(pegaConexao(), this.cfe.getCaminho());
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				this.addError(true, "caixa.error", e.getMessage());
+		if (this.cupomSelecionado == null) {
+			this.addError(true, "Selecione um cupom (CFe ou NFC-e) antes de imprimir.");
+			return;
+		}
+
+		try {
+			Long origemId = this.cupomSelecionado.getOrigemId();
+
+			boolean isNfceSelecionada = (this.nfce != null && this.nfce.getId() != null && Objects.equals(origemId, this.nfce.getId()));
+			boolean isCfeSelecionada = (this.cfe != null && this.cfe.getId() != null && Objects.equals(origemId, this.cfe.getId()));
+
+			if (isNfceSelecionada) {
+				if (!this.nfce.isEmitido()) {
+					this.addError(true, "NFC-e ainda não foi emitida!");
+					return;
+				}
+				String alvo = (this.nfce.getCaminhoXml() != null ? this.nfce.getCaminhoXml().trim() : "");
+				if (alvo.isEmpty()) {
+					alvo = (this.nfce.getChaveAcesso() != null ? this.nfce.getChaveAcesso().trim() : "");
+				}
+				if (alvo.isEmpty()) {
+					this.addError(true, "Não foi possível imprimir: NFC-e sem XML/Chave.");
+					return;
+				}
+				this.respostaAcbrLocal = acbr.nfeImprimirDanfce(pegaConexao(), alvo);
+				return;
 			}
-		}else {
-			this.addError(true, "CFe ainda nao foi emitido!");
+
+			if (isCfeSelecionada) {
+				if (!this.cfe.isEmitido()) {
+					this.addError(true, "CFe ainda nao foi emitido!");
+					return;
+				}
+
+				this.respostaAcbrLocal = acbr.satImprimiExtratoVenda(pegaConexao(), this.cfe.getCaminho());
+				return;
+			}
+
+			// Fallback: tenta NFC-e se tiver XML; senão tenta CFe
+			if (this.nfce != null && this.nfce.getId() != null && this.nfce.isEmitido()) {
+				String alvo = (this.nfce.getCaminhoXml() != null ? this.nfce.getCaminhoXml().trim() : "");
+				if (!alvo.isEmpty()) {
+					this.respostaAcbrLocal = acbr.nfeImprimirDanfce(pegaConexao(), alvo);
+					return;
+				}
+			}
+			if (this.cfe != null && this.cfe.getId() != null && this.cfe.isEmitido()) {
+				this.respostaAcbrLocal = acbr.satImprimiExtratoVenda(pegaConexao(), this.cfe.getCaminho());
+				return;
+			}
+
+			this.addError(true, "Não foi possível identificar o tipo de cupom selecionado (CFe/NFC-e).");
+
+		} catch (IOException e) {
+			this.addError(true, "caixa.error", e.getMessage());
 		}
 	}
 	
@@ -1317,110 +1557,154 @@ public class SatBean extends AbstractBeanEmpDS<CFe> {
 
 	@Transactional
 	public void doEmitirPelaLista()throws TributosException, TotaisCFeException {
-		try {
-		if (!this.cfe.isEmitido()) {
-			if (this.cfe.getId() == null) {
-				this.cfe.setListaItem(calculaTributos.preencheListaDeItensCfe(this.cfe.getListaItem(), this.cfe,pegaIdEmpresa(),pegaIdFilial()));
-			}else {
-				this.cfe.setListaItem(this.itemDao.listaDeItensPorCFe(this.cfe, pegaIdEmpresa(), pegaIdFilial()));
-				this.cfe.setListaItem(calculaTributos.preencheListaDeItensCfe(this.cfe.getListaItem(), this.cfe,pegaIdEmpresa(),pegaIdFilial()));
-			}
-			this.respostaAcbrLocal = acbr.criarArqIniSatMaqRemota(pegaConexao(), this.nomeArquivo, this.cfe,pegaVersaoSat());
-			String retornoAcbr = acbr.satCriarEnviarCFe(pegaConexao(), this.nomeArquivo);
-			SatResposta satResposta = validaRetornoCFe(retornoAcbr); 
-			System.out.println("Valido: " + satResposta.isValido() + "\n Cï¿½digo:" + satResposta.codigoRetorno);
-			if (satResposta.isValido()) {
-				this.cfe.setCaminho(satResposta.getPatch());
-				this.cfe.setStatusEmissao(StatusNfe.EN);
-				this.cfe.setNumeroNota(satResposta.getNumero());
-				this.cfe.setEmitido(true);
-				System.out.println("Campos CFE preenchidos caminho:" + this.cfe.getCaminho() + " Chave de acesso:"
-						+ this.cfe.getNumeroNota() + " Emitido:" + this.cfe.getStatusEmissao() + " emitido:" + this.cfe.isEmitido());
-				this.respostaAcbrLocal = acbr.geraPDFExtratoVenda(pegaConexao(), this.cfe.getCaminho(), this.cfe.getNumeroNota().trim() + ".pdf");
-				this.respostaAcbrLocal = acbr.satImprimiExtratoVenda(pegaConexao(), this.cfe.getCaminho());
-				this.addInfo(true, satResposta.motivo);
-				this.cfe = this.cfeDao.save(this.cfe);
-			}else {
 
-				this.addError(true, satResposta.motivo);
-			}
-		}else {
-			this.addWarning(true, "CFe jï¿½ emitido!");
+		if (this.cupomSelecionado == null) {
+			this.addError(true, "Selecione um cupom (CFe ou NFC-e) antes de imprimir.");
+			return;
 		}
+
+		try {
+			Long origemId = this.cupomSelecionado.getOrigemId();
+
+			boolean isNfceSelecionada = (this.nfce != null && this.nfce.getId() != null && Objects.equals(origemId, this.nfce.getId()));
+			boolean isCfeSelecionada = (this.cfe != null && this.cfe.getId() != null && Objects.equals(origemId, this.cfe.getId()));
+			if (isNfceSelecionada) {
+				if (!this.nfce.isEmitido()) { // Emissao NFCE
+					this.cupomSelecionado.setItens(calculaTributos.preencheListaDeItensCfe(this.cupomSelecionado.getItens(),pegaIdEmpresa(),pegaIdFilial()));
+					Nfce nfcTemp = new Nfce();
+						nfcTemp.setListaRecebimentosAgrupados(nfceDao.pegaListaRecebimentoParcial(origemId, pegaIdEmpresa(), pegaIdFilial()));
+					for (RecebimentoParcial rec : nfcTemp.getListaRecebimentosAgrupados()) {
+						System.out.println("recebimento parcial :" + rec.getValorRecebido() + " tamanho: "+ nfcTemp.getListaRecebimentosAgrupados().size());
+					}
+					NfceEmissaoResultado res = nfceEmissaoService.emitirCupomSalvo(pegaConexao(), nomeArquivo, this.cupomSelecionado,this.nfce,nfcTemp.getListaRecebimentosAgrupados() ,pegaIdEmpresa(), pegaIdFilial(), true);
+					this.nfce = (res != null ? res.getNfce() : null);
+					if (res == null || !res.isValido()) {
+						this.addError(true, res != null ? res.getMotivo() : "Falha ao emitir NFC-e (retorno nulo)");
+					}
+					this.addInfo(true, "NFC-e emitida com sucesso: " + res.getNumero() + " (Série " + res.getSerie() + ")");
+				}
+			}
+			if (isCfeSelecionada) {
+				if (!this.cfe.isEmitido()) {
+					if (this.cfe.getId() == null) {
+						this.cfe.setListaItem(calculaTributos.preencheListaDeItensCfe(this.cfe.getListaItem(), pegaIdEmpresa(),pegaIdFilial()));
+					}else {
+						this.cfe.setListaItem(this.itemDao.listaDeItensPorCFe(this.cfe, pegaIdEmpresa(), pegaIdFilial()));
+						this.cfe.setListaItem(calculaTributos.preencheListaDeItensCfe(this.cfe.getListaItem(), pegaIdEmpresa(),pegaIdFilial()));
+					}
+					this.respostaAcbrLocal = acbr.criarArqIniSatMaqRemota(pegaConexao(), this.nomeArquivo, this.cfe,pegaVersaoSat());
+					String retornoAcbr = acbr.satCriarEnviarCFe(pegaConexao(), this.nomeArquivo);
+					SatResposta satResposta = validaRetornoCFe(retornoAcbr); 
+					System.out.println("Valido: " + satResposta.isValido() + "\n C digo:" + satResposta.codigoRetorno);
+					if (satResposta.isValido()) {
+						this.cfe.setCaminho(satResposta.getPatch());
+						this.cfe.setStatusEmissao(StatusNfe.EN);
+						this.cfe.setNumeroNota(satResposta.getNumero());
+						this.cfe.setEmitido(true);
+						System.out.println("Campos CFE preenchidos caminho:" + this.cfe.getCaminho() + " Chave de acesso:"
+								+ this.cfe.getNumeroNota() + " Emitido:" + this.cfe.getStatusEmissao() + " emitido:" + this.cfe.isEmitido());
+						this.respostaAcbrLocal = acbr.geraPDFExtratoVenda(pegaConexao(), this.cfe.getCaminho(), this.cfe.getNumeroNota().trim() + ".pdf");
+						this.respostaAcbrLocal = acbr.satImprimiExtratoVenda(pegaConexao(), this.cfe.getCaminho());
+						this.addInfo(true, satResposta.motivo);
+						this.cfe = this.cfeDao.save(this.cfe);
+					}else {
+
+						this.addError(true, satResposta.motivo);
+					}
+				}else {
+					this.addWarning(true, "CFe j  emitido!");
+				}
+			}
 		}catch (IOException i) {
 			this.addError(true, "caixa.error", i.getMessage());
 		}catch (Exception e) {
 			this.addError(true, "caixa.error", e.getMessage());
 		}
 	}
+	
+	public void preencheCupom() throws TributosException, TotaisCFeException {
+		if (this.cfe.getListaItem().size() > 0) {
+			this.listaItemTemp = calculaTributos.preencheListaDeItensCfe(this.cfe.getListaItem(),pegaIdEmpresa(),pegaIdFilial());
+		}else {
+			throw new TributosException(this.translate("tributosException.listaEmpty"));
+		}
+		if (this.listaItemTemp.size() > 0) {
+			this.cfe.setListaItem(this.listaItemTemp);
+		}else {
+			throw new TributosException(this.translate("tributosException.listaEmpty"));
+		}
+		if (this.documento != null) {
+			preencheDestinatario(this.documento);
+		}
+		this.emitente = preencheEmitente();
+		//		this.emitente = this.emitenteDao.save(this.emitente);
+		//		this.destinatario = destinatarioDao.save(this.destinatario);
+
+		this.cfe.setEmitente(this.emitente);
+		this.cfe.setDestinatario(this.destinatario);
+		//		this.cfe.setValorTotalProdutos(this.totalCFe);
+		this.cfe = calculaTributos.calculaTotaisCFe(this.cfe);
+		this.cfe.setDesconto(this.totalDesconto);
+		this.cfe.setFormaPagamento(this.formaPag);
+
+
+
+		//		if (this.cfe.getId() != null) {
+		//			System.out.println("IBR - salvando os itens da cfe");
+		for (ItemCFe item : this.listaItemTemp) {
+			item.setCfe(this.cfe);
+			//				itemDao.save(item);
+		}
+
+		System.out.println("IBR - salvando o pagamento da cfe");
+		for (ParcelasNfe parcelasNfe : this.listaParcelamento) {
+			parcelasNfe.setCfe(this.cfe);
+			//				parcelaDao.save(parcelasNfe);
+			System.out.println("estou dentro do foreach parcelas");
+		}
+		//		}
+		this.cfe.setListaItem(this.listaItemTemp);
+		this.cfe = this.cfeDao.save(this.cfe);
+	}
 
 	@Transactional
 	public String doEmitir() {
 		try {
-			if (this.cfe.getListaItem().size() > 0) {
-				this.listaItemTemp = calculaTributos.preencheListaDeItensCfe(this.cfe.getListaItem(), this.cfe,pegaIdEmpresa(),pegaIdFilial());
-			}else {
-				throw new TributosException(this.translate("tributosException.listaEmpty"));
-			}
-			if (this.listaItemTemp.size() > 0) {
-				this.cfe.setListaItem(this.listaItemTemp);
-			}else {
-				throw new TributosException(this.translate("tributosException.listaEmpty"));
-			}
-			if (this.documento != null) {
-				preencheDestinatario(this.documento);
-			}
-			this.emitente = preencheEmitente();
-//			this.emitente = this.emitenteDao.save(this.emitente);
-//			this.destinatario = destinatarioDao.save(this.destinatario);
-
-			this.cfe.setEmitente(this.emitente);
-			this.cfe.setDestinatario(this.destinatario);
-			//		this.cfe.setValorTotalProdutos(this.totalCFe);
-			this.cfe = calculaTributos.calculaTotaisCFe(this.cfe);
-			this.cfe.setDesconto(this.totalDesconto);
-			this.cfe.setFormaPagamento(this.formaPag);
-
-
-
-//			if (this.cfe.getId() != null) {
-				//			System.out.println("IBR - salvando os itens da cfe");
-				for (ItemCFe item : this.listaItemTemp) {
-					item.setCfe(this.cfe);
-//					itemDao.save(item);
+			boolean nfceAtivado = AbstractBeanEmpDS.<Boolean>campoEmpUser(this.empresaUsuario,Filial::isNFCeAtivo,Empresa::isNFCeAtivo ).booleanValue();
+			preencheCupom();
+			if (nfceAtivado) { // NCFE emissao
+				NfceEmissaoResultado res = nfceEmissaoService.emitir(pegaConexao(), nomeArquivo, this.cfe, pegaIdEmpresa(), pegaIdFilial(), true,false);
+				this.nfce = (res != null ? res.getNfce() : null);
+				if (res == null || !res.isValido()) {
+					this.addError(true, res != null ? res.getMotivo() : "Falha ao emitir NFC-e (retorno nulo)");
+					return null;
 				}
+				this.addInfo(true, "NFC-e emitida com sucesso: " + res.getNumero() + " (Série " + res.getSerie() + ")");
+				return toListSat();
+			} else {
+				this.respostaAcbrLocal = acbr.criarArqIniSatMaqRemota(pegaConexao(), this.nomeArquivo, this.cfe,pegaVersaoSat());
+				String retornoAcbr = acbr.satCriarEnviarCFe(pegaConexao(), this.nomeArquivo);
+				SatResposta satResposta = validaRetornoCFe(retornoAcbr); 
+				System.out.println("Valido: " + satResposta.isValido() + "\n C digo:" + satResposta.codigoRetorno);
+				if (satResposta.isValido()) {
+					this.cfe.setCaminho(satResposta.getPatch());
+					this.cfe.setStatusEmissao(StatusNfe.EN);
+					this.cfe.setNumeroNota(satResposta.getNumero());
+					this.cfe.setEmitido(true);
+					System.out.println("Campos CFE preenchidos caminho:" + this.cfe.getCaminho() + " Chave de acesso:"
+							+ this.cfe.getNumeroNota() + " Emitido:" + this.cfe.getStatusEmissao() + " emitido:" + this.cfe.isEmitido());
+					this.respostaAcbrLocal = acbr.geraPDFExtratoVenda(pegaConexao(), this.cfe.getCaminho(), this.cfe.getNumeroNota().trim() + ".pdf");
+					this.respostaAcbrLocal = acbr.satImprimiExtratoVenda(pegaConexao(), this.cfe.getCaminho());
+					this.addInfo(true, satResposta.motivo);
+					this.destinatario.setCfe(this.cfe);
+	//				this.destinatario = this.destinatarioDao.save(this.destinatario);
+					this.cfe = this.cfeDao.save(this.cfe);
 
-				System.out.println("IBR - salvando o pagamento da cfe");
-				for (ParcelasNfe parcelasNfe : this.listaParcelamento) {
-					parcelasNfe.setCfe(this.cfe);
-//					parcelaDao.save(parcelasNfe);
-					System.out.println("estou dentro do foreach parcelas");
+
+				}else {
+
+					this.addError(true, satResposta.motivo);
 				}
-//			}
-			this.cfe.setListaItem(this.listaItemTemp);
-			this.cfe = this.cfeDao.save(this.cfe);
-			this.respostaAcbrLocal = acbr.criarArqIniSatMaqRemota(pegaConexao(), this.nomeArquivo, this.cfe,pegaVersaoSat());
-			String retornoAcbr = acbr.satCriarEnviarCFe(pegaConexao(), this.nomeArquivo);
-			SatResposta satResposta = validaRetornoCFe(retornoAcbr); 
-			System.out.println("Valido: " + satResposta.isValido() + "\n Cï¿½digo:" + satResposta.codigoRetorno);
-			if (satResposta.isValido()) {
-				this.cfe.setCaminho(satResposta.getPatch());
-				this.cfe.setStatusEmissao(StatusNfe.EN);
-				this.cfe.setNumeroNota(satResposta.getNumero());
-				this.cfe.setEmitido(true);
-				System.out.println("Campos CFE preenchidos caminho:" + this.cfe.getCaminho() + " Chave de acesso:"
-						+ this.cfe.getNumeroNota() + " Emitido:" + this.cfe.getStatusEmissao() + " emitido:" + this.cfe.isEmitido());
-				this.respostaAcbrLocal = acbr.geraPDFExtratoVenda(pegaConexao(), this.cfe.getCaminho(), this.cfe.getNumeroNota().trim() + ".pdf");
-				this.respostaAcbrLocal = acbr.satImprimiExtratoVenda(pegaConexao(), this.cfe.getCaminho());
-				this.addInfo(true, satResposta.motivo);
-				this.destinatario.setCfe(this.cfe);
-//				this.destinatario = this.destinatarioDao.save(this.destinatario);
-				this.cfe = this.cfeDao.save(this.cfe);
-
-
-			}else {
-
-				this.addError(true, satResposta.motivo);
 			}
 			return toListSat();
 

@@ -16,7 +16,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.function.Function;
 
 import javax.annotation.PostConstruct;
 import javax.faces.view.ViewScoped;
@@ -48,6 +47,9 @@ import br.com.nsym.application.component.table.Page;
 import br.com.nsym.application.component.table.PageRequest;
 import br.com.nsym.application.controller.AbstractBeanEmpDS;
 import br.com.nsym.application.controller.nfe.tools.CalculaTributos;
+import br.com.nsym.application.controller.nfe.tools.NfceEmissaoResultado;
+import br.com.nsym.application.controller.nfe.tools.NfceEmissaoService;
+import br.com.nsym.application.controller.nfe.tools.NfceService;
 import br.com.nsym.domain.misc.CpfCnpjUtils;
 import br.com.nsym.domain.misc.EstoqueUtil;
 import br.com.nsym.domain.misc.ImpressoraACBr;
@@ -78,6 +80,7 @@ import br.com.nsym.domain.model.entity.fiscal.Cfe.CFe;
 import br.com.nsym.domain.model.entity.fiscal.Cfe.DestinatarioCFe;
 import br.com.nsym.domain.model.entity.fiscal.Cfe.EmitenteCFe;
 import br.com.nsym.domain.model.entity.fiscal.Cfe.ItemCFe;
+import br.com.nsym.domain.model.entity.fiscal.Cfe.Nfce;
 import br.com.nsym.domain.model.entity.fiscal.tools.StatusNfe;
 import br.com.nsym.domain.model.entity.tools.CaixaFinalidade;
 import br.com.nsym.domain.model.entity.tools.Configuration;
@@ -138,6 +141,12 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	@Inject
 	private AcbrComunica acbr;
 	
+	@Inject
+	private NfceService nfceService;
+
+	@Inject
+	private NfceEmissaoService nfceEmissaoService;
+
 	@Getter
 	@Setter
 	private List<Pedido> listaPedidosSelecionados= new ArrayList<Pedido>();
@@ -391,6 +400,10 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	@Setter
 	private CFe cfe;
 	
+	@Getter
+	@Setter
+	private Nfce nfce = new Nfce();
+	
 	@Inject
 	private CFeRepository cfeDao;
 	
@@ -418,7 +431,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	@Inject
 	private EmitenteCfeRepository emitenteDao;
 	
-	// Utilitario com todas as funï¿½ï¿½es de estoque
+	// Utilitario com todas as fun  es de estoque
 	@Inject
 	private EstoqueUtil estoqueUtil;
 		
@@ -568,7 +581,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 			this.addError(true, "exception.error.fatal", e.getMessage());
 		}
 	}
-	// Tela CaixaReceber - Lanï¿½a os pagamentos 
+	// Tela CaixaReceber - Lan a os pagamentos 
 	public void initializeFormCaixa(Long id) {
 		// TODO Auto-generated method stub
 		try {
@@ -667,7 +680,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 							this.totalGT = this.totalGT.subtract(valorDesconto);
 							this.resto = this.resto.subtract(valorDesconto);
 							this.agrupado.setDesconto(valorDesconto);
-						}else { // desconto e acrï¿½scimo. Sendo que primeiro se aplica o desconto para depois se aplicar o acrï¿½scimo
+						}else { // desconto e acr scimo. Sendo que primeiro se aplica o desconto para depois se aplicar o acr scimo
 							valorDesconto = caixaUtil.calculaDescontoAcrescimo(this.totalGT, this.desconto, true, this.tipoDesconto);
 							valorAcrescimo = caixaUtil.calculaDescontoAcrescimo(this.totalGT, this.acrescimo, false, this.tipoAcrescimo);
 							this.totalGT = this.totalGT.subtract(valorDesconto);
@@ -745,7 +758,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	}
 	
 	/**toTela
-	 * Exibe o dialog com a lista de Devoluï¿½ï¿½es a serem confirmadas
+	 * Exibe o dialog com a lista de Devolu  es a serem confirmadas
 	 */
 	public void telaListaDevConfirm(){
 		geraNovaListaDevolucoes();
@@ -820,7 +833,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	/**
 	 * Inicialilza Form Abertura de caixa
 	 * 
-	 * verifica se tem algum caixa aberto, caso encontre ele carrega o caixa , caso contrario faz uma pesquisa pelo ï¿½ltimo caixa fechado e 
+	 * verifica se tem algum caixa aberto, caso encontre ele carrega o caixa , caso contrario faz uma pesquisa pelo ultimo caixa fechado e 
 	 * retorna o saldo anterior para abertura do novo caixa. obs: caso na data de abertura ja tenha um caixa fechado, ele reabre o caixa 
 	 * definindo o livro caixa como REABERTURA (somente reabre caixa do dia!)
 	 * @throws CaixaException 
@@ -859,7 +872,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 					this.addInfo(true, "caixa.isReOpen");
 				}
 			}else {
-				System.out.println("Caixa Aberto de Hoje nï¿½o encontrado, procurando caixas abertos em outras datas! - 3");
+				System.out.println("Caixa Aberto de Hoje nao encontrado, procurando caixas abertos em outras datas! - 3");
 				listaCaixaTemp = this.caixaDao.pegaCaixasEmAberto(getUsuarioAutenticado().getName(),LocalDate.now().minusDays(10), StatusCaixa.Abe,pegaIdEmpresa(), pegaIdFilial());
 				LocalDate maiorData = LocalDate.now().minusDays(5);
 				if (listaCaixaTemp.size() >0) {
@@ -882,7 +895,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 					}
 				}else {
 					this.viewState = ViewState.ADDING;
-					System.out.println("Nï¿½o encontrado nenhum caixa Aberto no banco de dados - 5");
+					System.out.println("N o encontrado nenhum caixa Aberto no banco de dados - 5");
 					maiorData = LocalDate.now().minusDays(10);
 					listaCaixaTemp = this.caixaDao.pegaCaixasEmAberto(getUsuarioAutenticado().getName(),maiorData, StatusCaixa.Fec,pegaIdEmpresa(), pegaIdFilial());
 					Long id = 0l;
@@ -938,7 +951,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 							}
 						}
 					}else {
-						System.out.println("Nï¿½o existe nenhum caixa fechado no sistema, Abrindo um caixa novo -8");
+						System.out.println("N o existe nenhum caixa fechado no sistema, Abrindo um caixa novo -8");
 						this.caixa = new Caixa();
 						this.caixa.setAberto(true);
 						this.hasTipoPagSimples = caixaUtil.hashTipoSimplesLimpo();
@@ -1098,7 +1111,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 							this.caixa.getListaFechamentoCaixa().add(this.recebimentoParcial);
 						}
 					}
-					// Faz a conferï¿½ncia do caixa e seta o StatusConferencia
+					// Faz a conferencia do caixa e seta o StatusConferencia
 					if (conferenciaDeCaixa(this.caixa)) {
 						this.caixa.setConferencia(StatusConferencia.Ok);
 					}else {
@@ -1125,9 +1138,9 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	}
 	
 	/**
-	 *  Conferï¿½ncia de caixa
+	 *  Conferencia de caixa
 	 * @param caixa
-	 * @return True = Caixa conferido sem erro   False = Caixa conferido mas possui divergï¿½ncias
+	 * @return True = Caixa conferido sem erro   False = Caixa conferido mas possui divergencias
 	 */
 	public boolean conferenciaDeCaixa(Caixa caixa) {
 		HashMap<String, BigDecimal> recebiveis = new HashMap<String, BigDecimal>();
@@ -1187,12 +1200,12 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	 * Insere os valores na respectivo Tipo de pagamento
 	 */
 	public void insereVal() {
-		System.out.println("iniciando a inclusï¿½o do valor  R$ "  + this.valorAbertura);
+		System.out.println("iniciando a inclusao do valor  R$ "  + this.valorAbertura);
 		BigDecimal tot = new BigDecimal("0");
 		if (this.hasTipoPagSimples.containsKey(this.tipoSimples.toString())) {
 			System.out.println("Forma de pagamento localizada");
 			tot = this.hasTipoPagSimples.get(this.tipoSimples.toString()).add(this.valorAbertura);
-			System.out.println("O valor a ser inseridor ï¿½ de R$ " + this.valorAbertura + " com o meio de pagamento " + this.tipoSimples.toString() + " saldo atual ï¿½ R$ " + tot);
+			System.out.println("O valor a ser inseridor e de R$ " + this.valorAbertura + " com o meio de pagamento " + this.tipoSimples.toString() + " saldo atual   R$ " + tot);
 			this.hasTipoPagSimples.replace(this.tipoSimples.toString(), tot);
 		}else {
 			this.addError(true, "Meio de pagamento nao consta na lista");
@@ -1204,12 +1217,12 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	 * Insere os valores na respectivo Tipo de pagamento
 	 */
 	public void insereValFechamento() {
-		System.out.println("iniciando a inclusï¿½o do valor  R$ "  + this.valorAbertura);
+		System.out.println("iniciando a inclusao do valor  R$ "  + this.valorAbertura);
 		BigDecimal tot = new BigDecimal("0");
 		if (this.hasTipoPagSimples.containsKey(this.tipoSimples.toString())) {
 			System.out.println("Forma de pagamento localizada");
 			tot = this.hasTipoPagSimples.get(this.tipoSimples.toString()).add(this.valorAbertura);
-			System.out.println("O valor a ser inseridor ï¿½ de R$ " + this.valorAbertura + " com o meio de pagamento " + this.tipoSimples.toString() + " saldo atual ï¿½ R$ " + tot);
+			System.out.println("O valor a ser inseridor e de R$ " + this.valorAbertura + " com o meio de pagamento " + this.tipoSimples.toString() + " saldo atual   R$ " + tot);
 			this.hasTipoPagSimples.replace(this.tipoSimples.toString(), tot);
 			
 		}else {
@@ -1221,7 +1234,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	@Transactional
 	public void doSaveAbertura() {
 		try {
-			if (this.caixa.getId() != null) { // Caixa Jï¿½ aberto
+			if (this.caixa.getId() != null) { // Caixa Ja aberto
 				this.addError(true, "caixa.isOpen");
 			}else {// Novo Caixa
 				this.caixa.setDataAbertura(LocalDate.now());
@@ -1270,7 +1283,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	
 	
 	/**
-	 * cria uma lista baseado no HASHMAP de forma de pagamentos para exibiï¿½ï¿½o como os valores
+	 * cria uma lista baseado no HASHMAP de forma de pagamentos para exibi  o como os valores
 	 * @return
 	 */
 	public List<Map.Entry<FormaDePagamento, BigDecimal>> getFormas(){ 
@@ -1279,7 +1292,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	}
 	
 	/**
-	 * cria uma lista Vazia para Forma de pagamentos a ser preenchida de acordo com a seleï¿½ï¿½o do usuï¿½rio
+	 * cria uma lista Vazia para Forma de pagamentos a ser preenchida de acordo com a sele  o do usu rio
 	 * @return
 	 */
 	public List<Map.Entry<FormaDePagamento, BigDecimal>> getHasFormaVazia(){
@@ -1390,7 +1403,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	}
 	
 	/**
-	 * 	Método que agrupa os pedidos selecionandos em um unico pedido (Grande Pedido) permitindo receber 
+	 * 	M todo que agrupa os pedidos selecionandos em um unico pedido (Grande Pedido) permitindo receber 
 	 * todos os pedidos selecionados de uma unica vez.
 	 * @throws CaixaException 
 	 */
@@ -1573,7 +1586,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 							this.totalGT = this.totalGT.add(pedTemp.getValorTotalPedido());
 						}
 					}else {
-						throw new CaixaException(this.translate("Pedido jÃ¡ consta na lista de selecionados"));
+						throw new CaixaException(this.translate("Pedido consta na lista de selecionados"));
 					}
 				}
 			}
@@ -1583,7 +1596,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	}
 		
 	/**
-	 * MÃ©todo que permite remover da listaPedidosSelecionados um pedido. 
+	 * Método que permite remover da listaPedidosSelecionados um pedido. 
 	 * @param itemSelect
 	 */
 	public void excluiItem(Pedido pedidoSelect){
@@ -1708,7 +1721,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 							itemPedido.setValorTotal(itemPedido.getValorTotalBruto().add(acrescimoPorItem));			
 							totAcrescimo = totAcrescimo.add(acrescimoPorItem);
 					}
-					// calculando possivel diferenï¿½a no acrescimo
+					// calculando possivel diferen a no acrescimo
 					BigDecimal restoAcrescItem = new BigDecimal("0");
 					restoAcrescItem = totAcrescimo.subtract(acrescimoPedido);
 					if (restoAcrescItem.compareTo(new BigDecimal("0"))>0) {
@@ -1726,7 +1739,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 						itemPedido.setValorTotal(itemPedido.getValorTotalBruto().subtract(descontoPorItem));			
 						totDescItem = totDescItem.add(descontoPorItem);
 					}
-					// calculando possivel diferenï¿½a no desconto
+					// calculando possivel diferen a no desconto
 					BigDecimal restoDescItem = new BigDecimal("0");
 					restoDescItem = totDescItem.subtract(descontoPedido);
 					if (restoDescItem.compareTo(new BigDecimal("0"))>0) {
@@ -1752,7 +1765,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 						totAcrescimo = totAcrescimo.add(acrescimoPorItem);
 						
 					}
-					// calculando possivel diferenï¿½a no acrescimo
+					// calculando possivel diferen a no acrescimo
 					BigDecimal restoDescItem = new BigDecimal("0");
 					BigDecimal restoAcrescItem = new BigDecimal("0");
 					restoAcrescItem = totAcrescimo.subtract(acrescimoPedido);
@@ -1773,7 +1786,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 				ped.setDataRecebimento(LocalDate.now());
 				
 			}
-			// calculo da diferenï¿½a no desconto e no acrescimo
+			// calculo da diferen a no desconto e no acrescimo
 			BigDecimal fracao = new BigDecimal("0");
 			BigDecimal totalDesconto = new BigDecimal("0");
 			BigDecimal totalAcrescimo = new BigDecimal("0");
@@ -1866,7 +1879,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 		}
 			return listaTempAddParcelaToRecebimentoParcial;
 		}catch (Exception e) {
-			throw new FinanceiroException(this.translate("Não foi possivel gerar o financeiro - " )+ e.getMessage());
+			throw new FinanceiroException(this.translate("N o foi possivel gerar o financeiro - " )+ e.getMessage());
 		}
 		
 	}
@@ -1876,8 +1889,8 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	}
 	
 	/**
-	 * Método que gera as parcelas conforme a formaDePagamento Informado
-	 * obs: o campo Controle da ParcelasNfe não é preenchido!
+	 * M todo que gera as parcelas conforme a formaDePagamento Informado
+	 * obs: o campo Controle da ParcelasNfe n o   preenchido!
 	 * @param forma
 	 * @param valor
 	 * @return List<ParcelasNfe>
@@ -1887,7 +1900,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 		try{
 //			nova formula para calculo dos vencimentos 
 // 			d1 d2 d2+(dn*(np*2)) ou criar uma lista com as parcelas e informar a quantidade de dias para cada vencimento
-//			de qualquer forma será necessário que o cliente informe os campos em FORMA DE PAGAMENTO
+//			de qualquer forma ser  necess rio que o cliente informe os campos em FORMA DE PAGAMENTO
 			List<ParcelasNfe> listaParcelamento = new ArrayList<ParcelasNfe>();
 			LocalDate hoje = LocalDate.now();
 			MathContext precisao = new MathContext(20, RoundingMode.HALF_UP);
@@ -1900,7 +1913,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 			String parc= ""+forma.getParcelas();
 			System.out.println("quantidade parcelas " + forma.getParcelas());
 			total = new BigDecimal(valor.intValue());
-			// só irá fazer os cálculos caso  valor Total da nota for maior que 0 e numero de parcelas tambem maior que zero
+			// s  ir  fazer os c lculos caso  valor Total da nota for maior que 0 e numero de parcelas tambem maior que zero
 			if ((valor.compareTo(new BigDecimal("0")) > 0  && forma.getParcelas() > 0) || (forma.getTipoPagamento().equals(TipoPagamento.Spg))){
 				if (forma.getTipoPagamento().equals(TipoPagamento.Spg)){
 					parcelaTemporaria.setNumParcela(1L);
@@ -1975,10 +1988,10 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 
 			return listaParcelamento;
 		}catch (HibernateException h){
-			this.addError(true, "Nï¿½o foi possivel apagar as parcelas", h.getCause());
+			this.addError(true, "N o foi possivel apagar as parcelas", h.getCause());
 			return new ArrayList<ParcelasNfe>();
 		}catch (Exception e) {
-			this.addError(true, "Nï¿½o sei qual foi a causa do erro", e.getCause());
+			this.addError(true, "N o sei qual foi a causa do erro", e.getCause());
 			return new ArrayList<ParcelasNfe>();
 		}
 		
@@ -2011,7 +2024,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 			if (retorna != null) {
 				if (imprimeCupomVenda()) {
 					for (int i = 0 ; i< this.configUser.getQuantViaVenda().intValue(); i++) {
-						this.pedido = this.agrupado.getListaPedidosRecebidos().get(0); // isso sÃ³ Ã© possivel porque no modo frente de caixa nÃ£o permite agrupamento de pedidos!
+						this.pedido = this.agrupado.getListaPedidosRecebidos().get(0); // isso s    possivel porque no modo frente de caixa n o permite agrupamento de pedidos!
 						impressora.imprimirCupomPdv(this.pedido,this.configUser.isCabecalhoPDV(),this.getUsuarioAutenticado().getConfig());
 					}
 					retorna =  newPedido();
@@ -2055,7 +2068,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 					// gerando lista de Parcelas de pagamento e persistindo no banco!
 					List<ParcelasNfe> listaParcelaTemp = new ArrayList<ParcelasNfe>();
 					for (RecebimentoParcial rec : listParcialTemp) {
-						listaParcelaTemp.addAll(geraListaParcelaNfePreenchinda(rec)); //jï¿½ salva no banco a parcela
+						listaParcelaTemp.addAll(geraListaParcelaNfePreenchinda(rec)); //j  salva no banco a parcela
 					}
 					String controleID ="PedidoGT : ";
 					for (Pedido ped : this.agrupado.getListaPedidosRecebidos()) {
@@ -2237,19 +2250,10 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	public String geraCFe() {
 		try {
 			if (this.resto.compareTo(new BigDecimal("0"))==0) {
-				// verificando se NFCe ativado
-				try {
-					if (AbstractBeanEmpDS.<Boolean>campoEmpUser(this.empresaUsuario,Filial::isNFCeAtivo,Empresa::isNFCeAtivo ).booleanValue()) {
-						
-					}else {
-					}
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
 				
 				// inicializando o CFe
 				this.cfe = new CFe();
+				this.nfce = new Nfce();
 				// preenchendo o destinatario
 				if (this.agrupado.getDestinatario().informaClassePreenchida().equalsIgnoreCase("null")== false) {
 					this.satEmitido = geraCupomCPFInformado(true);
@@ -2320,7 +2324,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 			this.cfe.setDestinatario(this.destino);
 
 			if (this.cfe.getListaItem().size() > 0) {
-				listaItemTemp = calculaTributos.preencheListaDeItensCfe(this.cfe.getListaItem(), this.cfe,pegaIdEmpresa(),pegaIdFilial());
+				listaItemTemp = calculaTributos.preencheListaDeItensCfe(this.cfe.getListaItem(),pegaIdEmpresa(),pegaIdFilial());
 			}else {
 				throw new TributosException(this.translate("tributosException.listaEmpty"));
 			}
@@ -2337,47 +2341,52 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 			this.cfe = calculaTributos.calculaTotaisCFe(this.cfe);
 			this.cfe.setDesconto(this.agrupado.getDesconto());
 			String retornoAcbr = "";
-			if (nfceAtivado) { // criar o arquivo de envio NFCE
-				acbr.criarArqIniMaqRemota(pegaConexao(), nomeArquivo, nfce, FinalidadeNfe.NO, true);
-				// criarArqIniMaqRemota é o que cria a NFe que tambem será usado para o NFC-e 
-				// necessario alterar  metodo para a reforma tributaria
-//				acbr.criarArqIniMaqRemota(pegaConexao(), nomeArquivo, this.cfe,pegaVersaoSat());
-//				retornoAcbr = acbr.satCriarEnviarCFe(pegaConexao(), nomeArquivo);
-			}else {
+			if (nfceAtivado) { // NCFE emissao
+				NfceEmissaoResultado res = nfceEmissaoService.emitir(pegaConexao(), nomeArquivo, this.cfe, pegaIdEmpresa(), pegaIdFilial(), true,true);
+				this.nfce = (res != null ? res.getNfce() : null);
+				if (res == null || !res.isValido()) {
+					this.addError(true, res != null ? res.getMotivo() : "Falha ao emitir NFC-e (retorno nulo)");
+					return false;
+				}
+				this.addInfo(true, "NFC-e emitida com sucesso: " + res.getNumero() + " (Série " + res.getSerie() + ")");
+				return true;
+			} else {
 				acbr.criarArqIniSatCaixaMaqRemota(pegaConexao(), nomeArquivo, this.cfe,pegaVersaoSat());
 				retornoAcbr = acbr.satCriarEnviarCFe(pegaConexao(), nomeArquivo);
-			}
-			SatResposta satResposta = validaRetornoCFe(retornoAcbr); 
-			System.out.println("Valido: " + satResposta.isValido() + "\n Código:" + satResposta.codigoRetorno);
-			if (satResposta.isValido()) {
-				this.cfe.setCaminho(satResposta.getPatch());
-				this.cfe.setStatusEmissao(StatusNfe.EN);
-				this.cfe.setNumeroNota(satResposta.getNumero());
-				this.cfe.setEmitido(true);
-				System.out.println("Campos CFE preenchidos caminho:" + this.cfe.getCaminho() + " Chave de acesso:"
-						+ this.cfe.getNumeroNota() + " Emitido:" + this.cfe.getStatusEmissao() + " emitido:" + this.cfe.isEmitido());
-				acbr.geraPDFExtratoVenda(pegaConexao(), this.cfe.getCaminho(), this.cfe.getNumeroNota().trim() + ".pdf");
-				acbr.satImprimiExtratoVenda(pegaConexao(), this.cfe.getCaminho());
-				this.addInfo(true, satResposta.motivo);
-				this.destino.setCfe(this.cfe);
-				//				this.destino = this.destinoDao.save(this.destino);
 
-				//				this.cfe = this.cfeDao.save(this.cfe);
+				SatResposta satResposta = validaRetornoCFe(retornoAcbr); 
+				System.out.println("Valido: " + satResposta.isValido() + "\n C digo:" + satResposta.codigoRetorno);
+				if (satResposta.isValido()) {
+					this.cfe.setCaminho(satResposta.getPatch());
+					this.cfe.setStatusEmissao(StatusNfe.EN);
+					this.cfe.setNumeroNota(satResposta.getNumero());
+					this.cfe.setEmitido(true);
+					System.out.println("Campos CFE preenchidos caminho:" + this.cfe.getCaminho() + " Chave de acesso:"
+							+ this.cfe.getNumeroNota() + " Emitido:" + this.cfe.getStatusEmissao() + " emitido:" + this.cfe.isEmitido());
+					acbr.geraPDFExtratoVenda(pegaConexao(), this.cfe.getCaminho(), this.cfe.getNumeroNota().trim() + ".pdf");
+					acbr.satImprimiExtratoVenda(pegaConexao(), this.cfe.getCaminho());
+					this.addInfo(true, satResposta.motivo);
+					this.destino.setCfe(this.cfe);
+					//				this.destino = this.destinoDao.save(this.destino);
 
-				if (this.cfe.getId() != null) {
-					//			System.out.println("IBR - salvando os itens da cfe");
-					for (ItemCFe item : listaItemTemp) {
-						item.setCfe(this.cfe);
-						//						this.itemCfeDao.save(item);
+					//				this.cfe = this.cfeDao.save(this.cfe);
+
+					if (this.cfe.getId() != null) {
+						//			System.out.println("IBR - salvando os itens da cfe");
+						for (ItemCFe item : listaItemTemp) {
+							item.setCfe(this.cfe);
+							//						this.itemCfeDao.save(item);
+						}
 					}
-				}
-				this.cfe.setListaItem(listaItemTemp);
-				this.cfe = this.cfeDao.save(this.cfe);
+					this.cfe.setListaItem(listaItemTemp);
+					this.cfe = this.cfeDao.save(this.cfe);
 
-				return true;
-			}else {
-				this.addError(true, satResposta.motivo);
-				return false;
+					return true;
+
+				}else {
+					this.addError(true, satResposta.motivo);
+					return false;
+				}
 			}
 			//			}else {
 			//				this.addError(true, "caixa.error.save");
@@ -2447,7 +2456,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 			inicio = resultadoUp.indexOf("CODIGODERETORNO");
 			fim = resultadoUp.indexOf("NUMEROSESSAO");
 			String codigoRetorno = resultadoUp.substring(inicio+16,fim);
-			System.out.println("Cï¿½digo: " + codigoRetorno);
+			System.out.println("C digo: " + codigoRetorno);
 			switch (codigoRetorno.trim()) {
 			case "6000":
 				inicio = resultadoUp.indexOf("ARQUIVO=");
@@ -2464,22 +2473,22 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 				break;
 			case "6001":
 				satResposta.setValido(false);
-				satResposta.setMotivo("Codigo de ativaÃ§Ã£o invÃ¡lido");
+				satResposta.setMotivo("Codigo de ativa  o inv lido");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			case "6002":
 				satResposta.setValido(false);
-				satResposta.setMotivo("SAT ainda nÃ£o ativado.");
+				satResposta.setMotivo("SAT ainda n o ativado.");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			case "6003":
 				satResposta.setValido(false);
-				satResposta.setMotivo("SAT nÃ£o vinculado ao AC");
+				satResposta.setMotivo("SAT n o vinculado ao AC");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			case "6004":
 				satResposta.setValido(false);
-				satResposta.setMotivo("VinculaÃ§Ã£o do AC nÃ£o confere.");
+				satResposta.setMotivo("Vincula  o do AC n o confere.");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			case "6005":
@@ -2499,17 +2508,17 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 				break;
 			case "6008":
 				satResposta.setValido(false);
-				satResposta.setMotivo("SAT bloqueado por falta de comunicaÃ§Ã£o");
+				satResposta.setMotivo("SAT bloqueado por falta de comunica  o");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			case "6009":
 				satResposta.setValido(false);
-				satResposta.setMotivo("SAT bloqueado, cÃ³digo de ativaÃ§Ã£o incorreto");
+				satResposta.setMotivo("SAT bloqueado, c digo de ativa  o incorreto");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			case "6010":
 				satResposta.setValido(false);
-				satResposta.setMotivo("Erro de validaÃ§Ã£o do conteÃºdo.");
+				satResposta.setMotivo("Erro de valida  o do conte do.");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			case "6011":
@@ -2519,7 +2528,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 				break;
 			case "6097":
 				satResposta.setValido(false);
-				satResposta.setMotivo("NÃºmero de sessÃ£o invÃ¡lido");
+				satResposta.setMotivo("N mero de sess o inv lido");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			case "6098":
@@ -2529,7 +2538,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 				break;
 			case "6099":
 				satResposta.setValido(false);
-				satResposta.setMotivo("Erro desconhecido na emissÃ£o.");
+				satResposta.setMotivo("Erro desconhecido na emiss o.");
 				satResposta.setCodigoRetorno(codigoRetorno);
 				break;
 			default:
@@ -2629,7 +2638,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	                	ProdutoCusto custoAtualizado = new ProdutoCusto();
 	                	if (empresaUsuario.getEmp().isTranferPreco()) {
 	                		custoAtualizado = estoqueUtil.atualizaCustoComPreco(custoDestino, custoOrigem,itemTemp);
-	                		System.out.println("Estou detro do transfere preço");
+	                		System.out.println("Estou detro do transfere pre o");
 	                	}else {
 	                		custoAtualizado = estoqueUtil.atualizaCustoSemPreco(custoDestino, custoOrigem,itemTemp);
 	                	}
@@ -2673,7 +2682,7 @@ public class CaixaBean extends AbstractBeanEmpDS<AgPedido> {
 	    }catch (EstoqueRuntimeException er) {
 	    	this.addError(true, "caixa.error", er.getMessage());
 	    } catch (EstoqueException ex) {
-	    	// nada a fazer ja é feito automatico o rollback e a exibiçao de mensagem.
+	    	// nada a fazer ja   feito automatico o rollback e a exibi ao de mensagem.
 	    	 this.addError(true, "caixa.error", ex.getMessage());
 	    } catch (HibernateException e) {
 	        this.addError(true, "caixa.error", e.getMessage());

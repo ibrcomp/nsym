@@ -26,6 +26,7 @@ import br.com.nsym.domain.model.entity.financeiro.FormaDePagamento;
 import br.com.nsym.domain.model.entity.financeiro.MovimentoCaixa;
 import br.com.nsym.domain.model.entity.financeiro.RecebimentoParcial;
 import br.com.nsym.domain.model.entity.financeiro.TipoPagamento;
+import br.com.nsym.domain.model.entity.fiscal.Cfe.Nfce;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -99,6 +100,12 @@ public abstract class RecebimentoParcialAbstract extends PersistentEntity {
 	@ManyToOne
 	@JoinColumn(name="Conta_ID",referencedColumnName = "id")
 	private ContaCorrente contaCorrente;
+	
+	@Getter
+	@Setter
+	@ManyToOne
+	@JoinColumn(name="Nfce_ID",referencedColumnName = "id")
+	private Nfce nfce;
 	
 	@Override
 	public int hashCode() {

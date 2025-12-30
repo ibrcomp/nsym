@@ -402,6 +402,18 @@
 									</p:selectBooleanButton>
 								</div>
 								<div class="form-group col-md-2">
+									<p:outputLabel for="temNFce"
+										value="#{label['label.param.temNFce']}" />
+									<p:selectBooleanButton id="temNFce"
+										value="#{filialBean.filial.NFCeAtivo}"
+										onLabel="#{label['label.yes']}"
+										offLabel="#{label['label.no']}"
+										styleClass="btn btn-flat btn-primary form-control"
+										disabled="#{userSessionBean.hasRole(authorization.PRODUTO_INSERT) eq 'false'}">
+										<p:ajax event="change" process="configNfe" />
+									</p:selectBooleanButton>
+								</div>
+								<div class="form-group col-md-2">
 									<p:outputLabel for="aliqAproveita"
 										value="#{label['label.param.apro']}"
 										rendered="#{filialBean.filial.enquadramento eq 'SimplesNacional'}" />
@@ -429,6 +441,21 @@
 										value="#{label['label.nfe.sequencia']}" />
 									<p:inputNumber id="numNfe"
 										value="#{filialBean.filial.numeroNFe}" decimalPlaces="0" />
+								</div>
+								
+								<div class="form-group col-md-2">
+									<p:outputLabel for="serieNFCE"
+										value="#{label['label.nfce.serieNfce']}" />
+									<p:inputNumber id="serieNFCE"
+										value="#{filialBean.filial.serieNfc}" decimalPlaces="0"
+										maxlength="3" />
+								</div>
+
+								<div class="form-group col-md-2">
+									<p:outputLabel for="numNfce"
+										value="#{label['label.nfce.sequencia']}" />
+									<p:inputNumber id="numNfce"
+										value="#{filialBean.filial.numeroNfce}" decimalPlaces="0" />
 								</div>
 							</div>
 							<div class="row">

@@ -13,7 +13,6 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
@@ -27,6 +26,7 @@ import br.com.nsym.domain.model.entity.financeiro.RecebimentoParcial;
 import br.com.nsym.domain.model.entity.financeiro.TipoPagamento;
 import br.com.nsym.domain.model.entity.financeiro.Enum.TipoLancamento;
 import br.com.nsym.domain.model.entity.fiscal.Cfe.CFe;
+import br.com.nsym.domain.model.entity.fiscal.Cfe.Nfce;
 import br.com.nsym.domain.model.entity.fiscal.nfe.Nfe;
 import br.com.nsym.domain.model.entity.fiscal.nfe.NfeRecebida;
 import br.com.nsym.domain.model.entity.venda.Pedido;
@@ -69,6 +69,12 @@ public abstract class Parcelas extends PersistentEntity{
 	@ManyToOne
 	@JoinColumn(name="id_CFe",referencedColumnName = "id")
 	private CFe cfe;
+	
+	@Getter
+	@Setter
+	@ManyToOne
+	@JoinColumn(name="id_Nfce",referencedColumnName = "id")
+	private Nfce nfce;
 	
 	@Getter
 	@Setter

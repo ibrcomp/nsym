@@ -1346,7 +1346,7 @@ public class CalculaTributos {
 	 * @return
 	 * @throws TributosException
 	 */
-	public ItemCFe preencheImpostoSat(ItemCFe preencher,CFe cfe,Long idEmpresa,Long idFilial) throws TributosException{
+	public ItemCFe preencheImpostoSat(ItemCFe preencher,Long idEmpresa,Long idFilial) throws TributosException{
 		ItemCFe itemTemp = new ItemCFe();
 		//		validaTributo(preencher.getProduto());
 		itemTemp = preencher;
@@ -1601,11 +1601,11 @@ public class CalculaTributos {
 	 * @return
 	 * @throws TributosException
 	 */
-	public List<ItemCFe> preencheListaDeItensCfe(List<ItemCFe> lista,CFe cfe,Long idEmpresa,Long idFilial
+	public List<ItemCFe> preencheListaDeItensCfe(List<ItemCFe> lista,Long idEmpresa,Long idFilial
 			) throws TributosException{
 		int i = 0 ;
 		for(ItemCFe item : lista) {
-			preencheImpostoSat(item, cfe, idEmpresa, idFilial);
+			preencheImpostoSat(item, idEmpresa, idFilial);
 			System.out.println("Passei pela lista "+ i++ +" veze(s) - preencheListaDeItensCfe - 1347" );
 		}
 		return lista;
